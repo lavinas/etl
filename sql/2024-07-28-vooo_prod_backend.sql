@@ -27,6 +27,11 @@ SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 -- Table structure for table `address`
 --
 
+
+DROP DATABASE IF EXISTS `vooo_prod_backend`;
+CREATE DATABASE `vooo_prod_backend`;
+USE `vooo_prod_backend`;
+
 DROP TABLE IF EXISTS `address`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -716,8 +721,7 @@ CREATE TABLE `client_connector_crawler` (
   `password` varchar(100) NOT NULL,
   PRIMARY KEY (`client_id`,`connector_id`),
   KEY `connector_id` (`connector_id`),
-  CONSTRAINT `client_connector_crawler_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `client_connector` (`client_id`),
-  CONSTRAINT `client_connector_crawler_ibfk_2` FOREIGN KEY (`connector_id`) REFERENCES `client_connector` (`connector_id`)
+  CONSTRAINT `client_connector_crawler_ibfk_1` FOREIGN KEY (`client_id`, `connector_id`) REFERENCES `client_connector` (`client_id`, `connector_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1217,7 +1221,7 @@ CREATE TABLE `connection` (
   KEY `fk_connection_client_connector1_idx` (`connector_id`,`client_id`),
   KEY `fk_connection_user1_idx` (`user_id`),
   CONSTRAINT `connection_sub_interaction_ibfk_2` FOREIGN KEY (`connection_status_id`) REFERENCES `connection_status` (`connection_status_id`),
-  CONSTRAINT `fk_connection_client_connector1` FOREIGN KEY (`connector_id`, `client_id`) REFERENCES `client_connector` (`connector_id`, `client_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_connection_client_connector1` FOREIGN KEY (`client_id`, `connector_id`) REFERENCES `client_connector` (`client_id`, `connector_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_connection_user1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=161315516 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -4746,7 +4750,7 @@ CREATE TABLE `shellbox_sales_consolidado` (
   KEY `data_lancamento` (`data_lancamento`),
   KEY `referencia` (`referencia`),
   KEY `FK_shellbox_sales_consolidado_shellbox_sales_consolidado_envio` (`envio_id`),
-  CONSTRAINT `FK_shellbox_sales_consolidado_shellbox_sales_consolidado_envio` FOREIGN KEY (`envio_id`) REFERENCES `shellbox_sales_consolidado_envio` (`id`)
+  CONSTRAINT `CT_shellbox_sales_consolidado_shellbox_sales_consolidado_envio` FOREIGN KEY (`envio_id`, `referencia`) REFERENCES `shellbox_sales_consolidado_envio` (`id`, `referencia`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1056136 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -4840,8 +4844,8 @@ CREATE TABLE `shellbox_sales_consolidado_keys` (
   `id` int(10) unsigned NOT NULL,
   `k1` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_k1` (`k1`),
-  CONSTRAINT `shellbox_sales_consolidado_key_fk` FOREIGN KEY (`id`) REFERENCES `shellbox_sales_consolidado` (`id`)
+  KEY `idx_k1` (`k1`)
+  # CONSTRAINT `shellbox_sales_consolidado_key_fk` FOREIGN KEY (`id`) REFERENCES `shellbox_sales_consolidado` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -4861,8 +4865,8 @@ CREATE TABLE `shellbox_sales_consolidado_link` (
   PRIMARY KEY (`sb_id`),
   UNIQUE KEY `id_consolidado` (`id_consolidado`,`sb_id`),
   KEY `id_consolidado_2` (`id_consolidado`),
-  CONSTRAINT `shellbox_sales_consolidado_link_fk1` FOREIGN KEY (`sb_id`) REFERENCES `shellbox_sales_line` (`sb_id`),
-  CONSTRAINT `shellbox_sales_consolidado_link_fk2` FOREIGN KEY (`id_consolidado`) REFERENCES `shellbox_sales_consolidado` (`id`)
+  CONSTRAINT `shellbox_sales_consolidado_link_fk1` FOREIGN KEY (`sb_id`) REFERENCES `shellbox_sales_line` (`sb_id`)
+  # CONSTRAINT `shellbox_sales_consolidado_link_fk2` FOREIGN KEY (`id_consolidado`) REFERENCES `shellbox_sales_consolidado` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -4949,8 +4953,8 @@ CREATE TABLE `shellbox_sales_line` (
   `consolidado` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`sb_id`),
   KEY `id_consolidado` (`id_consolidado`),
-  KEY `id_sb` (`sb_id`),
-  CONSTRAINT `shellbox_sales_line_ibfk_1` FOREIGN KEY (`id_consolidado`) REFERENCES `shellbox_sales_consolidado` (`id`)
+  KEY `id_sb` (`sb_id`)
+  #CONSTRAINT `shellbox_sales_line_ibfk_1` FOREIGN KEY (`id_consolidado`) REFERENCES `shellbox_sales_consolidado` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=222610360 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
