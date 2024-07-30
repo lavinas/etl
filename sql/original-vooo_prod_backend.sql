@@ -23,14 +23,16 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
---
--- Table structure for table `address`
---
-
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
 DROP DATABASE IF EXISTS `vooo_prod_backend`;
 CREATE DATABASE `vooo_prod_backend`;
 USE `vooo_prod_backend`;
+
+
+--
+-- Table structure for table `address`
+--
 
 DROP TABLE IF EXISTS `address`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -68,6 +70,322 @@ CREATE TABLE `aggregator` (
 
 --
 -- Table structure for table `analise_dados_sb_chave_01`
+--
+
+DROP TABLE IF EXISTS `analise_dados_sb_chave_01`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `analise_dados_sb_chave_01` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(15) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL,
+  `status` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `analise_sb_01_17`
+--
+
+DROP TABLE IF EXISTS `analise_sb_01_17`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `analise_sb_01_17` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(15) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL,
+  `sb_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id_consolidado` int(10) unsigned DEFAULT NULL,
+  `consolidado` int(10) unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `analise_sb_detalhado`
+--
+
+DROP TABLE IF EXISTS `analise_sb_detalhado`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `analise_sb_detalhado` (
+  `id` int(10) unsigned NOT NULL,
+  `sales_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `payment_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `payment_date` date NOT NULL,
+  `payment_time` time NOT NULL,
+  `gross_value` decimal(10,2) NOT NULL,
+  `net_value` decimal(10,2) NOT NULL,
+  `fee_value` decimal(10,2) NOT NULL,
+  `fee_rate` decimal(5,4) NOT NULL,
+  `payment_installments` decimal(2,0) NOT NULL,
+  `authorization_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code_extra` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `txn_id_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `credit_card_mask` varchar(20) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `vendor_mcc` decimal(6,0) DEFAULT NULL,
+  `vbv_transaction` tinyint(1) DEFAULT NULL,
+  `vendor_document` decimal(20,0) DEFAULT NULL,
+  `status_id` decimal(2,0) NOT NULL,
+  `power_id` decimal(1,0) NOT NULL,
+  `key_id` decimal(2,0) NOT NULL,
+  `register_type_id` decimal(2,0) NOT NULL,
+  `unity` decimal(1,0) NOT NULL,
+  `approuched_date` decimal(1,0) NOT NULL,
+  `event_lot_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `output_sales_adjusts_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `administration_fee_value` decimal(10,2) DEFAULT '0.00',
+  `administration_fare_value` decimal(10,2) DEFAULT '0.00',
+  `interchange_fee_value` decimal(10,2) DEFAULT '0.00',
+  `financial_fee_value` decimal(10,2) DEFAULT '0.00'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `analise_sb_full`
+--
+
+DROP TABLE IF EXISTS `analise_sb_full`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `analise_sb_full` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(15) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `analise_sb_mp`
+--
+
+DROP TABLE IF EXISTS `analise_sb_mp`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `analise_sb_mp` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(15) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `analise_sb_novos`
+--
+
+DROP TABLE IF EXISTS `analise_sb_novos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `analise_sb_novos` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(15) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `bank`
 --
 
 DROP TABLE IF EXISTS `bank`;
@@ -405,6 +723,7 @@ CREATE TABLE `client_connector_crawler` (
   `password` varchar(100) NOT NULL,
   PRIMARY KEY (`client_id`,`connector_id`),
   KEY `connector_id` (`connector_id`),
+  # ajuste paulo
   CONSTRAINT `client_connector_crawler_ibfk_1` FOREIGN KEY (`client_id`, `connector_id`) REFERENCES `client_connector` (`client_id`, `connector_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -905,6 +1224,7 @@ CREATE TABLE `connection` (
   KEY `fk_connection_client_connector1_idx` (`connector_id`,`client_id`),
   KEY `fk_connection_user1_idx` (`user_id`),
   CONSTRAINT `connection_sub_interaction_ibfk_2` FOREIGN KEY (`connection_status_id`) REFERENCES `connection_status` (`connection_status_id`),
+  # ajuste Paulo
   CONSTRAINT `fk_connection_client_connector1` FOREIGN KEY (`client_id`, `connector_id`) REFERENCES `client_connector` (`client_id`, `connector_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_connection_user1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=161315516 DEFAULT CHARSET=utf8;
@@ -3978,6 +4298,18 @@ CREATE TABLE `referencias_dinheiro_sb` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `rel_ant`
+--
+
+DROP TABLE IF EXISTS `rel_ant`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `rel_ant` (
+  `client_id` int(10) unsigned NOT NULL,
+  `item_date` date DEFAULT NULL,
+  `provider_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4421,8 +4753,9 @@ CREATE TABLE `shellbox_sales_consolidado` (
   PRIMARY KEY (`id`,`referencia`),
   KEY `data_lancamento` (`data_lancamento`),
   KEY `referencia` (`referencia`),
-  KEY `FK_shellbox_sales_consolidado_shellbox_sales_consolidado_envio` (`envio_id`),
-  CONSTRAINT `CT_shellbox_sales_consolidado_shellbox_sales_consolidado_envio` FOREIGN KEY (`envio_id`, `referencia`) REFERENCES `shellbox_sales_consolidado_envio` (`id`, `referencia`)
+  KEY `FK_shellbox_sales_consolidado_shellbox_sales_consolidado_envio` (`envio_id`)
+  # ajuste Paulo
+  # CONSTRAINT `FK_shellbox_sales_consolidado_shellbox_sales_consolidado_envio` FOREIGN KEY (`envio_id`) REFERENCES `shellbox_sales_consolidado_envio` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1056136 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -4539,6 +4872,7 @@ CREATE TABLE `shellbox_sales_consolidado_link` (
   UNIQUE KEY `id_consolidado` (`id_consolidado`,`sb_id`),
   KEY `id_consolidado_2` (`id_consolidado`),
   CONSTRAINT `shellbox_sales_consolidado_link_fk1` FOREIGN KEY (`sb_id`) REFERENCES `shellbox_sales_line` (`sb_id`)
+  # ajuste Paulo
   # CONSTRAINT `shellbox_sales_consolidado_link_fk2` FOREIGN KEY (`id_consolidado`) REFERENCES `shellbox_sales_consolidado` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -4627,7 +4961,8 @@ CREATE TABLE `shellbox_sales_line` (
   PRIMARY KEY (`sb_id`),
   KEY `id_consolidado` (`id_consolidado`),
   KEY `id_sb` (`sb_id`)
-  #CONSTRAINT `shellbox_sales_line_ibfk_1` FOREIGN KEY (`id_consolidado`) REFERENCES `shellbox_sales_consolidado` (`id`)
+  # ajuste Paulo
+  # CONSTRAINT `shellbox_sales_line_ibfk_1` FOREIGN KEY (`id_consolidado`) REFERENCES `shellbox_sales_consolidado` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=222610360 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -4653,6 +4988,28 @@ CREATE TABLE `sitef_control` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `stix_1405`
+--
+
+DROP TABLE IF EXISTS `stix_1405`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stix_1405` (
+  `documento_consolidador` bigint(20) NOT NULL,
+  `referencia` int(11) NOT NULL,
+  `texto_cabecalho` varchar(10) COLLATE utf8_bin NOT NULL,
+  `montante` varchar(10) COLLATE utf8_bin NOT NULL,
+  `data_de_lancamento` varchar(10) COLLATE utf8_bin NOT NULL,
+  `data_sb` date DEFAULT NULL,
+  `id_sb` int(11) DEFAULT NULL,
+  `data_stix` date DEFAULT NULL,
+  `id_stix` int(11) DEFAULT NULL,
+  KEY `idxr` (`referencia`),
+  KEY `Index 1` (`id_sb`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `sync_client`
 --
 
@@ -4671,6 +5028,201 @@ CREATE TABLE `sync_client` (
   CONSTRAINT `sync_client_ibfk_1` FOREIGN KEY (`client_from`) REFERENCES `client` (`id`),
   CONSTRAINT `sync_client_ibfk_2` FOREIGN KEY (`client_to`) REFERENCES `client` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_333_delete_duplicate`
+--
+
+DROP TABLE IF EXISTS `temp_333_delete_duplicate`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_333_delete_duplicate` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_id` int(10) unsigned NOT NULL,
+  `client_id` int(10) unsigned NOT NULL,
+  `headquarter_id` int(10) unsigned NOT NULL,
+  `item_date` date DEFAULT NULL,
+  `secondary_date` date DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_del_zul_sales`
+--
+
+DROP TABLE IF EXISTS `temp_del_zul_sales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_del_zul_sales` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_gross_value_lesser`
+--
+
+DROP TABLE IF EXISTS `temp_gross_value_lesser`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_gross_value_lesser` (
+  `count(a.id)` bigint(21) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_gross_value_lesser_dup`
+--
+
+DROP TABLE IF EXISTS `temp_gross_value_lesser_dup`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_gross_value_lesser_dup` (
+  `count(a.id)` bigint(21) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_sales_xp_del`
+--
+
+DROP TABLE IF EXISTS `temp_sales_xp_del`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_sales_xp_del` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_shellbox_analitico`
+--
+
+DROP TABLE IF EXISTS `temp_shellbox_analitico`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_shellbox_analitico` (
+  `Documento Consolidador` int(11) unsigned NOT NULL DEFAULT '0',
+  `Ponteiro` varchar(64) DEFAULT NULL,
+  `Empresa` varchar(20) DEFAULT NULL,
+  `Data de lançamento` date DEFAULT NULL,
+  `Data Documento` date DEFAULT NULL,
+  `Exercício` varchar(10) DEFAULT NULL,
+  `Tipo Documento` varchar(10) DEFAULT NULL,
+  `Moeda` varchar(3) DEFAULT NULL,
+  `Referência` varchar(20) NOT NULL,
+  `Texto cabeçalho` varchar(64) DEFAULT NULL,
+  `Chave Lançamento` varchar(5) DEFAULT NULL,
+  `Conta/Cliente/Fornecedor` varchar(16) DEFAULT NULL,
+  `Montante` decimal(16,2) DEFAULT NULL,
+  `Montante MI` decimal(16,2) DEFAULT NULL,
+  `Local de Negócio` varchar(15) DEFAULT NULL,
+  `Divisão` varchar(15) DEFAULT NULL,
+  `Sociedade Parceira` varchar(15) DEFAULT NULL,
+  `Centro Custo` varchar(15) DEFAULT NULL,
+  `Centro Lucro` varchar(15) DEFAULT NULL,
+  `Tp Movimento` varchar(15) DEFAULT NULL,
+  `Condição pagto` varchar(15) DEFAULT NULL,
+  `Chv Bloq Pagto` varchar(15) DEFAULT NULL,
+  `Forma Pagto` varchar(15) DEFAULT NULL,
+  `Parceiro` varchar(64) DEFAULT NULL,
+  `Data Parceiro` varchar(64) DEFAULT NULL,
+  `Taxa 1` varchar(64) DEFAULT NULL,
+  `Taxa 2` varchar(64) DEFAULT NULL,
+  `Taxa 3` varchar(64) DEFAULT NULL,
+  `Atribuição` varchar(20) DEFAULT NULL,
+  `Elemento PEP` varchar(15) DEFAULT NULL,
+  `Centro` varchar(15) DEFAULT NULL,
+  `ORDEM` varchar(15) DEFAULT NULL,
+  `Material` varchar(15) DEFAULT NULL,
+  `Data Efetiva` date DEFAULT NULL,
+  `Razao Especial` varchar(15) DEFAULT NULL,
+  `Data Vencimento` date DEFAULT NULL,
+  `Data Pagamento` date DEFAULT NULL,
+  `Valor_feeparceiro` decimal(16,2) DEFAULT NULL,
+  `Valor_feerevendedor` decimal(16,2) DEFAULT NULL,
+  `Valor_feepayly` decimal(16,2) DEFAULT NULL,
+  `taxa parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa payly` decimal(16,2) DEFAULT NULL,
+  `status do envio` decimal(1,0) DEFAULT NULL,
+  `Mensagem SAP` varchar(100) DEFAULT NULL,
+  `VALOR TOTAL` decimal(38,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_shellbox_analitico_2`
+--
+
+DROP TABLE IF EXISTS `temp_shellbox_analitico_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_shellbox_analitico_2` (
+  `Documento Consolidador` int(11) unsigned NOT NULL DEFAULT '0',
+  `Ponteiro` varchar(64) DEFAULT NULL,
+  `Empresa` varchar(20) DEFAULT NULL,
+  `Data de lançamento` date DEFAULT NULL,
+  `Data Documento` date DEFAULT NULL,
+  `Exercício` varchar(10) DEFAULT NULL,
+  `Tipo Documento` varchar(10) DEFAULT NULL,
+  `Moeda` varchar(3) DEFAULT NULL,
+  `Referência` varchar(20) NOT NULL,
+  `Texto cabeçalho` varchar(64) DEFAULT NULL,
+  `Chave Lançamento` varchar(5) DEFAULT NULL,
+  `Conta/Cliente/Fornecedor` varchar(16) DEFAULT NULL,
+  `Montante` decimal(16,2) DEFAULT NULL,
+  `Montante MI` decimal(16,2) DEFAULT NULL,
+  `Local de Negócio` varchar(15) DEFAULT NULL,
+  `Divisão` varchar(15) DEFAULT NULL,
+  `Sociedade Parceira` varchar(15) DEFAULT NULL,
+  `Centro Custo` varchar(15) DEFAULT NULL,
+  `Centro Lucro` varchar(15) DEFAULT NULL,
+  `Tp Movimento` varchar(15) DEFAULT NULL,
+  `Condição pagto` varchar(15) DEFAULT NULL,
+  `Chv Bloq Pagto` varchar(15) DEFAULT NULL,
+  `Forma Pagto` varchar(15) DEFAULT NULL,
+  `Parceiro` varchar(64) DEFAULT NULL,
+  `Data Parceiro` varchar(64) DEFAULT NULL,
+  `Taxa 1` varchar(64) DEFAULT NULL,
+  `Taxa 2` varchar(64) DEFAULT NULL,
+  `Taxa 3` varchar(64) DEFAULT NULL,
+  `Atribuição` varchar(20) DEFAULT NULL,
+  `Elemento PEP` varchar(15) DEFAULT NULL,
+  `Centro` varchar(15) DEFAULT NULL,
+  `ORDEM` varchar(15) DEFAULT NULL,
+  `Material` varchar(15) DEFAULT NULL,
+  `Data Efetiva` date DEFAULT NULL,
+  `Razao Especial` varchar(15) DEFAULT NULL,
+  `Data Vencimento` date DEFAULT NULL,
+  `Data Pagamento` date DEFAULT NULL,
+  `Valor_feeparceiro` decimal(16,2) DEFAULT NULL,
+  `Valor_feerevendedor` decimal(16,2) DEFAULT NULL,
+  `Valor_feepayly` decimal(16,2) DEFAULT NULL,
+  `taxa parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa payly` decimal(16,2) DEFAULT NULL,
+  `status do envio` decimal(1,0) DEFAULT NULL,
+  `Mensagem SAP` varchar(100) DEFAULT NULL,
+  `VALOR TOTAL` decimal(38,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `temp_shellbox_sales_count`
+--
+
+DROP TABLE IF EXISTS `temp_shellbox_sales_count`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `temp_shellbox_sales_count` (
+  `count(b.sb_id)` bigint(21) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4765,6 +5317,2300 @@ CREATE TABLE `tivit_control` (
   PRIMARY KEY (`id`),
   KEY `ix_tivit_control_mailbox` (`mailbox`)
 ) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_768_arq14`
+--
+
+DROP TABLE IF EXISTS `tmp_768_arq14`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_768_arq14` (
+  `connector_id` int(10) unsigned NOT NULL,
+  `connection_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `reconciliated` decimal(1,0) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_ajuste_picpay_1`
+--
+
+DROP TABLE IF EXISTS `tmp_ajuste_picpay_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_ajuste_picpay_1` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_ajuste_picpay_janeiro`
+--
+
+DROP TABLE IF EXISTS `tmp_ajuste_picpay_janeiro`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_ajuste_picpay_janeiro` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_all_vendas_porto`
+--
+
+DROP TABLE IF EXISTS `tmp_all_vendas_porto`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_all_vendas_porto` (
+  `payment_date` date NOT NULL,
+  `payment_time` time NOT NULL,
+  `sales_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `payment_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `authorization_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `gross_value` decimal(10,2) NOT NULL,
+  `net_value` decimal(10,2) NOT NULL,
+  `fee_value` decimal(10,2) NOT NULL,
+  `credit_card_mask` varchar(20) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `status` varchar(15) CHARACTER SET utf8mb4 DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_analise_sales_05`
+--
+
+DROP TABLE IF EXISTS `tmp_analise_sales_05`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_analise_sales_05` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sales_code` varchar(50) NOT NULL,
+  `payment_code` varchar(50) NOT NULL,
+  `tax_code` varchar(50) DEFAULT NULL,
+  `sales_date` date NOT NULL,
+  `sales_time` time NOT NULL,
+  `payment_date` date NOT NULL,
+  `payment_time` time NOT NULL,
+  `sales_value` decimal(10,2) NOT NULL,
+  `payment_value` decimal(10,2) NOT NULL,
+  `payment_installments` int(10) unsigned NOT NULL,
+  `payment_method_id` int(10) unsigned NOT NULL,
+  `provider_id` int(10) unsigned DEFAULT NULL,
+  `card_flag_id` int(10) unsigned DEFAULT NULL,
+  `credit_card_mask` varchar(20) DEFAULT NULL,
+  `authorization_code` varchar(64) DEFAULT NULL,
+  `nsu_code` varchar(64) DEFAULT NULL,
+  `tid_code` varchar(64) DEFAULT NULL,
+  `txn_id_code` varchar(64) DEFAULT NULL,
+  `client_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) DEFAULT NULL,
+  `sitef_provider_id` int(10) DEFAULT NULL,
+  `sitef_card_flag_id` int(10) DEFAULT NULL,
+  `sales_status` varchar(1) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `item_date` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_analise_sales_06`
+--
+
+DROP TABLE IF EXISTS `tmp_analise_sales_06`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_analise_sales_06` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sales_code` varchar(50) NOT NULL,
+  `payment_code` varchar(50) NOT NULL,
+  `tax_code` varchar(50) DEFAULT NULL,
+  `sales_date` date NOT NULL,
+  `sales_time` time NOT NULL,
+  `payment_date` date NOT NULL,
+  `payment_time` time NOT NULL,
+  `sales_value` decimal(10,2) NOT NULL,
+  `payment_value` decimal(10,2) NOT NULL,
+  `payment_installments` int(10) unsigned NOT NULL,
+  `payment_method_id` int(10) unsigned NOT NULL,
+  `provider_id` int(10) unsigned DEFAULT NULL,
+  `card_flag_id` int(10) unsigned DEFAULT NULL,
+  `credit_card_mask` varchar(20) DEFAULT NULL,
+  `authorization_code` varchar(64) DEFAULT NULL,
+  `nsu_code` varchar(64) DEFAULT NULL,
+  `tid_code` varchar(64) DEFAULT NULL,
+  `txn_id_code` varchar(64) DEFAULT NULL,
+  `client_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) DEFAULT NULL,
+  `sitef_provider_id` int(10) DEFAULT NULL,
+  `sitef_card_flag_id` int(10) DEFAULT NULL,
+  `sales_status` varchar(1) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `item_date` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_analise_sales_07`
+--
+
+DROP TABLE IF EXISTS `tmp_analise_sales_07`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_analise_sales_07` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sales_code` varchar(50) NOT NULL,
+  `payment_code` varchar(50) NOT NULL,
+  `tax_code` varchar(50) DEFAULT NULL,
+  `sales_date` date NOT NULL,
+  `sales_time` time NOT NULL,
+  `payment_date` date NOT NULL,
+  `payment_time` time NOT NULL,
+  `sales_value` decimal(10,2) NOT NULL,
+  `payment_value` decimal(10,2) NOT NULL,
+  `payment_installments` int(10) unsigned NOT NULL,
+  `payment_method_id` int(10) unsigned NOT NULL,
+  `provider_id` int(10) unsigned DEFAULT NULL,
+  `card_flag_id` int(10) unsigned DEFAULT NULL,
+  `credit_card_mask` varchar(20) DEFAULT NULL,
+  `authorization_code` varchar(64) DEFAULT NULL,
+  `nsu_code` varchar(64) DEFAULT NULL,
+  `tid_code` varchar(64) DEFAULT NULL,
+  `txn_id_code` varchar(64) DEFAULT NULL,
+  `client_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) DEFAULT NULL,
+  `sitef_provider_id` int(10) DEFAULT NULL,
+  `sitef_card_flag_id` int(10) DEFAULT NULL,
+  `sales_status` varchar(1) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `item_date` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_analise_sales_08`
+--
+
+DROP TABLE IF EXISTS `tmp_analise_sales_08`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_analise_sales_08` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `sales_code` varchar(50) NOT NULL,
+  `payment_code` varchar(50) NOT NULL,
+  `tax_code` varchar(50) DEFAULT NULL,
+  `sales_date` date NOT NULL,
+  `sales_time` time NOT NULL,
+  `payment_date` date NOT NULL,
+  `payment_time` time NOT NULL,
+  `sales_value` decimal(10,2) NOT NULL,
+  `payment_value` decimal(10,2) NOT NULL,
+  `payment_installments` int(10) unsigned NOT NULL,
+  `payment_method_id` int(10) unsigned NOT NULL,
+  `provider_id` int(10) unsigned DEFAULT NULL,
+  `card_flag_id` int(10) unsigned DEFAULT NULL,
+  `credit_card_mask` varchar(20) DEFAULT NULL,
+  `authorization_code` varchar(64) DEFAULT NULL,
+  `nsu_code` varchar(64) DEFAULT NULL,
+  `tid_code` varchar(64) DEFAULT NULL,
+  `txn_id_code` varchar(64) DEFAULT NULL,
+  `client_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) DEFAULT NULL,
+  `sitef_provider_id` int(10) DEFAULT NULL,
+  `sitef_card_flag_id` int(10) DEFAULT NULL,
+  `sales_status` varchar(1) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `item_date` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_antecipacao_2_803`
+--
+
+DROP TABLE IF EXISTS `tmp_antecipacao_2_803`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_antecipacao_2_803` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_antecipacao_rede_evo_2`
+--
+
+DROP TABLE IF EXISTS `tmp_antecipacao_rede_evo_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_antecipacao_rede_evo_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_chamado_3622`
+--
+
+DROP TABLE IF EXISTS `tmp_chamado_3622`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_chamado_3622` (
+  `provider_id` int(10) unsigned NOT NULL,
+  `name` varchar(75) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `payment_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `net_value` decimal(10,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_check_porto`
+--
+
+DROP TABLE IF EXISTS `tmp_check_porto`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_check_porto` (
+  `payment_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `net_value` decimal(10,2) NOT NULL,
+  `ID_TRANSACAO` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `DESCRICAO` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `DATA_MOVIMENTO` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `VALOR` varchar(50) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `PLASTICO` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `COD_AUT` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `CPF` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `DATA_TRANSACAO` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `AUTHORIZATION_ID` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_cielo_auth`
+--
+
+DROP TABLE IF EXISTS `tmp_cielo_auth`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_cielo_auth` (
+  `id` int(10) unsigned DEFAULT '0',
+  `id_client` int(10) unsigned DEFAULT NULL,
+  `access_token` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `refresh_token` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `token_type` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `expires_in` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_codigos_venda_pag`
+--
+
+DROP TABLE IF EXISTS `tmp_codigos_venda_pag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_codigos_venda_pag` (
+  `item_id` int(10) unsigned NOT NULL,
+  `codigo_venda` varchar(64) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_conn_59`
+--
+
+DROP TABLE IF EXISTS `tmp_conn_59`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_conn_59` (
+  `connection_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `client_id` int(10) unsigned NOT NULL,
+  `connector_id` int(10) unsigned NOT NULL,
+  `connection_status_id` int(10) unsigned NOT NULL,
+  `user_id` int(10) unsigned DEFAULT NULL,
+  `init_datetime` datetime NOT NULL,
+  `end_datetime` datetime DEFAULT NULL,
+  `end_reconciliation` datetime DEFAULT NULL,
+  `item_qty` int(10) unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_connectionPaypal`
+--
+
+DROP TABLE IF EXISTS `tmp_connectionPaypal`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_connectionPaypal` (
+  `item_date` date DEFAULT NULL,
+  `connection_id` int(10) unsigned NOT NULL,
+  `provider_source` varchar(200) CHARACTER SET utf8 DEFAULT NULL,
+  `item_qty` int(10) unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_connections_sales`
+--
+
+DROP TABLE IF EXISTS `tmp_connections_sales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_connections_sales` (
+  `connection_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_dispatch`
+--
+
+DROP TABLE IF EXISTS `tmp_dispatch`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_dispatch` (
+  `chave` tinyint(4) NOT NULL,
+  `lote` bigint(20) NOT NULL,
+  `conta_cli` mediumint(9) NOT NULL,
+  `montante` decimal(20,6) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_dr_without_cv`
+--
+
+DROP TABLE IF EXISTS `tmp_dr_without_cv`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_dr_without_cv` (
+  `item_id` int(10) unsigned NOT NULL,
+  `codigo_registro` varchar(2) NOT NULL,
+  `identificacao_loja` varchar(15) DEFAULT NULL,
+  `nsu_host_transacao` decimal(12,0) DEFAULT NULL,
+  `data_transacao_original` date DEFAULT NULL,
+  `hora_transacao_original` time DEFAULT NULL,
+  `numero_parcela` decimal(2,0) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `tipo_negociacao` varchar(2) DEFAULT NULL,
+  `valor_liquido` decimal(13,2) DEFAULT NULL,
+  `identificacao_tomador` varchar(50) DEFAULT NULL,
+  `tipo_conta` varchar(2) DEFAULT NULL,
+  `banco` decimal(4,0) DEFAULT NULL,
+  `agencia` decimal(6,0) DEFAULT NULL,
+  `conta` varchar(20) DEFAULT NULL,
+  `ec_submissor` decimal(9,0) DEFAULT NULL,
+  `tipo_operacao` decimal(1,0) DEFAULT NULL,
+  `numero_ro` decimal(50,0) DEFAULT NULL,
+  `nseq` decimal(8,0) DEFAULT NULL,
+  `codigo_operacao` varchar(20) DEFAULT NULL,
+  `seq_operacao` varchar(15) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_green_pass_reprocessamento_1`
+--
+
+DROP TABLE IF EXISTS `tmp_green_pass_reprocessamento_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_green_pass_reprocessamento_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_green_pass_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_green_pass_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_green_pass_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_green_pass_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_green_pass_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_green_pass_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_lav_1`
+--
+
+DROP TABLE IF EXISTS `tmp_lav_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_lav_1` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(20) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_lavinas_1`
+--
+
+DROP TABLE IF EXISTS `tmp_lavinas_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_lavinas_1` (
+  `item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_lavinas_2`
+--
+
+DROP TABLE IF EXISTS `tmp_lavinas_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_lavinas_2` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_lavinas_3`
+--
+
+DROP TABLE IF EXISTS `tmp_lavinas_3`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_lavinas_3` (
+  `item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_lavinas_4`
+--
+
+DROP TABLE IF EXISTS `tmp_lavinas_4`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_lavinas_4` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_lavinas_5`
+--
+
+DROP TABLE IF EXISTS `tmp_lavinas_5`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_lavinas_5` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liqMP01`
+--
+
+DROP TABLE IF EXISTS `tmp_liqMP01`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liqMP01` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `connection_id` int(10) unsigned NOT NULL,
+  `connection_position` int(10) NOT NULL,
+  `client_branch_id` int(10) unsigned DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `reconciliated` decimal(1,0) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liqMercadoPago`
+--
+
+DROP TABLE IF EXISTS `tmp_liqMercadoPago`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liqMercadoPago` (
+  `id` int(10) DEFAULT '0',
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_sales_id` int(10) unsigned DEFAULT NULL,
+  `output_reversal_id` int(10) unsigned DEFAULT NULL,
+  `gross_value` decimal(10,2),
+  `fee_value` decimal(10,2),
+  `net_value` decimal(10,2),
+  `anticipation_fee_value` decimal(10,2) DEFAULT NULL,
+  `settlement_value` decimal(10,2) DEFAULT NULL,
+  `fee_rate` decimal(5,4),
+  `period_fee_rate` decimal(5,4) DEFAULT NULL,
+  `monthly_fee_rate` decimal(5,4) DEFAULT NULL,
+  `payment_date` date DEFAULT NULL,
+  `payment_time` time DEFAULT NULL,
+  `reversal_date` date DEFAULT NULL,
+  `sales_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `payment_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `authorization_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code_extra` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `credit_card_mask` varchar(20) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `payment_installments` decimal(2,0) DEFAULT NULL,
+  `status_id` decimal(2,0),
+  `connection_item_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `administration_fee_value` decimal(10,2) DEFAULT NULL,
+  `interchange_fee_value` decimal(10,2) DEFAULT NULL,
+  `financial_fee_value` decimal(10,2) DEFAULT NULL,
+  `StId` int(10) unsigned NOT NULL,
+  `source_id` bigint(20) unsigned DEFAULT NULL,
+  `external_reference` varchar(120) DEFAULT NULL,
+  KEY `source_id` (`source_id`),
+  KEY `external_reference` (`external_reference`),
+  KEY `payment_code` (`payment_code`),
+  KEY `authorization_code` (`authorization_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liqui_eefi_porto`
+--
+
+DROP TABLE IF EXISTS `tmp_liqui_eefi_porto`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liqui_eefi_porto` (
+  `tipo` varchar(10) COLLATE utf8_bin NOT NULL,
+  `codigosucursal` varchar(10) COLLATE utf8_bin NOT NULL,
+  `numerodocumento` varchar(20) COLLATE utf8_bin NOT NULL,
+  `datalancamento` date NOT NULL,
+  `valorlancamento` decimal(20,6) NOT NULL,
+  `c_credito_` varchar(10) COLLATE utf8_bin NOT NULL,
+  `banco` varchar(10) COLLATE utf8_bin NOT NULL,
+  `ag_ncia` varchar(10) COLLATE utf8_bin NOT NULL,
+  `conta_corrente` varchar(20) COLLATE utf8_bin NOT NULL,
+  `datamovimento` date NOT NULL,
+  `numerorv` varchar(10) COLLATE utf8_bin NOT NULL,
+  `datarv` date NOT NULL,
+  `bandeira` varchar(10) COLLATE utf8_bin NOT NULL,
+  `tipotransac_o` varchar(10) COLLATE utf8_bin NOT NULL,
+  `valordesconto` decimal(20,6) NOT NULL,
+  `numeroparcela` varchar(10) COLLATE utf8_bin NOT NULL,
+  `numerototalparcelas` varchar(10) COLLATE utf8_bin NOT NULL,
+  `statuscredito` varchar(10) COLLATE utf8_bin NOT NULL,
+  `idautorizacao` varchar(20) COLLATE utf8_bin NOT NULL,
+  `idautorizacaooriginal` varchar(20) COLLATE utf8_bin NOT NULL,
+  KEY `Index 1` (`numerodocumento`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liquid`
+--
+
+DROP TABLE IF EXISTS `tmp_liquid`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liquid` (
+  `id` int(10) NOT NULL DEFAULT '0',
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_sales_id` int(10) unsigned DEFAULT NULL,
+  `output_reversal_id` int(10) unsigned DEFAULT NULL,
+  `gross_value` decimal(10,2) NOT NULL,
+  `fee_value` decimal(10,2) NOT NULL,
+  `net_value` decimal(10,2) NOT NULL,
+  `anticipation_fee_value` decimal(10,2) DEFAULT NULL,
+  `settlement_value` decimal(10,2) DEFAULT NULL,
+  `fee_rate` decimal(5,4) NOT NULL,
+  `period_fee_rate` decimal(5,4) DEFAULT NULL,
+  `monthly_fee_rate` decimal(5,4) DEFAULT NULL,
+  `payment_date` date DEFAULT NULL,
+  `payment_time` time DEFAULT NULL,
+  `reversal_date` date DEFAULT NULL,
+  `sales_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `payment_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `authorization_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code_extra` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `credit_card_mask` varchar(20) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `payment_installments` decimal(2,0) DEFAULT NULL,
+  `status_id` decimal(2,0) NOT NULL,
+  `connection_item_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `administration_fee_value` decimal(10,2) DEFAULT NULL,
+  `interchange_fee_value` decimal(10,2) DEFAULT NULL,
+  `financial_fee_value` decimal(10,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liquidacao_1`
+--
+
+DROP TABLE IF EXISTS `tmp_liquidacao_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liquidacao_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liquidacao_1333`
+--
+
+DROP TABLE IF EXISTS `tmp_liquidacao_1333`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liquidacao_1333` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liquidacao_2`
+--
+
+DROP TABLE IF EXISTS `tmp_liquidacao_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liquidacao_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liquidacao_2333`
+--
+
+DROP TABLE IF EXISTS `tmp_liquidacao_2333`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liquidacao_2333` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liquidacao_pp`
+--
+
+DROP TABLE IF EXISTS `tmp_liquidacao_pp`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liquidacao_pp` (
+  `output_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_liquidacoes_99`
+--
+
+DROP TABLE IF EXISTS `tmp_liquidacoes_99`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_liquidacoes_99` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_lotes_sapcl`
+--
+
+DROP TABLE IF EXISTS `tmp_lotes_sapcl`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_lotes_sapcl` (
+  `referencia` varchar(30) COLLATE utf8_bin NOT NULL,
+  `nundoc` varchar(10) COLLATE utf8_bin DEFAULT NULL,
+  `valor` decimal(20,6) DEFAULT NULL,
+  PRIMARY KEY (`referencia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_ltm_reprocessamento_1`
+--
+
+DROP TABLE IF EXISTS `tmp_ltm_reprocessamento_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_ltm_reprocessamento_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_ltm_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_ltm_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_ltm_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_ltm_reprocessamento_5`
+--
+
+DROP TABLE IF EXISTS `tmp_ltm_reprocessamento_5`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_ltm_reprocessamento_5` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_id` int(10) unsigned NOT NULL,
+  `client_id` int(10) unsigned NOT NULL,
+  `headquarter_id` int(10) unsigned NOT NULL,
+  `item_date` date DEFAULT NULL,
+  `secondary_date` date DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_ltm_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_ltm_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_ltm_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_mercado_pago_not_rec`
+--
+
+DROP TABLE IF EXISTS `tmp_mercado_pago_not_rec`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_mercado_pago_not_rec` (
+  `item_id` int(10) unsigned NOT NULL,
+  `source_id` bigint(20) unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_mercadopago_duplicate`
+--
+
+DROP TABLE IF EXISTS `tmp_mercadopago_duplicate`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_mercadopago_duplicate` (
+  `item_id` int(10) unsigned NOT NULL,
+  `external_reference` varchar(120) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_mpDuplicados`
+--
+
+DROP TABLE IF EXISTS `tmp_mpDuplicados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_mpDuplicados` (
+  `source_id` bigint(20) unsigned DEFAULT NULL,
+  `description` varchar(120) DEFAULT NULL,
+  `transaction_approval_date` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_nupay_reprocessamento_1`
+--
+
+DROP TABLE IF EXISTS `tmp_nupay_reprocessamento_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_nupay_reprocessamento_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_nupay_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_nupay_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_nupay_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_nupay_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_nupay_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_nupay_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_pagseguro_transacional`
+--
+
+DROP TABLE IF EXISTS `tmp_pagseguro_transacional`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_pagseguro_transacional` (
+  `authorization_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `item_id` int(1) NOT NULL DEFAULT '0',
+  `codigo_venda` varchar(80) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(20) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_full`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_full`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_full` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(20) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL,
+  KEY `k1` (`referencia`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_todos`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_todos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_todos` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(20) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_todos_2`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_todos_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_todos_2` (
+  `id` int(10) unsigned NOT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `c` bigint(21) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_todos_3`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_todos_3`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_todos_3` (
+  `id` int(10) unsigned NOT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `c` bigint(21) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_todos_4`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_todos_4`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_todos_4` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(20) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL,
+  KEY `k1` (`referencia`,`exercicio`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_todos_5`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_todos_5`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_todos_5` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(20) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL,
+  KEY `k1` (`referencia`,`exercicio`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_todos_6`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_todos_6`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_todos_6` (
+  `referencia` varchar(20) NOT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `count` bigint(21) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_payly_sap_todos_7`
+--
+
+DROP TABLE IF EXISTS `tmp_payly_sap_todos_7`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_payly_sap_todos_7` (
+  `referencia` varchar(20) NOT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `count` bigint(21) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_paypal_sales_raw`
+--
+
+DROP TABLE IF EXISTS `tmp_paypal_sales_raw`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_paypal_sales_raw` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_porto_seguro_reprocessamento_1`
+--
+
+DROP TABLE IF EXISTS `tmp_porto_seguro_reprocessamento_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_porto_seguro_reprocessamento_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_porto_seguro_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_porto_seguro_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_porto_seguro_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_porto_seguro_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_porto_seguro_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_porto_seguro_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_rede_ci_672`
+--
+
+DROP TABLE IF EXISTS `tmp_rede_ci_672`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_rede_ci_672` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `connection_id` int(10) unsigned NOT NULL,
+  `connection_position` int(10) NOT NULL,
+  `client_branch_id` int(10) unsigned DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `reconciliated` decimal(1,0) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_rede_eef_34`
+--
+
+DROP TABLE IF EXISTS `tmp_rede_eef_34`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_rede_eef_34` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_rede_eef_35`
+--
+
+DROP TABLE IF EXISTS `tmp_rede_eef_35`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_rede_eef_35` (
+  `settlement_id` int(10) unsigned NOT NULL,
+  `settlement_item_id` int(10) NOT NULL DEFAULT '0',
+  `reversal_id` int(10) unsigned NOT NULL,
+  `agenda_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_referShell_ajuste`
+--
+
+DROP TABLE IF EXISTS `tmp_referShell_ajuste`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_referShell_ajuste` (
+  `referencia` varchar(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_0_816`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_0_816`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_0_816` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `data_pagamento` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_1`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_1` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `connection_id` int(10) unsigned NOT NULL,
+  `connection_position` int(10) NOT NULL,
+  `client_branch_id` int(10) unsigned DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `reconciliated` decimal(1,0) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_10_816`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_10_816`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_10_816` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_1_816`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_1_816`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_1_816` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned,
+  `data_pagamento` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_1_pagg`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_1_pagg`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_1_pagg` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_1_stone`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_1_stone`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_1_stone` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_20_816`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_20_816`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_20_816` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_2B`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_2B`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_2B` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_entrepay`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_entrepay`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_entrepay` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_entrepay2`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_entrepay2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_entrepay2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_entrepay_sales`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_entrepay_sales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_entrepay_sales` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_pagseguro`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_pagseguro`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_pagseguro` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_pagseguro2`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_pagseguro2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_pagseguro2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_pagseguro_sales`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_pagseguro_sales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_pagseguro_sales` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_paypal_STL_1`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_paypal_STL_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_paypal_STL_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_paypal_STL_2`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_paypal_STL_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_paypal_STL_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_sap`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_sap`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_sap` (
+  `env_id` int(10) unsigned DEFAULT '0',
+  `sb_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id_consolidado` int(10) unsigned DEFAULT NULL,
+  `consolidado` int(10) unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_reprocessamento_vendas_paypay`
+--
+
+DROP TABLE IF EXISTS `tmp_reprocessamento_vendas_paypay`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_reprocessamento_vendas_paypay` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sales_and_compliment`
+--
+
+DROP TABLE IF EXISTS `tmp_sales_and_compliment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sales_and_compliment` (
+  `id` int(10) unsigned NOT NULL,
+  `referencia` varchar(20) NOT NULL,
+  KEY `idx_payment` (`referencia`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sales_and_compliment_2`
+--
+
+DROP TABLE IF EXISTS `tmp_sales_and_compliment_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sales_and_compliment_2` (
+  `id` int(10) unsigned NOT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `sales_id` int(10) unsigned,
+  KEY `idx_payment` (`referencia`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sales_system`
+--
+
+DROP TABLE IF EXISTS `tmp_sales_system`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sales_system` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL,
+  `status_id` decimal(2,0) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sales_zul`
+--
+
+DROP TABLE IF EXISTS `tmp_sales_zul`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sales_zul` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sb_cancelamentos_fev2023`
+--
+
+DROP TABLE IF EXISTS `tmp_sb_cancelamentos_fev2023`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sb_cancelamentos_fev2023` (
+  `ID_TRANSACAO` int(11) NOT NULL,
+  `DESCRICAO` varchar(20) COLLATE utf8_bin NOT NULL,
+  `DATA_MOVIMENTO` int(11) NOT NULL,
+  `VALOR` varchar(10) COLLATE utf8_bin NOT NULL,
+  `PLASTICO` varchar(20) COLLATE utf8_bin NOT NULL,
+  `COD_AUT` varchar(20) COLLATE utf8_bin NOT NULL,
+  `CPF` varchar(20) COLLATE utf8_bin NOT NULL,
+  `DH_TRANSACTION` datetime NOT NULL,
+  `AUTHORIZATION_ID` varchar(50) COLLATE utf8_bin NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sb_cancelamentos_jan23_portoseguro`
+--
+
+DROP TABLE IF EXISTS `tmp_sb_cancelamentos_jan23_portoseguro`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sb_cancelamentos_jan23_portoseguro` (
+  `ID_TRANSACAO` varchar(10) COLLATE utf8_bin NOT NULL,
+  `DESCRICAO` varchar(20) COLLATE utf8_bin NOT NULL,
+  `DATA_MOVIMENTO` varchar(10) COLLATE utf8_bin NOT NULL,
+  `VALOR` varchar(10) COLLATE utf8_bin NOT NULL,
+  `PLASTICO` varchar(20) COLLATE utf8_bin NOT NULL,
+  `COD_AUT` varchar(10) COLLATE utf8_bin NOT NULL,
+  `CPF` bigint(20) NOT NULL,
+  `DATA DA TRANSAÇÃO` varchar(10) COLLATE utf8_bin NOT NULL,
+  `HORÁRIO` varchar(10) COLLATE utf8_bin NOT NULL,
+  `AUTHORIZATION_ID (NSU)` int(11) NOT NULL,
+  `ID SHELL BOX` varchar(10) COLLATE utf8_bin DEFAULT NULL,
+  KEY `index1` (`COD_AUT`),
+  KEY `index2` (`AUTHORIZATION_ID (NSU)`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_settlement_pag`
+--
+
+DROP TABLE IF EXISTS `tmp_settlement_pag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_settlement_pag` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL,
+  `settlement_date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_shellBoxLotes`
+--
+
+DROP TABLE IF EXISTS `tmp_shellBoxLotes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_shellBoxLotes` (
+  `sb_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id_consolidado` int(10) unsigned DEFAULT NULL,
+  `consolidado` int(10) unsigned DEFAULT NULL,
+  `id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_shell_without_sales`
+--
+
+DROP TABLE IF EXISTS `tmp_shell_without_sales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_shell_without_sales` (
+  `referencia` varchar(20) NOT NULL,
+  `data_documento` date DEFAULT NULL,
+  `data_envio` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_shellbox_envio_errado_compli`
+--
+
+DROP TABLE IF EXISTS `tmp_shellbox_envio_errado_compli`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_shellbox_envio_errado_compli` (
+  `id_cons` int(10) unsigned NOT NULL DEFAULT '0',
+  `id_envio` int(10) unsigned NOT NULL DEFAULT '0',
+  `sb_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `id_consolidado` int(10) unsigned DEFAULT NULL,
+  `consolidado` int(10) unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_shellbox_lotes_202305310140001e2`
+--
+
+DROP TABLE IF EXISTS `tmp_shellbox_lotes_202305310140001e2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_shellbox_lotes_202305310140001e2` (
+  `id` int(10) unsigned NOT NULL,
+  `point` varchar(64) DEFAULT NULL,
+  `empresa` varchar(20) DEFAULT NULL,
+  `data_lancamento` date DEFAULT NULL,
+  `data_documento` date DEFAULT NULL,
+  `exercicio` varchar(10) DEFAULT NULL,
+  `tipo_documento` varchar(10) DEFAULT NULL,
+  `moeda` varchar(3) DEFAULT NULL,
+  `referencia` varchar(20) NOT NULL,
+  `texto_cabecalho` varchar(64) DEFAULT NULL,
+  `chave_lancamento` varchar(5) DEFAULT NULL,
+  `conta_cliente` varchar(16) DEFAULT NULL,
+  `montante` decimal(16,2) DEFAULT NULL,
+  `montante_mi` decimal(16,2) DEFAULT NULL,
+  `local_negocio` varchar(15) DEFAULT NULL,
+  `divisao` varchar(15) DEFAULT NULL,
+  `sociedade` varchar(15) DEFAULT NULL,
+  `centro_custo` varchar(15) DEFAULT NULL,
+  `centro_lucro` varchar(15) DEFAULT NULL,
+  `tp_movimento` varchar(15) DEFAULT NULL,
+  `condicao_pgto` varchar(15) DEFAULT NULL,
+  `chave_bloq_pgto` varchar(15) DEFAULT NULL,
+  `forma_pagamento` varchar(15) DEFAULT NULL,
+  `parceiro_txt` varchar(64) DEFAULT NULL,
+  `data_txt` varchar(64) DEFAULT NULL,
+  `taxa_1_txt` varchar(64) DEFAULT NULL,
+  `taxa_2_txt` varchar(64) DEFAULT NULL,
+  `taxa_3_txt` varchar(64) DEFAULT NULL,
+  `atribuicao` varchar(20) DEFAULT NULL,
+  `elemento_pep` varchar(15) DEFAULT NULL,
+  `centro` varchar(15) DEFAULT NULL,
+  `ordem` varchar(15) DEFAULT NULL,
+  `material` varchar(15) DEFAULT NULL,
+  `data_efetiva` date DEFAULT NULL,
+  `razao_especial` varchar(15) DEFAULT NULL,
+  `data_vencimento` date DEFAULT NULL,
+  `data_pagamento` date DEFAULT NULL,
+  `fee_parceiro` decimal(16,2) DEFAULT NULL,
+  `fee_revendedor` decimal(16,2) DEFAULT NULL,
+  `fee_payly` decimal(16,2) DEFAULT NULL,
+  `taxa_parceiro` decimal(16,2) DEFAULT NULL,
+  `taxa_revendedor` decimal(16,2) DEFAULT NULL,
+  `taxa_payly` decimal(16,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_shellboxids`
+--
+
+DROP TABLE IF EXISTS `tmp_shellboxids`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_shellboxids` (
+  `id` varchar(12) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sp_reprocessamento_1`
+--
+
+DROP TABLE IF EXISTS `tmp_sp_reprocessamento_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sp_reprocessamento_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sp_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_sp_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sp_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_sp_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_sp_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_sp_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_stellantis_reprocessamento_1`
+--
+
+DROP TABLE IF EXISTS `tmp_stellantis_reprocessamento_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_stellantis_reprocessamento_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_stellantis_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_stellantis_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_stellantis_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_stellantis_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_stellantis_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_stellantis_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_tmp_liqui_eefi_porto_with_cv`
+--
+
+DROP TABLE IF EXISTS `tmp_tmp_liqui_eefi_porto_with_cv`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_tmp_liqui_eefi_porto_with_cv` (
+  `codigo_shellbox` varchar(50) DEFAULT NULL,
+  `tipo` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `codigosucursal` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `numerodocumento` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `datalancamento` date NOT NULL,
+  `valorlancamento` decimal(20,6) NOT NULL,
+  `c_credito_` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `banco` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `ag_ncia` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `conta_corrente` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `datamovimento` date NOT NULL,
+  `numerorv` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `datarv` date NOT NULL,
+  `bandeira` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `tipotransac_o` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `valordesconto` decimal(20,6) NOT NULL,
+  `numeroparcela` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `numerototalparcelas` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `statuscredito` varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `idautorizacao` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `idautorizacaooriginal` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_vendas_1`
+--
+
+DROP TABLE IF EXISTS `tmp_vendas_1`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_vendas_1` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_vendas_1333`
+--
+
+DROP TABLE IF EXISTS `tmp_vendas_1333`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_vendas_1333` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_vendas_porto_2`
+--
+
+DROP TABLE IF EXISTS `tmp_vendas_porto_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_vendas_porto_2` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_vendas_xp_rep`
+--
+
+DROP TABLE IF EXISTS `tmp_vendas_xp_rep`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_vendas_xp_rep` (
+  `id` int(10) NOT NULL DEFAULT '0',
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_sales_id` int(10) unsigned DEFAULT NULL,
+  `output_reversal_id` int(10) unsigned DEFAULT NULL,
+  `gross_value` decimal(10,2) NOT NULL,
+  `fee_value` decimal(10,2) NOT NULL,
+  `net_value` decimal(10,2) NOT NULL,
+  `anticipation_fee_value` decimal(10,2) DEFAULT NULL,
+  `settlement_value` decimal(10,2) DEFAULT NULL,
+  `fee_rate` decimal(5,4) NOT NULL,
+  `period_fee_rate` decimal(5,4) DEFAULT NULL,
+  `monthly_fee_rate` decimal(5,4) DEFAULT NULL,
+  `payment_date` date DEFAULT NULL,
+  `payment_time` time DEFAULT NULL,
+  `reversal_date` date DEFAULT NULL,
+  `sales_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `payment_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `authorization_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider_code_extra` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `credit_card_mask` varchar(20) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `payment_installments` decimal(2,0) DEFAULT NULL,
+  `status_id` decimal(2,0) NOT NULL,
+  `connection_item_id` int(10) unsigned DEFAULT NULL,
+  `terminal_id` varchar(30) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
+  `administration_fee_value` decimal(10,2) DEFAULT NULL,
+  `interchange_fee_value` decimal(10,2) DEFAULT NULL,
+  `financial_fee_value` decimal(10,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_x_100`
+--
+
+DROP TABLE IF EXISTS `tmp_x_100`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_x_100` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_x_101`
+--
+
+DROP TABLE IF EXISTS `tmp_x_101`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_x_101` (
+  `agenda_id` int(10) unsigned NOT NULL,
+  `settlement_id` int(10) unsigned DEFAULT NULL,
+  `item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_xp_reprocessamento`
+--
+
+DROP TABLE IF EXISTS `tmp_xp_reprocessamento`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_xp_reprocessamento` (
+  `connection_id` int(10) unsigned NOT NULL,
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_xp_reprocessamento_2`
+--
+
+DROP TABLE IF EXISTS `tmp_xp_reprocessamento_2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_xp_reprocessamento_2` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `output_agenda_id` int(10) unsigned NOT NULL,
+  `output_settlement_id` int(10) unsigned DEFAULT NULL,
+  `output_anticipation_id` int(10) unsigned DEFAULT NULL,
+  `output_unschedule_id` int(10) unsigned DEFAULT NULL,
+  `status_id` decimal(1,0) NOT NULL,
+  `settlement_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tmp_xp_reprocessamento_vendas`
+--
+
+DROP TABLE IF EXISTS `tmp_xp_reprocessamento_vendas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tmp_xp_reprocessamento_vendas` (
+  `item_id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `transacao_btg`
+--
+
+DROP TABLE IF EXISTS `transacao_btg`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `transacao_btg` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `transacoes_erradas`
+--
+
+DROP TABLE IF EXISTS `transacoes_erradas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `transacoes_erradas` (
+  `output_item_id` int(10) unsigned NOT NULL,
+  `connection_item_id` int(10) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `transacoes_sap_08_07`
+--
+
+DROP TABLE IF EXISTS `transacoes_sap_08_07`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `transacoes_sap_08_07` (
+  `data_envio` datetime DEFAULT NULL,
+  `1` int(1) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
