@@ -23,6 +23,11 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
+DROP DATABASE IF EXISTS `vooo_cache`;
+CREATE DATABASE `vooo_cache`;
+USE `vooo_cache`;
+
+
 --
 -- Table structure for table `cache_statement`
 --

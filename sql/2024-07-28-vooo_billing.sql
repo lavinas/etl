@@ -23,9 +23,14 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
+DROP DATABASE IF EXISTS `vooo_billing`;
+CREATE DATABASE `vooo_billing`;
+USE `vooo_billing`;
+
 --
 -- Table structure for table `billing_amount`
 --
+
 
 DROP TABLE IF EXISTS `billing_amount`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

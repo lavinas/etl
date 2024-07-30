@@ -27,6 +27,10 @@ SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 -- Table structure for table `migrations`
 --
 
+DROP DATABASE IF EXISTS `vooo_admin_oauth`;
+CREATE DATABASE `vooo_admin_oauth`;
+USE `vooo_admin_oauth`;
+
 DROP TABLE IF EXISTS `migrations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

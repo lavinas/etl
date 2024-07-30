@@ -27,6 +27,10 @@ SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 -- Table structure for table `conn_item_accesstage_control`
 --
 
+DROP DATABASE IF EXISTS `vooo_prod_rawdata`;
+CREATE DATABASE `vooo_prod_rawdata`;
+USE `vooo_prod_rawdata`;
+
 DROP TABLE IF EXISTS `conn_item_accesstage_control`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

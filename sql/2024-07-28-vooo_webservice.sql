@@ -23,6 +23,10 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
+DROP DATABASE IF EXISTS `vooo_webservice`;
+CREATE DATABASE `vooo_webservice`;
+USE `vooo_webservice`;
+
 --
 -- Table structure for table `failed_jobs`
 --

@@ -23,6 +23,9 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
+DROP DATABASE IF EXISTS `vooo_prod_report`;
+CREATE DATABASE `vooo_prod_report`;
+USE `vooo_prod_report`;
 --
 -- Table structure for table `bank_statement_line`
 --
@@ -95,7 +98,7 @@ CREATE TABLE `client_report_log` (
   `status` decimal(1,0) NOT NULL DEFAULT '1',
   PRIMARY KEY (`log_id`),
   KEY `client_report_id` (`client_report_id`),
-  CONSTRAINT `client_report_log_ibfk_1` FOREIGN KEY (`client_report_id`) REFERENCES `client_report` (`client_report_id`)
+  CONSTRAINT `client_report_log_ibfk_1` FOREIGN KEY (`client_report_id`, `status`) REFERENCES `client_report` (`client_report_id`, `status`)
 ) ENGINE=InnoDB AUTO_INCREMENT=60091 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -113,8 +116,8 @@ CREATE TABLE `client_report_receiver` (
   `name` varchar(100) NOT NULL,
   `not_done_receiver` decimal(1,0) DEFAULT '0',
   PRIMARY KEY (`id`),
-  KEY `client_report_id` (`client_report_id`),
-  CONSTRAINT `client_report_receiver_ibfk_1` FOREIGN KEY (`client_report_id`) REFERENCES `client_report` (`client_report_id`)
+  KEY `client_report_id` (`client_report_id`)
+  # CONSTRAINT `client_report_receiver_ibfk_1` FOREIGN KEY (`client_report_id`) REFERENCES `client_report` (`client_report_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=165 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
