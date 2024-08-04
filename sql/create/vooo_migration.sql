@@ -65,10 +65,10 @@ CREATE TABLE `job` (
   `type` varchar(30) NOT NULL DEFAULT 'table',
   `action` varchar(30) NOT NULL DEFAULT 'insert',
   `base` varchar(100) NOT NULL,
-  `object` varchar(255) NOT NULL,
+  `object` varchar(100) NOT NULL,
   `field` varchar(100) NOT NULL DEFAULT 'id',
   `last` bigint(20) NOT NULL DEFAULT '0', 
-  `status` varchar(20) NOT NULL DEFAULT 'pending',
+  `status` varchar(30) NOT NULL DEFAULT 'pending',
   `locked` datetime NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -102,7 +102,8 @@ CREATE TABLE `log` (
   `job_id` bigint(20) NOT NULL,
   `start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `end` datetime NULL,
-  `status` varchar(20) NOT NULL,
+  `status` varchar(30) NOT NULL,
+  `detail` varchar(255) NULL,
   KEY `job_id` (`job_id`),
   CONSTRAINT `log_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
