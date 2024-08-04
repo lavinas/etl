@@ -22,3 +22,20 @@ select * from tmp_migra_control where connector_id = 407;
 select *
   from connector a
 where a.name like '%rede%';
+
+
+
+select connection_id
+  from connection a
+where a.connection_id >= 100000 and a.connection_id < 101000;
+
+
+select max(connection_id)
+  from connection;
+
+
+
+
+
+select max(output_id)
+  from output_
