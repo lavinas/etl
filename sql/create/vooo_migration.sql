@@ -15,7 +15,7 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
-SET @@SESSION.SQL_LOG_BIN= 0;
+SET @@SESSION.SQL_LOG_BIN=0;
 
 --
 -- GTID state at the beginning of the backup 
@@ -30,6 +30,29 @@ USE `vooo_migration`;
 # starting tables
 
 --
+-- Table structure for table `aggregator`
+--
+
+DROP TABLE IF EXISTS `aggregator_ref`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `aggregator_ref` (
+  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ref_client`
+
+DROP TABLE IF EXISTS `client_ref`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `client_ref` (
+  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `job`
 --
 
@@ -38,11 +61,15 @@ DROP TABLE IF EXISTS `job`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `job` (
   `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `type` varchar(30) NOT NULL DEFAULT 'insert',
+  `name` varchar(100) NOT NULL,
+  `type` varchar(30) NOT NULL DEFAULT 'table',
+  `action` varchar(30) NOT NULL DEFAULT 'insert',
+  `base` varchar(100) NOT NULL,
   `object` varchar(255) NOT NULL,
-  `last` bigint(20) NOT NULL DEFAULT '0',
+  `field` varchar(100) NOT NULL DEFAULT 'id',
+  `last` bigint(20) NOT NULL DEFAULT '0', 
   `status` varchar(20) NOT NULL DEFAULT 'pending',
-  `lock` BOOLEAN NOT NULL DEFAULT FALSE
+  `locked` datetime NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -64,6 +91,27 @@ CREATE TABLE `reference` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `log`
+--
+
+DROP TABLE IF EXISTS `log`;
+
+CREATE TABLE `log` (
+  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `job_id` bigint(20) NOT NULL,
+  `start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `end` datetime NULL,
+  `status` varchar(20) NOT NULL,
+  KEY `job_id` (`job_id`),
+  CONSTRAINT `log_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+-- 
+-- Inserting data into table `job`
+--
+
+
 # ending tables
 
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -78,6 +126,3 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2024-07-28 13:42:07
-
-
-
