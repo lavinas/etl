@@ -68,7 +68,7 @@ CREATE TABLE `job` (
   `object` varchar(100) NOT NULL,
   `field` varchar(100) NOT NULL DEFAULT 'id',
   `last` bigint(20) NOT NULL DEFAULT '0', 
-  `status` varchar(30) NOT NULL DEFAULT 'pending',
+  `status` varchar(30) NOT NULL DEFAULT 'ready',
   `locked` datetime NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -86,8 +86,8 @@ CREATE TABLE `reference` (
   PRIMARY KEY (`referrer`, `referred`),
   KEY `referred` (`referred`),
   KEY `referrer` (`referrer`),
-  CONSTRAINT `reference_ibfk_1` FOREIGN KEY (`referrer`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `reference_ibfk_2` FOREIGN KEY (`referred`) REFERENCES `user` (`id`) ON DELETE CASCADE
+  CONSTRAINT `reference_ibfk_1` FOREIGN KEY (`referrer`) REFERENCES `job` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `reference_ibfk_2` FOREIGN KEY (`referred`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 	"unicode"
+	"fmt"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -14,10 +15,11 @@ import (
 	"github.com/lavinas/vooo-etl/pkg"
 )
 
+
 const (
-	DB_DNS      = "MYSQL_INVOICE_DNS"
-	ErrNoFilter = "no fields where provided on base object"
+	ssh_key = "%s:file(%s)@tcp(%s:%s)"
 )
+
 
 // RepoMySql is the repository handler for the application
 type MySql struct {
@@ -25,7 +27,16 @@ type MySql struct {
 }
 
 // NewRepository creates a new repository handler
-func NewRepository(dns string) (*MySql, error) {
+func NewRepository(dns string, ssh string) (*MySql, error) {
+	var user, pass, host, port, db string
+	if ssh != "" {
+		if _, err := fmt.Scanf(ssh_key, &user, &pass, &host, &port); err != nil {
+			return nil, err
+		}
+		
+		
+
+
 	db, err := gorm.Open(mysql.Open(dns), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {
 		return nil, err
@@ -63,11 +74,11 @@ func (r *MySql) Begin() interface{} {
 // it receives a string that represents the transaction name
 func (r *MySql) Commit(tx interface{}) error {
 	if tx == nil {
-		return errors.New(ErrRepoNilTx)
+		return errors.New(port.ErrRepoNilTx)
 	}
 	stx, ok := tx.(*gorm.DB)
 	if !ok {
-		return errors.New(ErrRepoInvalidTX)
+		return errors.New(port.ErrRepoInvalidTX)
 	}
 	stx = stx.Commit()
 	if stx.Error != nil {
@@ -80,11 +91,11 @@ func (r *MySql) Commit(tx interface{}) error {
 // it receives a transaction generate by Begin method
 func (r *MySql) Rollback(tx interface{}) error {
 	if tx == nil {
-		return errors.New(ErrRepoNilTx)
+		return errors.New(port.ErrRepoNilTx)
 	}
 	stx, ok := tx.(*gorm.DB)
 	if !ok {
-		return errors.New(ErrRepoInvalidTX)
+		return errors.New(port.ErrRepoInvalidTX)
 	}
 	stx = stx.Rollback()
 	if stx.Error != nil {
@@ -223,17 +234,17 @@ func (r *MySql) find(stx *gorm.DB, obj interface{}, limit int, lock bool, extras
 // format formats input parameters
 func (r *MySql) format(tx interface{}, obj interface{}) (*gorm.DB, error) {
 	if tx == nil {
-		return nil, errors.New(ErrRepoNilTx)
+		return nil, errors.New(port.ErrRepoNilTx)
 	}
 	if obj == nil {
-		return nil, errors.New(ErrRepoNilObject)
+		return nil, errors.New(port.ErrRepoNilObject)
 	}
 	stx, ok := tx.(*gorm.DB)
 	if !ok {
-		return nil, errors.New(ErrRepoInvalidTX)
+		return nil, errors.New(port.ErrRepoInvalidTX)
 	}
 	if _, ok := obj.(port.Domain); !ok {
-		return nil, errors.New(ErrRepoInvalidObject)
+		return nil, errors.New(port.ErrRepoInvalidObject)
 	}
 	return stx, nil
 }
