@@ -23,92 +23,39 @@ import (
 	"github.com/lavinas/vooo-etl/pkg"
 )
 
-
 const (
 	ssh_key = "%s:file(%s)@tcp(%s:%s)"
 )
 
-
+/*
 type ViaSSHDialer struct {
 	client *ssh.Client
 }
-
 func (s *ViaSSHDialer) Dial(addr string) (net.Conn, error) {
 	return s.client.Dial("tcp", addr)
 }
-
+*/
 
 // RepoMySql is the repository handler for the application
 type MySql struct {
 	Db *gorm.DB
+	Conn *sql.DB
+	Ssh *ssh.Client 
 }
 
 // NewRepository creates a new repository handler
 func NewRepository(dns string, sshDns string) (*MySql, error) {
-	var sshUser, sshKfile, sshHost, sshPort string
-	if sshDns != "" {
-		if _, err := fmt.Sscanf(sshDns, ssh_key, &sshUser, &sshKfile, &sshHost, &sshPort); err != nil {
-			return nil, err
-		}
-		var agentClient agent.Agent
-		if conn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
-			defer conn.Close()
-			agentClient = agent.NewClient(conn)
-		}
-
-		pemBytes, err := os.ReadFile(sshKfile)
-		if err != nil {
-			return nil, err
-		}
-		signer, err := ssh.ParsePrivateKey(pemBytes)
-		if err != nil {
-			return nil,  err
-		}
-	
-		// The client configuration with configuration option to use the ssh-agent
-		sshConfig := &ssh.ClientConfig{
-			User:            sshUser,
-			Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		}
-	
-		// When the agentClient connection succeeded, add them as AuthMethod
-		if agentClient != nil {
-			sshConfig.Auth = append(sshConfig.Auth, ssh.PublicKeysCallback(agentClient.Signers))
-		}
-	
-		// Connect to the SSH Server
-		sshConn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
-		if err != nil {
-			return nil, err
-		}
-	
-		// Now we register the ViaSSHDialer with the ssh connection as a parameter
-		mysql.RegisterDialContext("mysql+tcp", func(_ context.Context, addr string) (net.Conn, error) {
-			dialer := &ViaSSHDialer{sshConn}
-			return dialer.Dial(addr)
-		})
-	}
-		
-	db, err := sql.Open("mysql", dns)
+	db, conn, ssh, err := connect(dns, sshDns)
 	if err != nil {
 		return nil, err
-	}
-	config := gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}
-	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
-	if err != nil {
-		return nil, err
-	}
-	return &MySql{Db: gormDb}, nil
+	} 
+	return &MySql{Db: db, Conn: conn, Ssh: ssh}, nil
 }
 
 // Close closes the database connection
 func (r *MySql) Close() {
-	db, err := r.Db.DB()
-	if err != nil {
-		return
-	}
-	db.Close()
+	r.Conn.Close()
+	r.Ssh.Close()
 }
 
 // Migrate migrates the database
@@ -263,6 +210,67 @@ func (r *MySql) Delete(tx interface{}, obj interface{}, extras ...interface{}) e
 		return stx.Error
 	}
 	return nil
+}
+
+// connect is a method that connects to the database
+func connect (dns string, sshDns string) (*gorm.DB, *sql.DB, *ssh.Client, error) {
+	sshConn, err := sshConnect(sshDns)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	db, err := sql.Open("mysql", dns)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	config := gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}
+	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return gormDb, db, sshConn, nil
+}
+
+// sshConnect is a method that connects to the ssh server
+func sshConnect(sshDns string) (*ssh.Client, error) {
+	if sshDns == "" {
+		return nil, nil
+	}	
+	var sshUser, sshKfile, sshHost, sshPort string
+	var sshConn *ssh.Client
+	if _, err := fmt.Sscanf(sshDns, ssh_key, &sshUser, &sshKfile, &sshHost, &sshPort); err != nil {
+		return nil, err
+	}
+	var agentClient agent.Agent
+	if conn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
+		defer conn.Close()
+		agentClient = agent.NewClient(conn)
+	}
+	pemBytes, err := os.ReadFile(sshKfile)
+	if err != nil {
+		return nil, err
+	}
+	signer, err := ssh.ParsePrivateKey(pemBytes)
+	if err != nil {
+		return  nil, err
+	}
+	sshConfig := &ssh.ClientConfig{
+		User:            sshUser,
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	if agentClient != nil {
+		sshConfig.Auth = append(sshConfig.Auth, ssh.PublicKeysCallback(agentClient.Signers))
+	}
+	sshConn, err = ssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
+	if err != nil {
+		return nil, err
+	}
+	mysql.RegisterDialContext("mysql+tcp", func(_ context.Context, addr string) (net.Conn, error) {
+		return sshConn.Dial("tcp", addr)
+		// dialer := &ViaSSHDialer{sshConn}
+		// return dialer.Dial(addr)
+	})
+	return sshConn, nil
 }
 
 // find finds object based on obj, limit and extras params

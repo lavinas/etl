@@ -7,7 +7,7 @@ services:
     volumes:
       - .:/go/src/
     environment:
-      SOURCE_DNS: root:root@tcp(vooo-mysql:3306)/vooo?charset=utf8&parseTime=True&loc=Local
+      SOURCE_DNS: root:@mysql+tcp(vooo-mysql:3306)/vooo?charset=utf8&parseTime=True&loc=Local
       SOURCE_SSH: ubuntu:file(vooo_backoffice.pem)@tcp(18.229.76.67:22)
       TARGET_DNS: root:root@tcp(vooo-mysql:3306)/vooo_migration?charset=utf8&parseTime=True&loc=Local
     ports:
