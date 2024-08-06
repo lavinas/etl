@@ -5,11 +5,19 @@ import (
 	"reflect"
 	"unicode"
 	"fmt"
+	"net"
+	"os"
+	"context"
+	"database/sql"
 
-	"gorm.io/driver/mysql"
+	gmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
+
+	"github.com/go-sql-driver/mysql"
+	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/lavinas/vooo-etl/internal/port"
 	"github.com/lavinas/vooo-etl/pkg"
@@ -21,27 +29,77 @@ const (
 )
 
 
+type ViaSSHDialer struct {
+	client *ssh.Client
+}
+
+func (s *ViaSSHDialer) Dial(addr string) (net.Conn, error) {
+	return s.client.Dial("tcp", addr)
+}
+
+
 // RepoMySql is the repository handler for the application
 type MySql struct {
 	Db *gorm.DB
 }
 
 // NewRepository creates a new repository handler
-func NewRepository(dns string, ssh string) (*MySql, error) {
-	var user, pass, host, port, db string
-	if ssh != "" {
-		if _, err := fmt.Scanf(ssh_key, &user, &pass, &host, &port); err != nil {
+func NewRepository(dns string, sshDns string) (*MySql, error) {
+	var sshUser, sshKfile, sshHost, sshPort string
+	if sshDns != "" {
+		if _, err := fmt.Sscanf(sshDns, ssh_key, &sshUser, &sshKfile, &sshHost, &sshPort); err != nil {
 			return nil, err
 		}
-		
-		
+		var agentClient agent.Agent
+		if conn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
+			defer conn.Close()
+			agentClient = agent.NewClient(conn)
+		}
 
-
-	db, err := gorm.Open(mysql.Open(dns), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+		pemBytes, err := os.ReadFile(sshKfile)
+		if err != nil {
+			return nil, err
+		}
+		signer, err := ssh.ParsePrivateKey(pemBytes)
+		if err != nil {
+			return nil,  err
+		}
+	
+		// The client configuration with configuration option to use the ssh-agent
+		sshConfig := &ssh.ClientConfig{
+			User:            sshUser,
+			Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
+	
+		// When the agentClient connection succeeded, add them as AuthMethod
+		if agentClient != nil {
+			sshConfig.Auth = append(sshConfig.Auth, ssh.PublicKeysCallback(agentClient.Signers))
+		}
+	
+		// Connect to the SSH Server
+		sshConn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
+		if err != nil {
+			return nil, err
+		}
+	
+		// Now we register the ViaSSHDialer with the ssh connection as a parameter
+		mysql.RegisterDialContext("mysql+tcp", func(_ context.Context, addr string) (net.Conn, error) {
+			dialer := &ViaSSHDialer{sshConn}
+			return dialer.Dial(addr)
+		})
+	}
+		
+	db, err := sql.Open("mysql", dns)
 	if err != nil {
 		return nil, err
 	}
-	return &MySql{Db: db}, nil
+	config := gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}
+	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
+	if err != nil {
+		return nil, err
+	}
+	return &MySql{Db: gormDb}, nil
 }
 
 // Close closes the database connection
