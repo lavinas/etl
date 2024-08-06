@@ -10,7 +10,7 @@ type Repository interface {
 	// Begin is a method that starts a transaction
 	// it receives a string that represents the transaction name
 	// if the transaction name is empty, it will be a default transaction
-	Begin() interface{}
+	Begin(schema string) interface{}
 	// Commit is a method that commits a transaction
 	Commit(tx interface{}) error
 	// Rollback is a method that rolls back a transaction

@@ -71,8 +71,12 @@ func (r *MySql) Migrate(domain []interface{}) error {
 
 // Begin is a method that starts a transaction
 // it returns an object that represents a transaction to be used in others methods
-func (r *MySql) Begin() interface{} {
-	return r.Db.Begin()
+func (r *MySql) Begin(schema string) interface{} {
+	tx := r.Db.Begin()
+	if schema != "" {
+		tx = tx.Exec("USE " + schema)
+	}
+	return tx
 }
 
 // Commit commits the transaction

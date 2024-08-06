@@ -45,7 +45,7 @@ func NewJob(id int64, name, jobType, action, object, field string, last int64, s
 
 // Load loads the job entity
 func (j *Job) Load(repo port.Repository) error {
-	tx := repo.Begin()
+	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	if ok, err := repo.Get(tx, j, strconv.FormatInt(j.Id, 10), false); err != nil {
 		return err
@@ -83,11 +83,10 @@ func (j *Job) TableName() string {
 	return "job"
 }
 
-
 // setStatus sets the job status
 func (j *Job) setStatus(repo port.Repository, status string) error {
 	j.Status = status
-	tx := repo.Begin()
+	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	if err := repo.Save(tx, j); err != nil {
 		return err
