@@ -9,16 +9,11 @@ import (
 
 var (
 	// actionMap is a map that represents the actions to run
-	actionMap = map[string]RunAction{
+	actionMap = map[string]port.RunAction{
 		"loadClient": NewLoadClient(),
 		"copy":       NewCopy(),
 	}
 )
-
-// RunAction is a interface that represents the action to run
-type RunAction interface {
-	Run(*domain.Job, port.Repository, port.Repository) error
-}
 
 // Run is a struct that represents the use case
 type Run struct {

@@ -3,6 +3,7 @@ module github.com/lavinas/vooo-etl
 go 1.22.3
 
 require (
+	github.com/alexflint/go-arg v1.5.1
 	github.com/go-sql-driver/mysql v1.7.0
 	golang.org/x/crypto v0.25.0
 	gorm.io/driver/mysql v1.5.7
@@ -10,6 +11,7 @@ require (
 )
 
 require (
+	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	golang.org/x/sys v0.22.0 // indirect

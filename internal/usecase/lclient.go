@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
@@ -15,6 +14,6 @@ func NewLoadClient() *Copy {
 }
 
 // Run runs the use case
-func (c *LoadClient) Run(job *domain.Job, repoSource port.Repository, repoTarget port.Repository) error {
+func (c *LoadClient) Run(job port.Domain, repoSource port.Repository, repoTarget port.Repository) error {
 	return nil
 }
