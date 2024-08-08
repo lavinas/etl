@@ -1,17 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"context"
 
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	
+
 	"github.com/lavinas/vooo-etl/internal/adapters/repository"
 )
 
@@ -35,24 +35,21 @@ type DatabaseCreds struct {
 }
 
 func main() {
-	source_ssh := "root root"
-	source_fmt := "%s %s"
-	var ssh_user, ssh_file string
-	_, err := fmt.Sscanf(source_ssh, source_fmt, &ssh_user, &ssh_file)
-	if err != nil {
-		log.Fatal(1, err)
-	}
-	fmt.Println(ssh_user, ssh_file)
-}
-
-func Main1() {
-	source_dns := "root:te4356sfh@mysql+tcp(vooo-mysql:3306)"
+	source_dns := "root:te4356sfh@mysql+tcp(mysql.vooo.ws:3306)/"
 	source_ssh := "ubuntu:file(vooo_backoffice.pem)@tcp(18.229.76.67:22)"
 	repo1, err := repository.NewRepository(source_dns, source_ssh)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer repo1.Close()
+
+	target_dns := "root:root@tcp(vooo-mysql:3306)/"
+	target_ssh := ""
+	repo2, err := repository.NewRepository(target_dns, target_ssh)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer repo2.Close()
 }
 
 func Main2() {
@@ -66,7 +63,7 @@ func Main2() {
 		DBHost:     "mysql.vooo.ws:3306",
 		DBName:     "vooo_prod_backend",
 	})
-	
+
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -18,4 +18,3 @@ func NewCopy() *Copy {
 func (c *Copy) Run(job *domain.Job, repo port.Repository) error {
 	return nil
 }
-

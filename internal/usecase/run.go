@@ -3,8 +3,8 @@ package usecase
 import (
 	"errors"
 
-	"github.com/lavinas/vooo-etl/internal/port"
 	"github.com/lavinas/vooo-etl/internal/domain"
+	"github.com/lavinas/vooo-etl/internal/port"
 )
 
 var (
@@ -51,7 +51,7 @@ func (r *Run) RunJob(jobId int64) error {
 }
 
 // actionFactory is a method that creates a action
-func (r *Run) runFactory (job *domain.Job) (RunAction, error) {
+func (r *Run) runFactory(job *domain.Job) (RunAction, error) {
 	if action, ok := actionMap[job.Action]; ok {
 		return action, nil
 	}

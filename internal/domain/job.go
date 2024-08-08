@@ -1,9 +1,9 @@
 package domain
 
 import (
-	"time"
-	"strconv"
 	"errors"
+	"strconv"
+	"time"
 
 	"github.com/lavinas/vooo-etl/internal/port"
 )
@@ -76,7 +76,6 @@ func (j *Job) SetReady(repo port.Repository) error {
 	}
 	return nil
 }
-
 
 // TableName returns the table name of the job entity
 func (j *Job) TableName() string {

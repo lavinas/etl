@@ -1,14 +1,15 @@
 package repository
 
 import (
+	"context"
+	"database/sql"
 	"errors"
-	"reflect"
-	"unicode"
 	"fmt"
 	"net"
 	"os"
-	"context"
-	"database/sql"
+	"reflect"
+	"regexp"
+	"unicode"
 
 	gmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -16,46 +17,37 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/go-sql-driver/mysql"
+	gssh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"golang.org/x/crypto/ssh"
 
 	"github.com/lavinas/vooo-etl/internal/port"
 	"github.com/lavinas/vooo-etl/pkg"
 )
 
-const (
-	ssh_key = "%s:file(%s)@tcp(%s:%d)"
-)
-
-/*
-type ViaSSHDialer struct {
-	client *ssh.Client
-}
-func (s *ViaSSHDialer) Dial(addr string) (net.Conn, error) {
-	return s.client.Dial("tcp", addr)
-}
-*/
-
 // RepoMySql is the repository handler for the application
 type MySql struct {
-	Db *gorm.DB
+	Db   *gorm.DB
 	Conn *sql.DB
-	Ssh *ssh.Client 
+	Ssh  *gssh.Client
 }
 
 // NewRepository creates a new repository handler
-func NewRepository(dns string, sshDns string) (*MySql, error) {
-	db, conn, ssh, err := connect(dns, sshDns)
+func NewRepository(dns string, ssh string) (*MySql, error) {
+	db, conn, cssh, err := connect(dns, ssh)
 	if err != nil {
 		return nil, err
-	} 
-	return &MySql{Db: db, Conn: conn, Ssh: ssh}, nil
+	}
+	return &MySql{Db: db, Conn: conn, Ssh: cssh}, nil
 }
 
 // Close closes the database connection
 func (r *MySql) Close() {
-	r.Conn.Close()
-	r.Ssh.Close()
+	if r.Conn != nil {
+		r.Conn.Close()
+	}
+	if r.Ssh != nil {
+		r.Ssh.Close()
+	}
 }
 
 // Migrate migrates the database
@@ -217,35 +209,37 @@ func (r *MySql) Delete(tx interface{}, obj interface{}, extras ...interface{}) e
 }
 
 // connect is a method that connects to the database
-func connect (dns string, sshDns string) (*gorm.DB, *sql.DB, *ssh.Client, error) {
-	sshConn, err := sshConnect(sshDns)
+func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
+	sshConn, err := sshConnect(ssh)
 	if err != nil {
+		fmt.Println(1)
 		return nil, nil, nil, err
 	}
 	db, err := sql.Open("mysql", dns)
 	if err != nil {
+		fmt.Println(2)
 		return nil, nil, nil, err
 	}
 	config := gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}
 	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
 	if err != nil {
+		fmt.Println(3)
 		return nil, nil, nil, err
 	}
 	return gormDb, db, sshConn, nil
 }
 
 // sshConnect is a method that connects to the ssh server
-func sshConnect(sshDns string) (*ssh.Client, error) {
-	if sshDns == "" {
-		fmt.Println(1)
+func sshConnect(ssh string) (*gssh.Client, error) {
+	if ssh == "" {
 		return nil, nil
-	}	
+	}
 	var sshUser, sshKfile, sshHost, sshPort string
-	var sshConn *ssh.Client
-	if _, err := fmt.Sscanf(sshDns, ssh_key, &sshUser, &sshKfile, &sshHost, &sshPort); err != nil {
-		fmt.Println(2, sshDns, ssh_key)
+	sshUser, sshKfile, sshHost, sshPort, err := parseSshDns(ssh)
+	if err != nil {
 		return nil, err
 	}
+
 	var agentClient agent.Agent
 	if conn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
 		defer conn.Close()
@@ -253,33 +247,48 @@ func sshConnect(sshDns string) (*ssh.Client, error) {
 	}
 	pemBytes, err := os.ReadFile(sshKfile)
 	if err != nil {
-		fmt.Println(3)
 		return nil, err
 	}
-	signer, err := ssh.ParsePrivateKey(pemBytes)
+	signer, err := gssh.ParsePrivateKey(pemBytes)
 	if err != nil {
-		fmt.Println(4)
-		return  nil, err
+		return nil, err
 	}
-	sshConfig := &ssh.ClientConfig{
+	sshConfig := &gssh.ClientConfig{
 		User:            sshUser,
-		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Auth:            []gssh.AuthMethod{gssh.PublicKeys(signer)},
+		HostKeyCallback: gssh.InsecureIgnoreHostKey(),
 	}
 	if agentClient != nil {
-		sshConfig.Auth = append(sshConfig.Auth, ssh.PublicKeysCallback(agentClient.Signers))
+		sshConfig.Auth = append(sshConfig.Auth, gssh.PublicKeysCallback(agentClient.Signers))
 	}
-	sshConn, err = ssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
+	sshConn, err := gssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
 	if err != nil {
-		fmt.Println(5)
 		return nil, err
 	}
 	mysql.RegisterDialContext("mysql+tcp", func(_ context.Context, addr string) (net.Conn, error) {
 		return sshConn.Dial("tcp", addr)
-		// dialer := &ViaSSHDialer{sshConn}
-		// return dialer.Dial(addr)
 	})
 	return sshConn, nil
+}
+
+// parseSshDns is a method that parses the ssh dns
+func parseSshDns(ssh string) (string, string, string, string, error) {
+	pat := `^(\w+):(\w+)\(([^)]+)\)@(\w+)\(([^:]+):(\d+)\)$`
+	re := regexp.MustCompile(pat)
+	if !re.MatchString(ssh) {
+		return "", "", "", "", errors.New(port.ErrRepoSshInvalid)
+	}
+	m := re.FindStringSubmatch(ssh)
+	if len(m) != 7 {
+		return "", "", "", "", errors.New(port.ErrRepoSshInvalid)
+	}
+	if m[2] != "file" {
+		return "", "", "", "", errors.New(port.ErrRepoPassNotImplemented)
+	}
+	if m[4] != "tcp" {
+		return "", "", "", "", errors.New(port.ErrRepoProtoNotImplemented)
+	}
+	return m[1], m[3], m[5], m[6], nil
 }
 
 // find finds object based on obj, limit and extras params
