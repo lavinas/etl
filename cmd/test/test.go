@@ -11,6 +11,8 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+	
+	"github.com/lavinas/vooo-etl/internal/adapters/repository"
 )
 
 type ViaSSHDialer struct {
@@ -33,6 +35,27 @@ type DatabaseCreds struct {
 }
 
 func main() {
+	source_ssh := "root root"
+	source_fmt := "%s %s"
+	var ssh_user, ssh_file string
+	_, err := fmt.Sscanf(source_ssh, source_fmt, &ssh_user, &ssh_file)
+	if err != nil {
+		log.Fatal(1, err)
+	}
+	fmt.Println(ssh_user, ssh_file)
+}
+
+func Main1() {
+	source_dns := "root:te4356sfh@mysql+tcp(vooo-mysql:3306)"
+	source_ssh := "ubuntu:file(vooo_backoffice.pem)@tcp(18.229.76.67:22)"
+	repo1, err := repository.NewRepository(source_dns, source_ssh)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer repo1.Close()
+}
+
+func Main2() {
 	db, sshConn, err := ConnectToDB(DatabaseCreds{
 		SSHHost:    "18.229.76.67",
 		SSHPort:    22,

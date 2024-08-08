@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	ssh_key = "%s:file(%s)@tcp(%s:%s)"
+	ssh_key = "%s:file(%s)@tcp(%s:%d)"
 )
 
 /*
@@ -237,11 +237,13 @@ func connect (dns string, sshDns string) (*gorm.DB, *sql.DB, *ssh.Client, error)
 // sshConnect is a method that connects to the ssh server
 func sshConnect(sshDns string) (*ssh.Client, error) {
 	if sshDns == "" {
+		fmt.Println(1)
 		return nil, nil
 	}	
 	var sshUser, sshKfile, sshHost, sshPort string
 	var sshConn *ssh.Client
 	if _, err := fmt.Sscanf(sshDns, ssh_key, &sshUser, &sshKfile, &sshHost, &sshPort); err != nil {
+		fmt.Println(2, sshDns, ssh_key)
 		return nil, err
 	}
 	var agentClient agent.Agent
@@ -251,10 +253,12 @@ func sshConnect(sshDns string) (*ssh.Client, error) {
 	}
 	pemBytes, err := os.ReadFile(sshKfile)
 	if err != nil {
+		fmt.Println(3)
 		return nil, err
 	}
 	signer, err := ssh.ParsePrivateKey(pemBytes)
 	if err != nil {
+		fmt.Println(4)
 		return  nil, err
 	}
 	sshConfig := &ssh.ClientConfig{
@@ -267,6 +271,7 @@ func sshConnect(sshDns string) (*ssh.Client, error) {
 	}
 	sshConn, err = ssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
 	if err != nil {
+		fmt.Println(5)
 		return nil, err
 	}
 	mysql.RegisterDialContext("mysql+tcp", func(_ context.Context, addr string) (net.Conn, error) {
