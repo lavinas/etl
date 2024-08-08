@@ -36,7 +36,7 @@ type DatabaseCreds struct {
 
 func main() {
 	source_dns := "root:te4356sfh@mysql+tcp(mysql.vooo.ws:3306)/"
-	source_ssh := "ubuntu:file(vooo_backoffice.pem)@tcp(18.229.76.67:22)"
+	source_ssh := "ubuntu:file(.ssh/vooo_backoffice.pem)@tcp(18.229.76.67:22)"
 	repo1, err := repository.NewRepository(source_dns, source_ssh)
 	if err != nil {
 		log.Fatal(err)
