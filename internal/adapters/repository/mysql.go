@@ -239,7 +239,6 @@ func sshConnect(ssh string) (*gssh.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	var agentClient agent.Agent
 	if conn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
 		defer conn.Close()

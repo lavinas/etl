@@ -10,50 +10,64 @@ import (
 var (
 	// actionMap is a map that represents the actions to run
 	actionMap = map[string]RunAction{
+		"loadClient": NewLoadClient(),
 		"copy": NewCopy(),
 	}
 )
 
 // RunAction is a interface that represents the action to run
 type RunAction interface {
-	Run(*domain.Job, port.Repository) error
+	Run(*domain.Job, port.Repository, port.Repository) error
 }
 
 // Run is a struct that represents the use case
 type Run struct {
-	Repo port.Repository
+	RepoSource port.Repository
+	RepoTarget port.Repository
 }
 
 // NewRun creates a new use case
-func NewRun(repo port.Repository) *Run {
-	return &Run{Repo: repo}
+func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
+	return &Run{RepoSource: repoSource, RepoTarget: repoTarget}
 }
 
 // Run runs the use case
 func (r *Run) RunJob(jobId int64) error {
-	// get the job
-	job := &domain.Job{Id: jobId}
-	if err := job.Load(r.Repo); err != nil {
+	exec := &domain.Exec{}
+	if err := exec.Init(r.RepoTarget, jobId); err != nil {
 		return err
 	}
-	if err := job.SetRunning(r.Repo); err != nil {
-		return err
+	var status, detail string
+	if err := r.run(jobId); err != nil {
+		status = "error"
+		detail = err.Error()
+	} else {
+		status = "success"
 	}
-	if action, err := r.runFactory(job); err != nil {
-		return err
-	} else if err := action.Run(job, r.Repo); err != nil {
-		return err
-	}
-	if err := job.SetReady(r.Repo); err != nil {
+	if err := exec.SetStatus(r.RepoTarget, status, detail); err != nil {
 		return err
 	}
 	return nil
 }
 
-// actionFactory is a method that creates a action
-func (r *Run) runFactory(job *domain.Job) (RunAction, error) {
-	if action, ok := actionMap[job.Action]; ok {
-		return action, nil
+// run runs the use case
+func (r *Run) run(jobId int64) error {
+	job := &domain.Job{Id: jobId}
+	tx := r.RepoTarget.Begin("")
+	defer r.RepoTarget.Rollback(tx)
+	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
+		return err
 	}
-	return nil, errors.New(port.ErrJobNotReady)
+	action, ok := actionMap[job.Action]
+	if !ok {
+		return errors.New(port.ErrActionNotFound)
+	}
+	if err := action.Run(job, r.RepoSource, r.RepoTarget); err != nil {
+		return err
+	}
+	if err := r.RepoTarget.Commit(tx); err != nil {
+		return err
+	}
+	return nil
 }
+

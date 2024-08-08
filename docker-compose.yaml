@@ -9,8 +9,7 @@ services:
     environment:
       SOURCE_DNS: root:te4356sfh@mysql+tcp(mysql.vooo.ws:3306)/
       SOURCE_SSH: ubuntu:file(.ssh/vooo_backoffice.pem)@tcp(18.229.76.67:22)
-      TARGET_DNS: root:root@tcp(vooo-mysql:3306)/
-
+      TARGET_DNS: root:root@tcp(vooo-mysql:3306)/vooo_migration
     ports:
       - "8081:8080"
 

@@ -6,15 +6,15 @@ import (
 )
 
 // Copy is a struct that represents the use case copy a object from database to another
-type Copy struct {
+type LoadClient struct {
 }
 
 // NewCopy creates a new use case
-func NewCopy() *Copy {
+func NewLoadClient() *Copy {
 	return &Copy{}
 }
 
 // Run runs the use case
-func (c *Copy) Run(job *domain.Job, repoSource port.Repository, repoTarget port.Repository) error {
+func (c *LoadClient) Run(job *domain.Job, repoSource port.Repository, repoTarget port.Repository) error {
 	return nil
 }

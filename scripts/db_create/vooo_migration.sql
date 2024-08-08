@@ -95,9 +95,9 @@ CREATE TABLE `reference` (
 -- Table structure for table `log`
 --
 
-DROP TABLE IF EXISTS `log`;
+DROP TABLE IF EXISTS `exec`;
 
-CREATE TABLE `log` (
+CREATE TABLE `exec` (
   `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `job_id` bigint(20) NOT NULL,
   `start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -105,7 +105,7 @@ CREATE TABLE `log` (
   `status` varchar(30) NOT NULL,
   `detail` varchar(255) NULL,
   KEY `job_id` (`job_id`),
-  CONSTRAINT `log_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
+  CONSTRAINT `exec_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 -- 
