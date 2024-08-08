@@ -48,7 +48,6 @@ func (l *Exec) SetStatus(repo port.Repository, status string, detail string) err
 	return nil
 }
 
-
 // TableName returns the table name of the log entity
 func (l *Exec) TableName() string {
 	return "exec"

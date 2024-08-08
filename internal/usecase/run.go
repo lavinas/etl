@@ -11,7 +11,7 @@ var (
 	// actionMap is a map that represents the actions to run
 	actionMap = map[string]RunAction{
 		"loadClient": NewLoadClient(),
-		"copy": NewCopy(),
+		"copy":       NewCopy(),
 	}
 )
 
@@ -70,4 +70,3 @@ func (r *Run) run(jobId int64) error {
 	}
 	return nil
 }
-

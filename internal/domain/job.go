@@ -16,15 +16,14 @@ const (
 
 // Job represents the job entity of application
 type Job struct {
-	Id     int64     `gorm:"type:bigint(20); not null; primaryKey"`
-	Name   string    `gorm:"type:varchar(100); not null"`
-	Type   string    `gorm:"type:varchar(30); not null"`
-	Action string    `gorm:"type:varchar(30); not null"`
-	Object string    `gorm:"type:varchar(255); not null"`
-	Field  string    `gorm:"type:varchar(100); not null"`
-	Last   int64     `gorm:"type:bigint(20); not null"`
+	Id     int64  `gorm:"type:bigint(20); not null; primaryKey"`
+	Name   string `gorm:"type:varchar(100); not null"`
+	Type   string `gorm:"type:varchar(30); not null"`
+	Action string `gorm:"type:varchar(30); not null"`
+	Object string `gorm:"type:varchar(255); not null"`
+	Field  string `gorm:"type:varchar(100); not null"`
+	Last   int64  `gorm:"type:bigint(20); not null"`
 }
-
 
 // Load loads the job entity
 func (j *Job) Load(repo port.Repository) error {
@@ -52,4 +51,3 @@ func (j *Job) LoadLock(repo port.Repository, tx interface{}) error {
 func (j *Job) TableName() string {
 	return "job"
 }
-
