@@ -67,9 +67,7 @@ CREATE TABLE `job` (
   `base` varchar(100) NOT NULL,
   `object` varchar(100) NOT NULL,
   `field` varchar(100) NOT NULL DEFAULT 'id',
-  `last` bigint(20) NOT NULL DEFAULT '0', 
-  `status` varchar(30) NOT NULL DEFAULT 'ready',
-  `locked` datetime NULL
+  `last` bigint(20) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

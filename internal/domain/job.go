@@ -19,6 +19,7 @@ type Job struct {
 	Id     int64  `gorm:"type:bigint(20); not null; primaryKey"`
 	Name   string `gorm:"type:varchar(100); not null"`
 	Type   string `gorm:"type:varchar(30); not null"`
+	Base   string `gorm:"type:varchar(255); not null"`
 	Action string `gorm:"type:varchar(30); not null"`
 	Object string `gorm:"type:varchar(255); not null"`
 	Field  string `gorm:"type:varchar(100); not null"`
