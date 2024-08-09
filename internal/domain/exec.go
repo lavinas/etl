@@ -7,12 +7,12 @@ import (
 )
 
 type Exec struct {
-	Id     int64     `gorm:"type:bigint(20); not null; primaryKey"`
-	JobId  int64     `gorm:"type:bigint(20); not null"`
-	Start  time.Time `gorm:"type:datetime; not null"`
+	Id     int64      `gorm:"type:bigint(20); not null; primaryKey"`
+	JobId  int64      `gorm:"type:bigint(20); not null"`
+	Start  time.Time  `gorm:"type:datetime; not null"`
 	End    *time.Time `gorm:"type:datetime; null"`
-	Status string    `gorm:"type:varchar(20); not null"`
-	Detail string    `gorm:"type:text; not null"`
+	Status string     `gorm:"type:varchar(20); not null"`
+	Detail string     `gorm:"type:text; not null"`
 }
 
 // Init initializes the log entity
@@ -24,7 +24,7 @@ func (l *Exec) Init(repo port.Repository, jobId int64) error {
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	if err := repo.Add(tx, l); err != nil {
-		
+
 		return err
 	}
 	if err := repo.Commit(tx); err != nil {

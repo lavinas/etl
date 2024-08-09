@@ -12,5 +12,5 @@ const (
 	ErrRepoPassNotImplemented  = "just file implemented"
 	ErrRepoProtoNotImplemented = "just tcp implemented"
 	ErrActionNotFound          = "action not found"
-	ErrJobTypeNotImplemented  = "job type not implemented"
+	ErrJobTypeNotImplemented   = "job type not implemented"
 )

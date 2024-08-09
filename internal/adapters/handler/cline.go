@@ -29,6 +29,6 @@ func (c *CommandLine) Run() {
 	if qtt, err := c.usecase.RunJob(args.JobID); err != nil {
 		p.Fail(err.Error())
 	} else {
-		fmt.Printf("ok: %d processed\nexit status 0", qtt)
+		fmt.Printf("ok: %s\nexit status 0", qtt)
 	}
 }

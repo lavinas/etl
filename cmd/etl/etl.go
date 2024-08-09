@@ -27,5 +27,5 @@ func main() {
 	run := usecase.NewRun(repoSource, repoTarget)
 	// get and run the handler
 	handler := handler.NewLine(run)
-	handler.Run()	
+	handler.Run()
 }

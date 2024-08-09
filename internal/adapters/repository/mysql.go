@@ -208,6 +208,45 @@ func (r *MySql) Delete(tx interface{}, obj interface{}, extras ...interface{}) e
 	return nil
 }
 
+// Query queries the database
+// it receives the sql command and the transaction
+// transaction have to be started before calling this method
+func (r *MySql) Query(tx interface{}, sql string, args ...interface{}) ([]string, [][]*string, error) {
+	stx, ok := tx.(*gorm.DB)
+	if !ok {
+		return nil, nil, errors.New(port.ErrRepoInvalidTX)
+	}
+	rows, err := stx.Raw(sql, args...).Rows()
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, nil, err
+	}
+	frows, err := r.queryFormatResult(cols, rows)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cols, frows, nil
+}
+
+// Exec executes a query
+// it receives the sql command and the transaction
+// transaction have to be started before calling this method
+func (r *MySql) Exec(tx interface{}, sql string, args ...interface{}) (interface{}, error) {
+	stx, err := r.format(tx, &gorm.DB{})
+	if err != nil {
+		return nil, err
+	}
+	stx = stx.Exec(sql, args...)
+	if stx.Error != nil {
+		return nil, stx.Error
+	}
+	return stx.RowsAffected, nil
+}
+
 // connect is a method that connects to the database
 func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
 	sshConn, err := sshConnect(ssh)
@@ -370,4 +409,44 @@ func (r *MySql) fieldName(field string) string {
 		ret += string(unicode.ToLower(ch))
 	}
 	return ret
+}
+
+// queyMountMap is a method that mounts the map from the query result
+func (r *MySql) queryFormatResult(columns []string, rows *sql.Rows) ([][]*string, error) {
+	values := make([]interface{}, len(columns))
+	valuePtrs := make([]interface{}, len(columns))
+	for i := range columns {
+		valuePtrs[i] = &values[i]
+	}
+	result := make([][]*string, 0)
+	for rows.Next() {
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, err
+		}
+		row, err := r.queryFormatRow(values)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, row)
+	}
+	return result, nil
+}
+
+// queryFormatRow is a method that formats the row
+func (r *MySql) queryFormatRow(values []interface{}) ([]*string, error) {
+	row := make([]*string, 0)
+	for _, val := range values {
+		if val == nil {
+			row = append(row, nil)
+			continue
+		}
+		b, ok := val.([]byte)
+		if ok {
+			str := string(b)
+			row = append(row, &str)
+		} else {
+			return nil, errors.New("invalid value found")
+		}
+	}
+	return row, nil
 }

@@ -26,4 +26,8 @@ type Repository interface {
 	Save(tx interface{}, obj interface{}) error
 	// Delete is a method that deletes an object by filled fields
 	Delete(tx interface{}, obj interface{}, extras ...interface{}) error
+	// Query is a method that queries the database
+	Query(tx interface{}, sql string, args ...interface{}) ([]string, [][]*string, error)
+	// Exec is a method that executes a query
+	Exec(tx interface{}, sql string, args ...interface{}) (interface{}, error)
 }

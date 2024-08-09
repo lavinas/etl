@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/ssh"
@@ -35,6 +36,7 @@ type DatabaseCreds struct {
 }
 
 func main() {
+	start := time.Now()
 	source_dns := os.Getenv("SOURCE_DNS")
 	source_ssh := os.Getenv("SOURCE_SSH")
 	repo1, err := repository.NewRepository(source_dns, source_ssh)
@@ -42,14 +44,20 @@ func main() {
 		log.Fatal(err)
 	}
 	defer repo1.Close()
-
-	target_dns := os.Getenv("TARGET_DNS")
-	target_ssh := os.Getenv("TARGET_SSH")
-	repo2, err := repository.NewRepository(target_dns, target_ssh)
+	query := "SELECT * FROM client WHERE id > 1000 limit 10;"
+	tx := repo1.Begin("vooo_prod_backend")
+	defer repo1.Rollback(tx)
+	_, rows, err := repo1.Query(tx, query)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer repo2.Close()
+	count := 0
+	for _, row := range rows {
+		fmt.Println(*row[0])
+		count++
+	}
+
+	log.Println("Time: ", time.Since(start), "Count: ", count)
 }
 
 func Main2() {

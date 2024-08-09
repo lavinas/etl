@@ -1,8 +1,8 @@
 package usecase
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -28,10 +28,10 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 }
 
 // Run runs the use case
-func (r *Run) RunJob(jobId int64) (int64, error) {
+func (r *Run) RunJob(jobId int64) (string, error) {
 	exec := &domain.Exec{}
 	if err := exec.Init(r.RepoTarget, jobId); err != nil {
-		return 0, err
+		return "", err
 	}
 	var status, detail string
 	if qtt, err := r.run(jobId); err != nil {
@@ -39,15 +39,15 @@ func (r *Run) RunJob(jobId int64) (int64, error) {
 		detail = err.Error()
 	} else {
 		status = "success"
-		detail = fmt.Sprintf("%d processed", qtt)
+		detail = fmt.Sprintf("%v processed", qtt)
 	}
 	if err := exec.SetStatus(r.RepoTarget, status, detail); err != nil {
-		return 0, err
+		return "", err
 	}
 	if status == "error" {
-		return 0, errors.New(detail)
+		return "", errors.New(detail)
 	}
-	return 0, nil
+	return detail, nil
 }
 
 // run runs the use case

@@ -7,5 +7,5 @@ type RunAction interface {
 
 // UseCase is a interface that represents the use case to run
 type UseCase interface {
-	RunJob(int64) (int64, error)
+	RunJob(int64) (string, error)
 }
