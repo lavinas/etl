@@ -6,7 +6,7 @@ const (
 	ErrRepoNilObject           = "object informed is nil"
 	ErrRepoInvalidObject       = "object informed is invalid"
 	ErrRepoSshInvalid          = "ssh dns is invalid"
-	ErrJobNotFound             = "no job found"
+	ErrJobNotFound             = "job not found"
 	ErrJobNotReady             = "job is not ready"
 	ErrJobNotRunning           = "job is not running"
 	ErrRepoPassNotImplemented  = "just file implemented"

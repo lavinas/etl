@@ -14,6 +14,6 @@ func NewCopy() *Copy {
 }
 
 // Run runs the use case
-func (c *Copy) Run(job port.Domain, repoSource port.Repository, repoTarget port.Repository) error {
-	return nil
+func (c *Copy) Run(job port.Domain, repoSource port.Repository, repoTarget port.Repository) (int64, error) {
+	return 0, nil
 }

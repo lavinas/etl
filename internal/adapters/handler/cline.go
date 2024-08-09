@@ -26,9 +26,9 @@ func NewLine(useCase port.UseCase) *CommandLine {
 // Run runs the command line handler
 func (c *CommandLine) Run() {
 	p := arg.MustParse(&args)
-	if err := c.usecase.RunJob(args.JobID); err != nil {
+	if qtt, err := c.usecase.RunJob(args.JobID); err != nil {
 		p.Fail(err.Error())
+	} else {
+		fmt.Printf("ok: %d processed\nexit status 0", qtt)
 	}
-	fmt.Println("success!")
-	fmt.Println("exit status 0")
 }

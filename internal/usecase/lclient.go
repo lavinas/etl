@@ -14,6 +14,6 @@ func NewLoadClient() *Copy {
 }
 
 // Run runs the use case
-func (c *LoadClient) Run(job port.Domain, repoSource port.Repository, repoTarget port.Repository) error {
-	return nil
+func (c *LoadClient) Run(job port.Domain, repoSource port.Repository, repoTarget port.Repository) (int64, error) {
+	return 0, nil
 }

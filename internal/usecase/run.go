@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"errors"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
@@ -27,41 +28,46 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 }
 
 // Run runs the use case
-func (r *Run) RunJob(jobId int64) error {
+func (r *Run) RunJob(jobId int64) (int64, error) {
 	exec := &domain.Exec{}
 	if err := exec.Init(r.RepoTarget, jobId); err != nil {
-		return err
+		return 0, err
 	}
 	var status, detail string
-	if err := r.run(jobId); err != nil {
+	if qtt, err := r.run(jobId); err != nil {
 		status = "error"
 		detail = err.Error()
 	} else {
 		status = "success"
+		detail = fmt.Sprintf("%d processed", qtt)
 	}
 	if err := exec.SetStatus(r.RepoTarget, status, detail); err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	if status == "error" {
+		return 0, errors.New(detail)
+	}
+	return 0, nil
 }
 
 // run runs the use case
-func (r *Run) run(jobId int64) error {
+func (r *Run) run(jobId int64) (int64, error) {
 	job := &domain.Job{Id: jobId}
 	tx := r.RepoTarget.Begin("")
 	defer r.RepoTarget.Rollback(tx)
 	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
-		return err
+		return 0, err
 	}
 	action, ok := actionMap[job.Action]
 	if !ok {
-		return errors.New(port.ErrActionNotFound)
+		return 0, errors.New(port.ErrActionNotFound)
 	}
-	if err := action.Run(job, r.RepoSource, r.RepoTarget); err != nil {
-		return err
+	qtt, err := action.Run(job, r.RepoSource, r.RepoTarget)
+	if err != nil {
+		return 0, err
 	}
 	if err := r.RepoTarget.Commit(tx); err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return qtt, nil
 }

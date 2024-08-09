@@ -104,8 +104,7 @@ CREATE TABLE `exec` (
   `end` datetime NULL,
   `status` varchar(30) NOT NULL,
   `detail` varchar(255) NULL,
-  KEY `job_id` (`job_id`),
-  CONSTRAINT `exec_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
+  KEY `job_id` (`job_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 -- 

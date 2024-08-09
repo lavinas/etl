@@ -114,7 +114,7 @@ func (r *MySql) Add(tx interface{}, obj interface{}) error {
 		return err
 	}
 	stx = stx.Session(&gorm.Session{})
-	stx.Create(obj)
+	stx = stx.Create(obj)
 	if stx.Error != nil {
 		return stx.Error
 	}
