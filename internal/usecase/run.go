@@ -71,3 +71,21 @@ func (r *Run) run(jobId int64) (int64, error) {
 	}
 	return qtt, nil
 }
+
+
+// getReferences gets the references of the job
+func (r *Run) GetReferrences(jobId int64, repoTarged port.Repository, tx interface{}) ([]*domain.Job, error) {
+	ref := &domain.Reference{Referrer: jobId}
+	refs, err := ref.GetByReferrer(repoTarged, tx)
+	if err != nil {
+		return nil, err
+	}
+	jobs := make([]*domain.Job, len(refs))
+	for i, r := range refs {
+		jobs[i] = &domain.Job{Id: r.Referred}
+		if err := jobs[i].LoadLock(repoTarged, tx); err != nil {
+			return nil, err
+		}
+	}
+	return jobs, nil
+}
