@@ -66,10 +66,6 @@ func (r *Run) run(jobId int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	job.Last += qtt
-	if err := job.Save(r.RepoTarget, txTarget); err != nil {
-		return 0, err
-	}
 	if err := r.RepoTarget.Commit(txTarget); err != nil {
 		return 0, err
 	}

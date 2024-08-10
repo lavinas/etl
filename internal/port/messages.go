@@ -13,4 +13,5 @@ const (
 	ErrRepoProtoNotImplemented = "just tcp implemented"
 	ErrActionNotFound          = "action not found"
 	ErrJobTypeNotImplemented   = "job type not implemented"
+	ErrFieldNotFound           = "field not found"
 )

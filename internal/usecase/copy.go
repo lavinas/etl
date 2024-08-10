@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
@@ -13,7 +14,7 @@ const (
 	limit     = 100
 	disableFK = "SET FOREIGN_KEY_CHECKS = 0;"
 	enableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
-	sqlrow    = "SELECT * FROM %s WHERE %s > %d and %s <= %d;"
+	sqlrow    = "SELECT * FROM %s WHERE %s > %d and %s <= %d order by %s;"
 	sqlinsert = "INSERT INTO %s.%s %s VALUES %s;"
 )
 
@@ -43,6 +44,9 @@ func (c *Copy) Run(job port.Domain, repoSource port.Repository, repoTarget port.
 	if err != nil {
 		return 0, err
 	}
+	if err := c.setJob(j, cols, rows, repoTarget, txTarget); err != nil {
+		return 0, err
+	}
 	return int64(len(rows)), nil
 }
 
@@ -50,7 +54,7 @@ func (c *Copy) Run(job port.Domain, repoSource port.Repository, repoTarget port.
 func (c *Copy) getSource(repoSource port.Repository, j *domain.Job) ([]string, [][]*string, error) {
 	txSource := repoSource.Begin(j.Base)
 	defer repoSource.Rollback(txSource)
-	sql := fmt.Sprintf(sqlrow, j.Object, j.Field, j.Last, j.Field, j.Last+limit)
+	sql := fmt.Sprintf(sqlrow, j.Object, j.Field, j.Last, j.Field, j.Last+limit, j.Field)
 	cols, rows, err := repoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -73,6 +77,40 @@ func (c *Copy) putSource(repoTarget port.Repository, txTarget interface{}, cmd s
 		return 0, err
 	}
 	return done, nil
+}
+
+// setJob sets the job last id
+func (c *Copy) setJob(job *domain.Job, cols []string, rows[][]*string, repoTarget port.Repository, txTarget interface{}) error {
+	last, err := c.getLast(cols, rows, job.Field)
+	if err != nil {
+		return err
+	}
+	job.Last = last
+	if err := job.Save(repoTarget, txTarget); err != nil {
+		return err
+	}
+	return nil
+}
+
+// getLast gets the last id from the source
+func (c *Copy) getLast(cols []string, rows [][]*string, field string) (int64, error) {
+	iField := -1
+	for i, col := range cols {
+		if col == field {
+			iField = i
+			break
+		}
+	}
+	if iField == -1 {
+		return 0, errors.New(port.ErrFieldNotFound)
+	}
+	last := rows[len(rows)-1][iField]
+	ilast, err := strconv.ParseInt(*last, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println("last", ilast)
+	return ilast, nil
 }
 
 // mountInsert mounts the insert sql
