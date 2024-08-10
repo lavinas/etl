@@ -29,5 +29,5 @@ type Repository interface {
 	// Query is a method that queries the database
 	Query(tx interface{}, sql string, args ...interface{}) ([]string, [][]*string, error)
 	// Exec is a method that executes a query
-	Exec(tx interface{}, sql string, args ...interface{}) (interface{}, error)
+	Exec(tx interface{}, sql string, args ...interface{}) (int64, error)
 }

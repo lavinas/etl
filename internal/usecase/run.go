@@ -53,20 +53,24 @@ func (r *Run) RunJob(jobId int64) (string, error) {
 // run runs the use case
 func (r *Run) run(jobId int64) (int64, error) {
 	job := &domain.Job{Id: jobId}
-	tx := r.RepoTarget.Begin("")
-	defer r.RepoTarget.Rollback(tx)
-	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
+	txTarget := r.RepoTarget.Begin("")
+	defer r.RepoTarget.Rollback(txTarget)
+	if err := job.LoadLock(r.RepoTarget, txTarget); err != nil {
 		return 0, err
 	}
 	action, ok := actionMap[job.Action]
 	if !ok {
 		return 0, errors.New(port.ErrActionNotFound)
 	}
-	qtt, err := action.Run(job, r.RepoSource, r.RepoTarget)
+	qtt, err := action.Run(job, r.RepoSource, r.RepoTarget, txTarget)
 	if err != nil {
 		return 0, err
 	}
-	if err := r.RepoTarget.Commit(tx); err != nil {
+	job.Last += qtt
+	if err := job.Save(r.RepoTarget, txTarget); err != nil {
+		return 0, err
+	}
+	if err := r.RepoTarget.Commit(txTarget); err != nil {
 		return 0, err
 	}
 	return qtt, nil

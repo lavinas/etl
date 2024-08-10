@@ -48,6 +48,11 @@ func (j *Job) LoadLock(repo port.Repository, tx interface{}) error {
 	return nil
 }
 
+// Save saves the job entity
+func (j *Job) Save(repo port.Repository, tx interface{}) error {
+	return repo.Save(tx, j)
+}
+
 // TableName returns the table name of the job entity
 func (j *Job) TableName() string {
 	return "job"

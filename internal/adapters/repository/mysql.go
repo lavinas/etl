@@ -235,14 +235,14 @@ func (r *MySql) Query(tx interface{}, sql string, args ...interface{}) ([]string
 // Exec executes a query
 // it receives the sql command and the transaction
 // transaction have to be started before calling this method
-func (r *MySql) Exec(tx interface{}, sql string, args ...interface{}) (interface{}, error) {
-	stx, err := r.format(tx, &gorm.DB{})
-	if err != nil {
-		return nil, err
+func (r *MySql) Exec(tx interface{}, sql string, args ...interface{}) (int64, error) {
+	stx, ok := tx.(*gorm.DB)
+	if !ok {
+		return 0, errors.New(port.ErrRepoInvalidTX)
 	}
 	stx = stx.Exec(sql, args...)
 	if stx.Error != nil {
-		return nil, stx.Error
+		return 0, stx.Error
 	}
 	return stx.RowsAffected, nil
 }
