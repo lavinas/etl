@@ -44,7 +44,7 @@ func (r *Reference) GetByReferrer(repo port.Repository, tx interface{}) (*[]Refe
 		return nil, err
 	}
 	if refs == nil {
-		return nil, errors.New(port.ErrReferenceNotFound)
+		return nil, nil
 	}
 	return refs.(*[]Reference), nil
 }

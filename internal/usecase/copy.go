@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
 const (
-	limit     = 1000
-	disableFK = "SET FOREIGN_KEY_CHECKS = 0;"
-	enableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
-	sqlrow    = "SELECT * FROM %s WHERE %s > %d and %s <= %d order by %s;"
-	sqlinsert = "INSERT INTO %s.%s %s VALUES %s;"
+	copyLimit     = 1000
+	copyDisableFK = "SET FOREIGN_KEY_CHECKS = 0;"
+	copyEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
+	copySelect    = "SELECT * FROM %s WHERE %s > %d and %s <= %d order by %s;"
+	copyInsert = "INSERT INTO %s.%s %s VALUES %s;"
 )
 
 // Copy is a struct that represents the use case copy a object from database to another
@@ -30,7 +29,6 @@ func NewCopy() *Copy {
 
 // Run runs the use case
 func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port.Repository, repoTarget port.Repository, txTarget interface{}) (string, error) {
-	now := time.Now()
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", errors.New(port.ErrJobTypeNotImplemented)
@@ -40,7 +38,7 @@ func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port
 		return "", err
 	}
 	if len(rows) == 0 {
-		return fmt.Sprintf("0 processed in %v", time.Since(now)), nil
+		return "0 processed", nil
 	}
 	getLen := len(rows)
 	if rows, err = c.filterRefs(refs, cols, rows, repoTarget, txTarget); err != nil {
@@ -53,11 +51,14 @@ func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port
 	if err := c.setJob(j, cols, rows, repoTarget, txTarget); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%d rows processed, %d copied in %v", getLen, len(rows), time.Since(now)), nil
+	return fmt.Sprintf("%d rows processed, %d copied", getLen, len(rows)), nil
 }
 
 // filterRefs filters the references
 func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows [][]*string, repo port.Repository, tx interface{}) ([][]*string, error) {
+	if len(refs) == 0 {
+		return rows, nil
+	}
 	colsMap := make(map[string]int)
 	for i, col := range cols {
 		colsMap[col] = i
@@ -85,7 +86,7 @@ func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows [][]*
 
 // getRefPossibles gets the possible references
 func (c *Copy) getRefPossibles(job *domain.Job, repoTarget port.Repository, txTarget interface{}, min int64, max int64) (map[int64]bool, error) {
-	sql := fmt.Sprintf(sqlrow, job.Object, job.Field, min-1, job.Field, max, job.Field)
+	sql := fmt.Sprintf(copySelect, job.Object, job.Field, min-1, job.Field, max, job.Field)
 	cols, rows, err := repoTarget.Query(txTarget, sql)
 	if err != nil {
 		return nil, err
@@ -150,7 +151,7 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 func (c *Copy) getSource(repoSource port.Repository, j *domain.Job) ([]string, [][]*string, error) {
 	txSource := repoSource.Begin(j.Base)
 	defer repoSource.Rollback(txSource)
-	sql := fmt.Sprintf(sqlrow, j.Object, j.Field, j.Last, j.Field, j.Last+limit, j.Field)
+	sql := fmt.Sprintf(copySelect, j.Object, j.Field, j.Last, j.Field, j.Last+copyLimit, j.Field)
 	cols, rows, err := repoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -160,7 +161,7 @@ func (c *Copy) getSource(repoSource port.Repository, j *domain.Job) ([]string, [
 
 // putSource puts the source data into the target
 func (c *Copy) putSource(repoTarget port.Repository, txTarget interface{}, cmd string) (int64, error) {
-	_, err := repoTarget.Exec(txTarget, disableFK)
+	_, err := repoTarget.Exec(txTarget, copyDisableFK)
 	if err != nil {
 		return 0, err
 	}
@@ -168,7 +169,7 @@ func (c *Copy) putSource(repoTarget port.Repository, txTarget interface{}, cmd s
 	if err != nil {
 		return 0, err
 	}
-	done, err := repoTarget.Exec(txTarget, enableFK)
+	done, err := repoTarget.Exec(txTarget, copyEnableFK)
 	if err != nil {
 		return 0, err
 	}
@@ -217,7 +218,7 @@ func (c *Copy) mountInsert(base string, tablename string, cols []string, rows []
 		}
 		values += fmt.Sprintf("(%s), ", value[:len(value)-2])
 	}
-	return fmt.Sprintf(sqlinsert, base, tablename, strCols, values[:len(values)-2])
+	return fmt.Sprintf(copyInsert, base, tablename, strCols, values[:len(values)-2])
 }
 
 // formatValue formats the value to insert

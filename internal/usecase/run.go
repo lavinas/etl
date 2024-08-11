@@ -44,7 +44,6 @@ func (r *Run) RunJob(jobId int64) (string, error) {
 		return "", err
 	}
 	if status == "error" {
-
 		return "", errors.New(detail)
 	}
 	return detail, nil
@@ -82,6 +81,9 @@ func (r *Run) getReferrences(jobId int64, repoTarged port.Repository, tx interfa
 	refs, err := ref.GetByReferrer(repoTarged, tx)
 	if err != nil {
 		return nil, err
+	}
+	if refs == nil {
+		return nil, nil
 	}
 	jobs := make(map[string]port.Domain, len(*refs))
 	for _, r := range *refs {

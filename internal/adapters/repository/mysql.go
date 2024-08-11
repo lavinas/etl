@@ -24,6 +24,11 @@ import (
 	"github.com/lavinas/vooo-etl/pkg"
 )
 
+
+const (
+	logLevel = logger.Silent
+)
+
 // RepoMySql is the repository handler for the application
 type MySql struct {
 	Db   *gorm.DB
@@ -257,7 +262,7 @@ func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	config := gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}
+	config := gorm.Config{Logger: logger.Default.LogMode(logLevel)}
 	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
 	if err != nil {
 		return nil, nil, nil, err
