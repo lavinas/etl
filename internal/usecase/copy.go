@@ -55,7 +55,7 @@ func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port
 }
 
 // filterRefs filters the references
-func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows[][]*string, repo port.Repository, tx interface{}) ([][]*string, error) {
+func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows [][]*string, repo port.Repository, tx interface{}) ([][]*string, error) {
 	colsMap := make(map[string]int)
 	for i, col := range cols {
 		colsMap[col] = i
@@ -104,7 +104,7 @@ func (c *Copy) getRefPossibles(job *domain.Job, repoTarget port.Repository, txTa
 }
 
 // filterRef filters the references
-func (c *Copy) filterRef(field string, possibles map[int64]bool, cols map[string]int, rows[][]*string) ([][]*string, error) {
+func (c *Copy) filterRef(field string, possibles map[int64]bool, cols map[string]int, rows [][]*string) ([][]*string, error) {
 	iField, ok := cols[field]
 	if !ok {
 		return nil, errors.New(port.ErrFieldNotFound)
@@ -123,7 +123,7 @@ func (c *Copy) filterRef(field string, possibles map[int64]bool, cols map[string
 }
 
 // getRefRange gets the reference range of ids based on the source data
-func (c *Copy) getRefRange(field string, cols map[string]int, rows[][]*string) (int64, int64, error) {
+func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) (int64, int64, error) {
 	iField, ok := cols[field]
 	if !ok {
 		return 0, 0, errors.New(port.ErrFieldNotFound)
