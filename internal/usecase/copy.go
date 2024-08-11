@@ -38,7 +38,7 @@ func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port
 		return "", err
 	}
 	if len(rows) == 0 {
-		return "", nil
+		return "nothing to do", nil
 	}
 	getLen := len(rows)
 	if rows, err = c.filterRefs(refs, cols, rows, repoTarget, txTarget); err != nil {
