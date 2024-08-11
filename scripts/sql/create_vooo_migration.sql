@@ -81,6 +81,7 @@ DROP TABLE IF EXISTS `reference`;
 CREATE TABLE `reference` (
   `referrer` bigint(20) NOT NULL,
   `referred` bigint(20) NOT NULL,
+  `field` varchar(100) NOT NULL DEFAULT 'id',
   PRIMARY KEY (`referrer`, `referred`),
   KEY `referred` (`referred`),
   KEY `referrer` (`referrer`),

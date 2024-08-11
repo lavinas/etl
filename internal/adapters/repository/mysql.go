@@ -251,18 +251,15 @@ func (r *MySql) Exec(tx interface{}, sql string, args ...interface{}) (int64, er
 func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
 	sshConn, err := sshConnect(ssh)
 	if err != nil {
-		fmt.Println(1)
 		return nil, nil, nil, err
 	}
 	db, err := sql.Open("mysql", dns)
 	if err != nil {
-		fmt.Println(2)
 		return nil, nil, nil, err
 	}
 	config := gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}
 	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
 	if err != nil {
-		fmt.Println(3)
 		return nil, nil, nil, err
 	}
 	return gormDb, db, sshConn, nil

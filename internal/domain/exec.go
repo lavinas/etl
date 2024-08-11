@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"errors"
+	"strconv"
 	"time"
 
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -24,11 +26,20 @@ func (l *Exec) Init(repo port.Repository, jobId int64) error {
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	if err := repo.Add(tx, l); err != nil {
-
 		return err
 	}
 	if err := repo.Commit(tx); err != nil {
 		return err
+	}
+	return nil
+}
+
+// LoadLock loads the job entity with lock
+func (l *Exec) LoadLock(repo port.Repository, tx interface{}) error {
+	if ok, err := repo.Get(tx, l, strconv.FormatInt(l.Id, 10), true); err != nil {
+		return err
+	} else if !ok {
+		return errors.New(port.ErrJobNotFound)
 	}
 	return nil
 }

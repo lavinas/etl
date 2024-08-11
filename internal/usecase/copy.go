@@ -28,26 +28,120 @@ func NewCopy() *Copy {
 }
 
 // Run runs the use case
-func (c *Copy) Run(job port.Domain, repoSource port.Repository, repoTarget port.Repository, txTarget interface{}) (int64, error) {
+func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port.Repository, repoTarget port.Repository, txTarget interface{}) (string, error) {
 	j := job.(*domain.Job)
 	if j.Type != "table" {
-		return 0, errors.New(port.ErrJobTypeNotImplemented)
+		return "", errors.New(port.ErrJobTypeNotImplemented)
 	}
 	cols, rows, err := c.getSource(repoSource, j)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	if len(rows) == 0 {
-		return 0, nil
+		return "", nil
+	}
+	getLen := len(rows)
+	if rows, err = c.filterRefs(refs, cols, rows, repoTarget, txTarget); err != nil {
+		return "", err
 	}
 	_, err = c.putSource(repoTarget, txTarget, c.mountInsert(j.Base, j.Object, cols, rows))
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	if err := c.setJob(j, cols, rows, repoTarget, txTarget); err != nil {
-		return 0, err
+		return "", err
 	}
-	return int64(len(rows)), nil
+	return fmt.Sprintf("%d rows processed, %d copied", getLen, len(rows)), nil
+}
+
+// filterRefs filters the references
+func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows[][]*string, repo port.Repository, tx interface{}) ([][]*string, error) {
+	colsMap := make(map[string]int)
+	for i, col := range cols {
+		colsMap[col] = i
+	}
+	for field, ref := range refs {
+		min, max, err := c.getRefRange(field, colsMap, rows)
+		if err != nil {
+			return nil, err
+		}
+		iref := ref.(*domain.Job)
+		if max > iref.Last {
+			return nil, fmt.Errorf(port.ErrReferenceNotDone, iref.Name)
+		}
+		possibles, err := c.getRefPossibles(iref, repo, tx, min, max)
+		if err != nil {
+			return nil, err
+		}
+		rows, err = c.filterRef(field, possibles, colsMap, rows)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return rows, nil
+}
+
+// getRefPossibles gets the possible references
+func (c *Copy) getRefPossibles(job *domain.Job, repoTarget port.Repository, txTarget interface{}, min int64, max int64) (map[int64]bool, error) {
+	sql := fmt.Sprintf(sqlrow, job.Object, job.Field, min-1, job.Field, max, job.Field)
+	cols, rows, err := repoTarget.Query(txTarget, sql)
+	if err != nil {
+		return nil, err
+	}
+	icol, err := c.getColumn(cols, job.Field)
+	if err != nil {
+		return nil, err
+	}
+	possibles := make(map[int64]bool)
+	for _, row := range rows {
+		val, err := strconv.ParseInt(*row[icol], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		possibles[val] = true
+	}
+	return possibles, nil
+}
+
+// filterRef filters the references
+func (c *Copy) filterRef(field string, possibles map[int64]bool, cols map[string]int, rows[][]*string) ([][]*string, error) {
+	iField, ok := cols[field]
+	if !ok {
+		return nil, errors.New(port.ErrFieldNotFound)
+	}
+	var filtered [][]*string
+	for _, row := range rows {
+		val, err := strconv.ParseInt(*row[iField], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := possibles[val]; ok {
+			filtered = append(filtered, row)
+		}
+	}
+	return filtered, nil
+}
+
+// getRefRange gets the reference range of ids based on the source data
+func (c *Copy) getRefRange(field string, cols map[string]int, rows[][]*string) (int64, int64, error) {
+	iField, ok := cols[field]
+	if !ok {
+		return 0, 0, errors.New(port.ErrFieldNotFound)
+	}
+	var min, max int64
+	for _, row := range rows {
+		val, err := strconv.ParseInt(*row[iField], 10, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+		if min == 0 || val < min {
+			min = val
+		}
+		if val > max {
+			max = val
+		}
+	}
+	return min, max, nil
 }
 
 // getSource gets the source data for the insert
@@ -80,7 +174,7 @@ func (c *Copy) putSource(repoTarget port.Repository, txTarget interface{}, cmd s
 }
 
 // setJob sets the job last id
-func (c *Copy) setJob(job *domain.Job, cols []string, rows[][]*string, repoTarget port.Repository, txTarget interface{}) error {
+func (c *Copy) setJob(job *domain.Job, cols []string, rows [][]*string, repoTarget port.Repository, txTarget interface{}) error {
 	last, err := c.getLast(cols, rows, job.Field)
 	if err != nil {
 		return err
@@ -94,22 +188,15 @@ func (c *Copy) setJob(job *domain.Job, cols []string, rows[][]*string, repoTarge
 
 // getLast gets the last id from the source
 func (c *Copy) getLast(cols []string, rows [][]*string, field string) (int64, error) {
-	iField := -1
-	for i, col := range cols {
-		if col == field {
-			iField = i
-			break
-		}
-	}
-	if iField == -1 {
-		return 0, errors.New(port.ErrFieldNotFound)
+	iField, err := c.getColumn(cols, field)
+	if err != nil {
+		return 0, err
 	}
 	last := rows[len(rows)-1][iField]
 	ilast, err := strconv.ParseInt(*last, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("last", ilast)
 	return ilast, nil
 }
 
@@ -143,4 +230,14 @@ func (c *Copy) formatValue(col *string) string {
 	ret = strings.Replace(ret, "\r", "", -1)
 	ret = strings.Replace(ret, "\t", "", -1)
 	return fmt.Sprintf("'%s'", ret)
+}
+
+// getColumns gets the columns of the table
+func (c *Copy) getColumn(cols []string, field string) (int, error) {
+	for i, col := range cols {
+		if col == field {
+			return i, nil
+		}
+	}
+	return -1, errors.New(port.ErrFieldNotFound)
 }

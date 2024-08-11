@@ -14,4 +14,6 @@ const (
 	ErrActionNotFound          = "action not found"
 	ErrJobTypeNotImplemented   = "job type not implemented"
 	ErrFieldNotFound           = "field not found"
+	ErrReferenceNotFound       = "reference not found"
+	ErrReferenceNotDone        = "reference %s not done"
 )

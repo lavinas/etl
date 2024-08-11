@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -34,56 +33,60 @@ func (r *Run) RunJob(jobId int64) (string, error) {
 		return "", err
 	}
 	var status, detail string
-	if qtt, err := r.run(jobId); err != nil {
+	if message, err := r.run(jobId); err != nil {
 		status = "error"
 		detail = err.Error()
 	} else {
 		status = "success"
-		detail = fmt.Sprintf("%v processed", qtt)
+		detail = message
 	}
 	if err := exec.SetStatus(r.RepoTarget, status, detail); err != nil {
 		return "", err
 	}
 	if status == "error" {
+
 		return "", errors.New(detail)
 	}
 	return detail, nil
 }
 
 // run runs the use case
-func (r *Run) run(jobId int64) (int64, error) {
+func (r *Run) run(jobId int64) (string, error) {
 	job := &domain.Job{Id: jobId}
 	txTarget := r.RepoTarget.Begin("")
 	defer r.RepoTarget.Rollback(txTarget)
 	if err := job.LoadLock(r.RepoTarget, txTarget); err != nil {
-		return 0, err
+		return "", err
 	}
 	action, ok := actionMap[job.Action]
 	if !ok {
-		return 0, errors.New(port.ErrActionNotFound)
+		return "", errors.New(port.ErrActionNotFound)
 	}
-	qtt, err := action.Run(job, r.RepoSource, r.RepoTarget, txTarget)
+	refs, err := r.getReferrences(jobId, r.RepoTarget, txTarget)
 	if err != nil {
-		return 0, err
+		return "", err
+	}
+	message, err := action.Run(job, refs, r.RepoSource, r.RepoTarget, txTarget)
+	if err != nil {
+		return "", err
 	}
 	if err := r.RepoTarget.Commit(txTarget); err != nil {
-		return 0, err
+		return "", err
 	}
-	return qtt, nil
+	return message, nil
 }
 
-
 // getReferences gets the references of the job
-func (r *Run) GetReferrences(jobId int64, repoTarged port.Repository, tx interface{}) ([]*domain.Job, error) {
+func (r *Run) getReferrences(jobId int64, repoTarged port.Repository, tx interface{}) (map[string]port.Domain, error) {
 	ref := &domain.Reference{Referrer: jobId}
 	refs, err := ref.GetByReferrer(repoTarged, tx)
 	if err != nil {
 		return nil, err
 	}
-	jobs := make([]*domain.Job, len(refs))
-	for i, r := range refs {
-		jobs[i] = &domain.Job{Id: r.Referred}
-		if err := jobs[i].LoadLock(repoTarged, tx); err != nil {
+	jobs := make(map[string]port.Domain, len(*refs))
+	for _, r := range *refs {
+		jobs[r.Field] = &domain.Job{Id: *r.Referred}
+		if err := jobs[r.Field].LoadLock(repoTarged, tx); err != nil {
 			return nil, err
 		}
 	}
