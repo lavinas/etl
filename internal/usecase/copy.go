@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
 const (
-	limit     = 100
+	limit     = 1000
 	disableFK = "SET FOREIGN_KEY_CHECKS = 0;"
 	enableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
 	sqlrow    = "SELECT * FROM %s WHERE %s > %d and %s <= %d order by %s;"
@@ -29,6 +30,7 @@ func NewCopy() *Copy {
 
 // Run runs the use case
 func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port.Repository, repoTarget port.Repository, txTarget interface{}) (string, error) {
+	now := time.Now()
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", errors.New(port.ErrJobTypeNotImplemented)
@@ -38,7 +40,7 @@ func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port
 		return "", err
 	}
 	if len(rows) == 0 {
-		return "nothing to do", nil
+		return fmt.Sprintf("0 processed in %v", time.Since(now)), nil
 	}
 	getLen := len(rows)
 	if rows, err = c.filterRefs(refs, cols, rows, repoTarget, txTarget); err != nil {
@@ -51,7 +53,7 @@ func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port
 	if err := c.setJob(j, cols, rows, repoTarget, txTarget); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%d rows processed, %d copied", getLen, len(rows)), nil
+	return fmt.Sprintf("%d rows processed, %d copied in %v", getLen, len(rows), time.Since(now)), nil
 }
 
 // filterRefs filters the references
