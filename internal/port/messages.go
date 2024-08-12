@@ -15,6 +15,6 @@ const (
 	ErrJobTypeNotImplemented   = "job type not implemented"
 	ErrFieldNotFound           = "field not found"
 	ErrReferenceNotFound       = "reference not found"
-	ErrReferenceNotDone        = "reference %s not done"
+	ErrReferenceNotDone        = "reference '%s' not done"
 	ErrAggregatorNotFound      = "aggregator not found"
 )

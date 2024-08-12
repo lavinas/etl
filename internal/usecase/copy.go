@@ -71,7 +71,7 @@ func (c *Copy) filterRefs(refereces interface{}, cols []string, rows [][]*string
 		colsMap[col] = i
 	}
 	for _, ref := range refs {
-		min, max, err := c.getRefRange(ref.FieldReferred, colsMap, rows)
+		min, max, err := c.getRefRange(ref.FieldReferrer, colsMap, rows)
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +82,7 @@ func (c *Copy) filterRefs(refereces interface{}, cols []string, rows [][]*string
 		if err != nil {
 			return nil, err
 		}
-		rows, err = c.filterRef(ref.FieldReferred, possibles, colsMap, rows)
+		rows, err = c.filterRef(ref.FieldReferrer, possibles, colsMap, rows)
 		if err != nil {
 			return nil, err
 		}

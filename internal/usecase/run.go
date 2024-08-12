@@ -87,7 +87,7 @@ func (r *Run) getReferences(jobId int64, tx interface{}) ([]References, error) {
 		if err := j.LoadLock(r.RepoTarget, tx); err != nil {
 			return nil, err
 		}
-		ret[i] = References{Id: j.Id, Name: j.Name, Base: j.Base, Last: j.Last, 
+		ret[i] = References{Id: j.Id, Name: j.Name, Base: j.Base, Object: j.Object, Last: j.Last, 
 			FieldReferrer: re.FieldReferrer, FieldReferred: re.FieldReferred}
 	}
 	return ret, nil
