@@ -11,29 +11,35 @@ import (
 )
 
 const (
-	copyLimit     = 1000
+	copyLimit     = 5000
 	copyDisableFK = "SET FOREIGN_KEY_CHECKS = 0;"
 	copyEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
 	copySelect    = "SELECT * FROM %s WHERE %s > %d and %s <= %d order by %s;"
-	copyInsert = "INSERT INTO %s.%s %s VALUES %s;"
+	copyInsert    = "INSERT INTO %s.%s %s VALUES %s;"
 )
 
 // Copy is a struct that represents the use case copy a object from database to another
 type Copy struct {
+	Base
 }
 
 // NewCopy creates a new use case
-func NewCopy() *Copy {
-	return &Copy{}
+func NewCopy(repoSource port.Repository, repoTarget port.Repository) *Copy {
+	return &Copy{
+		Base: Base{
+			RepoSource: repoSource,
+			RepoTarget: repoTarget,
+		},
+	}
 }
 
 // Run runs the use case
-func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port.Repository, repoTarget port.Repository, txTarget interface{}) (string, error) {
+func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, error) {
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", errors.New(port.ErrJobTypeNotImplemented)
 	}
-	cols, rows, err := c.getSource(repoSource, j)
+	cols, rows, err := c.getSource(j)
 	if err != nil {
 		return "", err
 	}
@@ -41,21 +47,22 @@ func (c *Copy) Run(job port.Domain, refs map[string]port.Domain, repoSource port
 		return "0 processed", nil
 	}
 	getLen := len(rows)
-	if rows, err = c.filterRefs(refs, cols, rows, repoTarget, txTarget); err != nil {
+	if rows, err = c.filterRefs(refs, cols, rows, txTarget); err != nil {
 		return "", err
 	}
-	_, err = c.putSource(repoTarget, txTarget, c.mountInsert(j.Base, j.Object, cols, rows))
+	_, err = c.putSource(txTarget, c.mountInsert(j.Base, j.Object, cols, rows))
 	if err != nil {
 		return "", err
 	}
-	if err := c.setJob(j, cols, rows, repoTarget, txTarget); err != nil {
+	if err := c.setJob(j, cols, rows, txTarget); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%d rows processed, %d copied", getLen, len(rows)), nil
 }
 
 // filterRefs filters the references
-func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows [][]*string, repo port.Repository, tx interface{}) ([][]*string, error) {
+func (c *Copy) filterRefs(refereces interface{}, cols []string, rows [][]*string, tx interface{}) ([][]*string, error) {
+	refs := refereces.([]References)
 	if len(refs) == 0 {
 		return rows, nil
 	}
@@ -63,20 +70,19 @@ func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows [][]*
 	for i, col := range cols {
 		colsMap[col] = i
 	}
-	for field, ref := range refs {
-		min, max, err := c.getRefRange(field, colsMap, rows)
+	for _, ref := range refs {
+		min, max, err := c.getRefRange(ref.FieldReferred, colsMap, rows)
 		if err != nil {
 			return nil, err
 		}
-		iref := ref.(*domain.Job)
-		if max > iref.Last {
-			return nil, fmt.Errorf(port.ErrReferenceNotDone, iref.Name)
+		if max > ref.Last {
+			return nil, fmt.Errorf(port.ErrReferenceNotDone, ref.Name)
 		}
-		possibles, err := c.getRefPossibles(iref, repo, tx, min, max)
+		possibles, err := c.getRefPossibles(&ref, min, max, tx)
 		if err != nil {
 			return nil, err
 		}
-		rows, err = c.filterRef(field, possibles, colsMap, rows)
+		rows, err = c.filterRef(ref.FieldReferred, possibles, colsMap, rows)
 		if err != nil {
 			return nil, err
 		}
@@ -85,13 +91,13 @@ func (c *Copy) filterRefs(refs map[string]port.Domain, cols []string, rows [][]*
 }
 
 // getRefPossibles gets the possible references
-func (c *Copy) getRefPossibles(job *domain.Job, repoTarget port.Repository, txTarget interface{}, min int64, max int64) (map[int64]bool, error) {
-	sql := fmt.Sprintf(copySelect, job.Object, job.Field, min-1, job.Field, max, job.Field)
-	cols, rows, err := repoTarget.Query(txTarget, sql)
+func (c *Copy) getRefPossibles(ref *References, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
+	sql := fmt.Sprintf(copySelect, ref.Object, ref.FieldReferred, min-1, ref.FieldReferred, max, ref.FieldReferred)
+	cols, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
 		return nil, err
 	}
-	icol, err := c.getColumn(cols, job.Field)
+	icol, err := c.getColumn(cols, ref.FieldReferred)
 	if err != nil {
 		return nil, err
 	}
@@ -148,11 +154,11 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 }
 
 // getSource gets the source data for the insert
-func (c *Copy) getSource(repoSource port.Repository, j *domain.Job) ([]string, [][]*string, error) {
-	txSource := repoSource.Begin(j.Base)
-	defer repoSource.Rollback(txSource)
+func (c *Copy) getSource(j *domain.Job) ([]string, [][]*string, error) {
+	txSource := c.RepoSource.Begin(j.Base)
+	defer c.RepoSource.Rollback(txSource)
 	sql := fmt.Sprintf(copySelect, j.Object, j.Field, j.Last, j.Field, j.Last+copyLimit, j.Field)
-	cols, rows, err := repoSource.Query(txSource, sql)
+	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -160,16 +166,16 @@ func (c *Copy) getSource(repoSource port.Repository, j *domain.Job) ([]string, [
 }
 
 // putSource puts the source data into the target
-func (c *Copy) putSource(repoTarget port.Repository, txTarget interface{}, cmd string) (int64, error) {
-	_, err := repoTarget.Exec(txTarget, copyDisableFK)
+func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
+	_, err := c.RepoTarget.Exec(txTarget, copyDisableFK)
 	if err != nil {
 		return 0, err
 	}
-	_, err = repoTarget.Exec(txTarget, cmd)
+	_, err = c.RepoTarget.Exec(txTarget, cmd)
 	if err != nil {
 		return 0, err
 	}
-	done, err := repoTarget.Exec(txTarget, copyEnableFK)
+	done, err := c.RepoTarget.Exec(txTarget, copyEnableFK)
 	if err != nil {
 		return 0, err
 	}
@@ -177,13 +183,13 @@ func (c *Copy) putSource(repoTarget port.Repository, txTarget interface{}, cmd s
 }
 
 // setJob sets the job last id
-func (c *Copy) setJob(job *domain.Job, cols []string, rows [][]*string, repoTarget port.Repository, txTarget interface{}) error {
+func (c *Copy) setJob(job *domain.Job, cols []string, rows [][]*string,txTarget interface{}) error {
 	last, err := c.getLast(cols, rows, job.Field)
 	if err != nil {
 		return err
 	}
 	job.Last = last
-	if err := job.Save(repoTarget, txTarget); err != nil {
+	if err := job.Save(c.RepoTarget, txTarget); err != nil {
 		return err
 	}
 	return nil

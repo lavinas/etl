@@ -24,7 +24,6 @@ import (
 	"github.com/lavinas/vooo-etl/pkg"
 )
 
-
 const (
 	logLevel = logger.Silent
 )

@@ -7,23 +7,19 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-var (
-	// actionMap is a map that represents the actions to run
-	actionMap = map[string]port.RunAction{
-		"loadClient": NewLoadClient(),
-		"copy":       NewCopy(),
-	}
-)
-
 // Run is a struct that represents the use case
 type Run struct {
-	RepoSource port.Repository
-	RepoTarget port.Repository
+	Base
 }
 
 // NewRun creates a new use case
 func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
-	return &Run{RepoSource: repoSource, RepoTarget: repoTarget}
+	return &Run{
+		Base: Base{
+			RepoSource: repoSource,
+			RepoTarget: repoTarget,
+		},
+	}
 }
 
 // Run runs the use case
@@ -57,15 +53,15 @@ func (r *Run) run(jobId int64) (string, error) {
 	if err := job.LoadLock(r.RepoTarget, txTarget); err != nil {
 		return "", err
 	}
-	action, ok := actionMap[job.Action]
-	if !ok {
-		return "", errors.New(port.ErrActionNotFound)
-	}
-	refs, err := r.getReferrences(jobId, r.RepoTarget, txTarget)
+	refs, err := r.getReferences(jobId, txTarget)
 	if err != nil {
 		return "", err
 	}
-	message, err := action.Run(job, refs, r.RepoSource, r.RepoTarget, txTarget)
+	action, err := r.factory(job.Action)
+	if err != nil {
+		return "", err
+	}
+	message, err := action.Run(job, refs, txTarget)
 	if err != nil {
 		return "", err
 	}
@@ -76,21 +72,34 @@ func (r *Run) run(jobId int64) (string, error) {
 }
 
 // getReferences gets the references of the job
-func (r *Run) getReferrences(jobId int64, repoTarged port.Repository, tx interface{}) (map[string]port.Domain, error) {
+func (r *Run) getReferences(jobId int64, tx interface{}) ([]References, error) {
 	ref := &domain.Reference{Referrer: jobId}
-	refs, err := ref.GetByReferrer(repoTarged, tx)
+	refs, err := ref.GetByReferrer(r.RepoTarget, tx)
 	if err != nil {
 		return nil, err
 	}
 	if refs == nil {
 		return nil, nil
 	}
-	jobs := make(map[string]port.Domain, len(*refs))
-	for _, r := range *refs {
-		jobs[r.Field] = &domain.Job{Id: *r.Referred}
-		if err := jobs[r.Field].LoadLock(repoTarged, tx); err != nil {
+	ret := make([]References, len(*refs))
+	for i, re := range *refs {
+		j := &domain.Job{Id: *re.Referred}
+		if err := j.LoadLock(r.RepoTarget, tx); err != nil {
 			return nil, err
 		}
+		ret[i] = References{Id: j.Id, Name: j.Name, Base: j.Base, Last: j.Last, 
+			FieldReferrer: re.FieldReferrer, FieldReferred: re.FieldReferred}
 	}
-	return jobs, nil
+	return ret, nil
+}
+
+// factoryAction creates a new action use case
+func (r *Run) factory(action string) (port.RunAction, error) {
+	switch action {
+	case "loadClient":
+		return NewLoadClient(r.RepoSource, r.RepoTarget), nil
+	case "copy":
+		return NewCopy(r.RepoSource, r.RepoTarget), nil
+	}
+	return nil, errors.New(port.ErrActionNotFound)
 }

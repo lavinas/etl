@@ -13,6 +13,6 @@ insert into job (id, name, type, action, base, object, field, last) values (100,
 insert into job (id, name, type, action, base, object, field, last) values (200, 'cliente copy', 'table', 'copy', 'vooo_prod_backend', 'client', 'id', 1076);
 
 
-insert into reference (referrer, referred, field) values (200, 100, 'id');
+insert into reference (referrer, referred, field) values (200, 100, 'id', 'id');
 
 commit;

@@ -10,45 +10,50 @@ import (
 )
 
 const (
-	loadClientLimit = 5000
+	loadClientLimit      = 5000
 	loadClientSourceBase = "vooo_prod_backend"
 	loadClientAggregator = "SELECT id FROM aggregator_ref;"
-	loadClientSelect = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"
-	loadClientInsert = "INSERT INTO client_ref VALUES %s;"
-	loadClientMax = "SELECT max(id) FROM client;"
-
+	loadClientSelect     = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"
+	loadClientInsert     = "INSERT INTO client_ref VALUES %s;"
+	loadClientMax        = "SELECT max(id) FROM client;"
 )
 
 // Copy is a struct that represents the use case copy a object from database to another
-type LoadClient struct {	
+type LoadClient struct {
+	Base
 }
 
 // NewCopy creates a new use case
-func NewLoadClient() *LoadClient {
-	return &LoadClient{}
+func NewLoadClient(repoSource port.Repository, repoTarget port.Repository) *LoadClient {
+	return &LoadClient{
+		Base: Base{
+			RepoSource: repoSource,
+			RepoTarget: repoTarget,
+		},
+	}
 }
 
 // Run runs the use case
-func (c *LoadClient) Run(job port.Domain, refs map[string]port.Domain, repoSource port.Repository, repoTarget port.Repository, txTarget interface{}) (string, error) {
+func (c *LoadClient) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, error) {
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", errors.New(port.ErrJobTypeNotImplemented)
 	}
-	aggregators, err := c.getAggregators(repoTarget, txTarget)
+	aggregators, err := c.getAggregators(txTarget)
 	if err != nil {
 		return "", err
 	}
-	ids, err := c.getSource(aggregators, j.Last, j.Last + loadClientLimit, repoSource)
+	ids, err := c.getSource(aggregators, j.Last, j.Last+loadClientLimit)
 	if err != nil {
 		return "", err
 	}
 	if len(ids) == 0 {
 		return "0 processed", nil
 	}
-	if err := c.insertTarget(ids, repoTarget, txTarget); err != nil {
+	if err := c.insertTarget(ids, txTarget); err != nil {
 		return "", err
 	}
-	processed, err := c.setJob(j, repoSource, repoTarget, txTarget)
+	processed, err := c.setJob(j, txTarget)
 	if err != nil {
 		return "", err
 	}
@@ -56,8 +61,8 @@ func (c *LoadClient) Run(job port.Domain, refs map[string]port.Domain, repoSourc
 }
 
 // getAggregators gets the aggregators from reference table
-func (c *LoadClient) getAggregators(repo port.Repository, tx interface{}) (string, error) {
-    _, rows, err := repo.Query(tx, loadClientAggregator)
+func (c *LoadClient) getAggregators(txTarget interface{}) (string, error) {
+	_, rows, err := c.RepoTarget.Query(txTarget, loadClientAggregator)
 	if err != nil {
 		return "", err
 	}
@@ -72,11 +77,11 @@ func (c *LoadClient) getAggregators(repo port.Repository, tx interface{}) (strin
 }
 
 // getSource gets the source data from the database
-func (c *LoadClient) getSource(aggregators string, initId int64, endId int64, repo port.Repository) ([][]*string, error) {
-	tx := repo.Begin(loadClientSourceBase)
-	defer repo.Rollback(tx)
+func (c *LoadClient) getSource(aggregators string, initId int64, endId int64) ([][]*string, error) {
+	tx := c.RepoSource.Begin(loadClientSourceBase)
+	defer c.RepoSource.Rollback(tx)
 	query := fmt.Sprintf(loadClientSelect, aggregators, initId, endId)
-	_, rows, err := repo.Query(tx, query)
+	_, rows, err := c.RepoSource.Query(tx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -84,14 +89,14 @@ func (c *LoadClient) getSource(aggregators string, initId int64, endId int64, re
 }
 
 // insertTarget inserts the data into the target database
-func (c *LoadClient) insertTarget(rows [][]*string, repo port.Repository, tx interface{}) error {
+func (c *LoadClient) insertTarget(rows [][]*string, txTarget interface{}) error {
 	clis := ""
 	for _, row := range rows {
 		clis += fmt.Sprintf("(%s),", *row[0])
 	}
 	clis = clis[:len(clis)-1]
 	query := fmt.Sprintf(loadClientInsert, clis)
-	_, err := repo.Exec(tx, query)
+	_, err := c.RepoTarget.Exec(txTarget, query)
 	if err != nil {
 		return err
 	}
@@ -99,9 +104,9 @@ func (c *LoadClient) insertTarget(rows [][]*string, repo port.Repository, tx int
 }
 
 // setJob sets the job with the last id processed
-func (c *LoadClient) setJob(job *domain.Job, repoSource port.Repository, repoTarget port.Repository, tx interface{}) (int64, error) {
+func (c *LoadClient) setJob(job *domain.Job, txTarget interface{}) (int64, error) {
 	last := job.Last + loadClientLimit
-	max, err := c.getMaxClient(repoSource)
+	max, err := c.getMaxClient()
 	if err != nil {
 		return 0, err
 	}
@@ -110,17 +115,17 @@ func (c *LoadClient) setJob(job *domain.Job, repoSource port.Repository, repoTar
 	}
 	processed := last - job.Last
 	job.Last = last
-	if err := job.Save(repoTarget, tx); err != nil {
+	if err := job.Save(c.RepoTarget, txTarget); err != nil {
 		return 0, err
 	}
 	return processed, nil
 }
 
 // getMaxClient gets the max id from the client table
-func (c *LoadClient) getMaxClient(repoSource port.Repository) (int64, error) {
-	tx := repoSource.Begin(loadClientSourceBase)
-	defer repoSource.Rollback(tx)
-	_, rows, err := repoSource.Query(tx, loadClientMax)
+func (c *LoadClient) getMaxClient() (int64, error) {
+	tx := c.RepoSource.Begin(loadClientSourceBase)
+	defer c.RepoSource.Rollback(tx)
+	_, rows, err := c.RepoSource.Query(tx, loadClientMax)
 	if err != nil {
 		return 0, err
 	}

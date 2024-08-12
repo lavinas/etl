@@ -8,9 +8,10 @@ import (
 
 // Reference represents the reference entity of application
 type Reference struct {
-	Referrer int64  `gorm:"type:bigint(20); not null; primaryKey"`
-	Referred *int64 `gorm:"type:bigint(20); not null; primaryKey"`
-	Field    string `gorm:"type:varchar(255); not null"`
+	Referrer      int64  `gorm:"type:bigint(20); not null; primaryKey"`
+	Referred      *int64 `gorm:"type:bigint(20); not null; primaryKey"`
+	FieldReferrer string `gorm:"type:varchar(100); not null"`
+	FieldReferred string `gorm:"type:varchar(100); not null"`
 }
 
 // NewReference creates a new reference entity
@@ -33,7 +34,8 @@ func (r *Reference) LoadLock(repo port.Repository, tx interface{}) error {
 	}
 	r.Referrer = ref[0].Referrer
 	r.Referred = ref[0].Referred
-	r.Field = ref[0].Field
+	r.FieldReferred = ref[0].FieldReferred
+	r.FieldReferrer = ref[0].FieldReferrer
 	return nil
 }
 
