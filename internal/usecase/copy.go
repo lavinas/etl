@@ -49,7 +49,7 @@ func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (str
 		return "", -1, err
 	}
 	if len(rows) == 0 {
-		return "0 processed", 0, nil
+		return "0 processed, 0 copied, 0 missing", 0, nil
 	}
 	if rows, err = c.filterRefs(refs, cols, rows, txTarget); err != nil {
 		return "", -1, err
