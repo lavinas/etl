@@ -39,7 +39,7 @@ func (j *Job) Load(repo port.Repository) error {
 }
 
 // GetAllOrdered gets all jobs ordered
-func (j *Job) GetAllOrdered(repo port.Repository) (*[]Job, error) {
+func (j *Job) GetAll(repo port.Repository) (*[]Job, error) {
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	jobs, _, err := repo.Find(tx, &Job{}, -1, false, "all")

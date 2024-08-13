@@ -43,7 +43,7 @@ func (r *Run) Run(args port.Args) (string, error) {
 // runAll runs all jobs in sequence
 func (r *Run) runAll() (string, error) {
 	job := &domain.Job{}
-	jobs, err := job.GetAllOrdered(r.RepoTarget)
+	jobs, err := job.GetAll(r.RepoTarget)
 	if err != nil {
 		return "", err
 	}
