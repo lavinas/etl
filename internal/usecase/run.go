@@ -24,7 +24,16 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 	}
 }
 
-// Run runs the use case
+// Run runs app with given parameters 
+func (r *Run) Run(args port.Args) (string, error) {
+	params := args.GetParams()
+	if jobId, ok := params["JobID"]; ok {
+		return r.RunJob(jobId.(int64))
+	}
+	return "", errors.New("not Implemented")
+}
+
+// Run runs a Job with a given id
 func (r *Run) RunJob(jobId int64) (string, error) {
 	exec := &domain.Exec{}
 	if err := exec.Init(r.RepoTarget, jobId); err != nil {

@@ -107,7 +107,6 @@ func (c *LoadClient) insertTarget(rows [][]*string, txTarget interface{}) error 
 func (c *LoadClient) setJob(job *domain.Job, txTarget interface{}) (int64, int64, error) {
 	last := job.Last + loadClientLimit
 	max, err := c.getMaxClient()
-	fmt.Println("max", max)
 	if err != nil {
 		return -1, -1, err
 	}
