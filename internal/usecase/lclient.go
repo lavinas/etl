@@ -54,7 +54,7 @@ func (c *LoadClient) Run(job port.Domain, refs interface{}, txTarget interface{}
 	if err != nil {
 		return "", -1, err
 	}
-	return fmt.Sprintf("%d processed, %d copied, %missing ", processed, len(ids), missing), missing, nil
+	return fmt.Sprintf("%d processed, %d copied, missing %d ", processed, len(ids), missing), missing, nil
 }
 
 // getAggregators gets the aggregators from reference table
