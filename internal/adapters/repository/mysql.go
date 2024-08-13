@@ -334,8 +334,7 @@ func parseSshDns(ssh string) (string, string, string, string, error) {
 func (r *MySql) find(stx *gorm.DB, obj interface{}, limit int, lock bool, extras ...interface{}) (interface{}, error) {
 	stx = stx.Session(&gorm.Session{})
 	sob := reflect.TypeOf(obj).Elem()
-	var err error
-	stx, err = r.where(stx, sob, obj, extras...)
+	stx, err := r.filterFind(stx, sob, obj, extras...)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +344,7 @@ func (r *MySql) find(stx *gorm.DB, obj interface{}, limit int, lock bool, extras
 	result := reflect.New(reflect.SliceOf(sob)).Interface()
 	if lock {
 		if stx = stx.Clauses(clause.Locking{Strength: "UPDATE"}); stx.Error != nil {
-			return nil, err
+			return nil, stx.Error
 		}
 	}
 	if stx = stx.Find(result); stx.Error != nil {
@@ -368,6 +367,25 @@ func (r *MySql) format(tx interface{}, obj interface{}) (*gorm.DB, error) {
 	}
 	if _, ok := obj.(port.Domain); !ok {
 		return nil, errors.New(port.ErrRepoInvalidObject)
+	}
+	return stx, nil
+}
+
+// filterFind filters the query based on extras params
+func (r *MySql) filterFind(stx *gorm.DB, sob reflect.Type, obj interface{}, extras ...interface{}) (*gorm.DB, error) {
+	all := false
+	if extras != nil {
+		e, ok := extras[0].(string)
+		if ok && e == "all" {
+			all = true
+		}
+	}
+	if !all {
+		var err error
+		stx, err = r.where(stx, sob, obj, extras...)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return stx, nil
 }

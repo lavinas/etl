@@ -17,4 +17,5 @@ const (
 	ErrReferenceNotFound       = "reference not found"
 	ErrReferenceNotDone        = "reference '%s' not done"
 	ErrAggregatorNotFound      = "aggregator not found"
+	ErrJobsNotFound            = "no jobs is found"
 )

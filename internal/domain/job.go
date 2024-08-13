@@ -38,6 +38,20 @@ func (j *Job) Load(repo port.Repository) error {
 	return nil
 }
 
+// GetAllOrdered gets all jobs ordered
+func (j *Job) GetAllOrdered(repo port.Repository) (*[]Job, error) {
+	tx := repo.Begin("")
+	defer repo.Rollback(tx)
+	jobs, _, err := repo.Find(tx, &Job{}, -1, false, "all")
+	if err != nil {
+		return nil, err
+	}
+	if jobs == nil {
+		return nil, errors.New(port.ErrJobsNotFound)
+	}
+	return jobs.(*[]Job), nil
+}
+
 // LoadLock loads the job entity with lock
 func (j *Job) LoadLock(repo port.Repository, tx interface{}) error {
 	if ok, err := repo.Get(tx, j, strconv.FormatInt(j.Id, 10), true); err != nil {

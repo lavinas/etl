@@ -9,6 +9,12 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
+const (
+	success       = "%s in %.4f seconds"
+	errorStatus   = "error"
+	successStatus = "success"
+)
+
 // Run is a struct that represents the use case
 type Run struct {
 	Base
@@ -24,46 +30,75 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 	}
 }
 
-// Run runs app with given parameters 
+// Run runs app with given parameters
 func (r *Run) Run(args port.Args) (string, error) {
 	params := args.GetParams()
 	if jobId, ok := params["JobID"]; ok {
-		return r.RunJob(jobId.(int64))
+		message, _, err := r.runJob(jobId.(int64))
+		return message, err
 	}
-	return "", errors.New("not Implemented")
+	return r.runAll()
+}
+
+// runAll runs all jobs in sequence
+func (r *Run) runAll() (string, error) {
+	job := &domain.Job{}
+	jobs, err := job.GetAllOrdered(r.RepoTarget)
+	if err != nil {
+		return "", err
+	}
+	for _, j := range *jobs {
+		_, err := r.runUntil(&j)
+		if err != nil {
+			return "", err
+		}
+	}
+	return "not implemented", nil
+}
+
+// runUntil runs all jobs until finish all registers
+func (r *Run) runUntil(job *domain.Job) (string, error) {
+	fmt.Println(job)
+	return "", nil
 }
 
 // Run runs a Job with a given id
-func (r *Run) RunJob(jobId int64) (string, error) {
+func (r *Run) runJob(jobId int64) (string, int64, error) {
 	exec := &domain.Exec{}
 	if err := exec.Init(r.RepoTarget, jobId); err != nil {
-		return "", err
+		return "", -1, err
 	}
+	status, detail, miss, dur := r.runPrepare(jobId)
+	if err := exec.SetStatus(r.RepoTarget, status, detail, miss, dur); err != nil {
+		return "", -1, err
+	}
+	if status == "error" {
+		return "", -1, errors.New(detail)
+	}
+	detail = fmt.Sprintf(success, detail, dur)
+	return detail, miss, nil
+}
+
+// runJob runs a job with a given id and returns the status, detail, missing and duration
+func (r *Run) runPrepare(jobId int64) (string, string, int64, float64) {
 	now := time.Now()
 	var status, detail string
 	var miss int64
-	if message, m, err := r.run(jobId); err != nil {
-		status = "error"
+	if message, m, err := r.runAtomic(jobId); err != nil {
+		status = errorStatus
 		detail = err.Error()
 		miss = -1
 	} else {
-		status = "success"
+		status = successStatus
 		detail = message
 		miss = m
 	}
 	dur := time.Since(now).Seconds()
-	if err := exec.SetStatus(r.RepoTarget, status, detail, miss, dur); err != nil {
-		return "", err
-	}
-	if status == "error" {
-		return "", errors.New(detail)
-	}
-	detail = fmt.Sprintf("%s in %.4f seconds", detail, dur)
-	return detail, nil
+	return status, detail, miss, dur
 }
 
 // run runs the use case
-func (r *Run) run(jobId int64) (string, int64, error) {
+func (r *Run) runAtomic(jobId int64) (string, int64, error) {
 	job := &domain.Job{Id: jobId}
 	txTarget := r.RepoTarget.Begin("")
 	defer r.RepoTarget.Rollback(txTarget)
