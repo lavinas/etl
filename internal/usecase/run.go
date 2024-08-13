@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -28,47 +30,53 @@ func (r *Run) RunJob(jobId int64) (string, error) {
 	if err := exec.Init(r.RepoTarget, jobId); err != nil {
 		return "", err
 	}
+	now := time.Now()
 	var status, detail string
-	if message, err := r.run(jobId); err != nil {
+	var miss int64
+	if message, m, err := r.run(jobId); err != nil {
 		status = "error"
 		detail = err.Error()
+		miss = -1
 	} else {
 		status = "success"
 		detail = message
+		miss = m
 	}
-	if err := exec.SetStatus(r.RepoTarget, status, detail); err != nil {
+	dur := time.Since(now).Seconds()
+	if err := exec.SetStatus(r.RepoTarget, status, detail, miss, dur); err != nil {
 		return "", err
 	}
 	if status == "error" {
 		return "", errors.New(detail)
 	}
+	detail = fmt.Sprintf("%s in %.4f seconds", detail, dur)
 	return detail, nil
 }
 
 // run runs the use case
-func (r *Run) run(jobId int64) (string, error) {
+func (r *Run) run(jobId int64) (string, int64, error) {
 	job := &domain.Job{Id: jobId}
 	txTarget := r.RepoTarget.Begin("")
 	defer r.RepoTarget.Rollback(txTarget)
 	if err := job.LoadLock(r.RepoTarget, txTarget); err != nil {
-		return "", err
+		return "", -1, err
 	}
 	refs, err := r.getReferences(jobId, txTarget)
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
 	action, err := r.factory(job.Action)
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
-	message, err := action.Run(job, refs, txTarget)
+	message, missing, err := action.Run(job, refs, txTarget)
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
 	if err := r.RepoTarget.Commit(txTarget); err != nil {
-		return "", err
+		return "", -1, err
 	}
-	return message, nil
+	return message, missing, nil
 }
 
 // getReferences gets the references of the job
@@ -87,7 +95,7 @@ func (r *Run) getReferences(jobId int64, tx interface{}) ([]References, error) {
 		if err := j.LoadLock(r.RepoTarget, tx); err != nil {
 			return nil, err
 		}
-		ret[i] = References{Id: j.Id, Name: j.Name, Base: j.Base, Object: j.Object, Last: j.Last, 
+		ret[i] = References{Id: j.Id, Name: j.Name, Base: j.Base, Object: j.Object, Last: j.Last,
 			FieldReferrer: re.FieldReferrer, FieldReferred: re.FieldReferred}
 	}
 	return ret, nil

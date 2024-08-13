@@ -5,11 +5,11 @@ import (
 )
 
 type References struct {
-	Id     int64
-	Name   string
-	Base   string
-	Object string
-	Last   int64
+	Id            int64
+	Name          string
+	Base          string
+	Object        string
+	Last          int64
 	FieldReferrer string
 	FieldReferred string
 }

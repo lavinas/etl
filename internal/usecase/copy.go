@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	copyLimit     = 5000
+	copyLimit     = 1000
 	copyDisableFK = "SET FOREIGN_KEY_CHECKS = 0;"
 	copyEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
-	copySelect    = "SELECT * FROM %s WHERE %s > %d and %s <= %d order by %s;"
+	copyMaxClient = "SELECT max(%s) FROM %s;"
+	copySelect    = "SELECT * FROM %s.%s WHERE %s > %d and %s <= %d order by %s;"
 	copyInsert    = "INSERT INTO %s.%s %s VALUES %s;"
 )
 
@@ -34,30 +35,35 @@ func NewCopy(repoSource port.Repository, repoTarget port.Repository) *Copy {
 }
 
 // Run runs the use case
-func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, error) {
+func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, int64, error) {
 	j := job.(*domain.Job)
 	if j.Type != "table" {
-		return "", errors.New(port.ErrJobTypeNotImplemented)
+		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	cols, rows, err := c.getSource(j)
+	limit, max, err := c.getLimits(j.Object, j.Field, j.Last)
 	if err != nil {
-		return "", err
+		return "", -1, err
+	}
+	cols, rows, err := c.getSource(j, limit)
+	if err != nil {
+		return "", -1, err
 	}
 	if len(rows) == 0 {
-		return "0 processed", nil
+		return "0 processed", 0, nil
 	}
-	getLen := len(rows)
 	if rows, err = c.filterRefs(refs, cols, rows, txTarget); err != nil {
-		return "", err
+		return "", -1, err
 	}
 	_, err = c.putSource(txTarget, c.mountInsert(j.Base, j.Object, cols, rows))
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
-	if err := c.setJob(j, cols, rows, txTarget); err != nil {
-		return "", err
+	missing := max - limit
+	processed := limit - j.Last
+	if err := c.setJob(j, limit, txTarget); err != nil {
+		return "", -1, err
 	}
-	return fmt.Sprintf("%d rows processed, %d copied", getLen, len(rows)), nil
+	return fmt.Sprintf("%d rows processed, %d copied, %d missing", processed, len(rows), missing), missing, nil
 }
 
 // filterRefs filters the references
@@ -92,7 +98,7 @@ func (c *Copy) filterRefs(refereces interface{}, cols []string, rows [][]*string
 
 // getRefPossibles gets the possible references
 func (c *Copy) getRefPossibles(ref *References, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
-	sql := fmt.Sprintf(copySelect, ref.Object, ref.FieldReferred, min-1, ref.FieldReferred, max, ref.FieldReferred)
+	sql := fmt.Sprintf(copySelect, ref.Base, ref.Object, ref.FieldReferred, min-1, ref.FieldReferred, max, ref.FieldReferred)
 	cols, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
 		return nil, err
@@ -154,10 +160,10 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 }
 
 // getSource gets the source data for the insert
-func (c *Copy) getSource(j *domain.Job) ([]string, [][]*string, error) {
+func (c *Copy) getSource(j *domain.Job, limit int64) ([]string, [][]*string, error) {
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
-	sql := fmt.Sprintf(copySelect, j.Object, j.Field, j.Last, j.Field, j.Last+copyLimit, j.Field)
+	sql := fmt.Sprintf(copySelect, j.Base, j.Object, j.Field, j.Last, j.Field, limit, j.Field)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -167,6 +173,9 @@ func (c *Copy) getSource(j *domain.Job) ([]string, [][]*string, error) {
 
 // putSource puts the source data into the target
 func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
+	if cmd == "" {
+		return 0, nil
+	}
 	_, err := c.RepoTarget.Exec(txTarget, copyDisableFK)
 	if err != nil {
 		return 0, err
@@ -183,11 +192,7 @@ func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
 }
 
 // setJob sets the job last id
-func (c *Copy) setJob(job *domain.Job, cols []string, rows [][]*string,txTarget interface{}) error {
-	last, err := c.getLast(cols, rows, job.Field)
-	if err != nil {
-		return err
-	}
+func (c *Copy) setJob(job *domain.Job, last int64, txTarget interface{}) error {
 	job.Last = last
 	if err := job.Save(c.RepoTarget, txTarget); err != nil {
 		return err
@@ -195,22 +200,11 @@ func (c *Copy) setJob(job *domain.Job, cols []string, rows [][]*string,txTarget 
 	return nil
 }
 
-// getLast gets the last id from the source
-func (c *Copy) getLast(cols []string, rows [][]*string, field string) (int64, error) {
-	iField, err := c.getColumn(cols, field)
-	if err != nil {
-		return 0, err
-	}
-	last := rows[len(rows)-1][iField]
-	ilast, err := strconv.ParseInt(*last, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return ilast, nil
-}
-
 // mountInsert mounts the insert sql
 func (c *Copy) mountInsert(base string, tablename string, cols []string, rows [][]*string) string {
+	if len(rows) == 0 {
+		return ""
+	}
 	strCols := "("
 	for _, col := range cols {
 		strCols += fmt.Sprintf("%s, ", col)
@@ -238,6 +232,7 @@ func (c *Copy) formatValue(col *string) string {
 	ret = strings.Replace(ret, "\n", "", -1)
 	ret = strings.Replace(ret, "\r", "", -1)
 	ret = strings.Replace(ret, "\t", "", -1)
+	ret = strings.Replace(ret, "0000-00-00 00:00:00", "2001-01-01 00:00:00", -1)
 	return fmt.Sprintf("'%s'", ret)
 }
 
@@ -249,4 +244,27 @@ func (c *Copy) getColumn(cols []string, field string) (int, error) {
 		}
 	}
 	return -1, errors.New(port.ErrFieldNotFound)
+}
+
+// getMaxClient gets the max id from the client table
+func (c *Copy) getLimits(object string, field string, last int64) (int64, int64, error) {
+	tx := c.RepoSource.Begin(loadClientSourceBase)
+	defer c.RepoSource.Rollback(tx)
+	q := fmt.Sprintf(copyMaxClient, field, object)
+	_, rows, err := c.RepoSource.Query(tx, q)
+	if err != nil {
+		return -1, -1, err
+	}
+	if len(rows) == 0 || rows[0] == nil {
+		return -1, -1, errors.New(port.ErrFieldNotFound)
+	}
+	max, err := strconv.ParseInt(*rows[0][0], 10, 64)
+	if err != nil {
+		return -1, -1, err
+	}
+	limit := last + copyLimit
+	if limit > max {
+		limit = max
+	}
+	return limit, max, nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	loadClientLimit      = 5000
+	loadClientLimit      = 1000
 	loadClientSourceBase = "vooo_prod_backend"
 	loadClientAggregator = "SELECT id FROM aggregator_ref;"
 	loadClientSelect     = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"
@@ -34,30 +34,27 @@ func NewLoadClient(repoSource port.Repository, repoTarget port.Repository) *Load
 }
 
 // Run runs the use case
-func (c *LoadClient) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, error) {
+func (c *LoadClient) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, int64, error) {
 	j := job.(*domain.Job)
 	if j.Type != "table" {
-		return "", errors.New(port.ErrJobTypeNotImplemented)
+		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
 	aggregators, err := c.getAggregators(txTarget)
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
 	ids, err := c.getSource(aggregators, j.Last, j.Last+loadClientLimit)
 	if err != nil {
-		return "", err
-	}
-	if len(ids) == 0 {
-		return "0 processed", nil
+		return "", -1, err
 	}
 	if err := c.insertTarget(ids, txTarget); err != nil {
-		return "", err
+		return "", -1, err
 	}
-	processed, err := c.setJob(j, txTarget)
+	processed, missing, err := c.setJob(j, txTarget)
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
-	return fmt.Sprintf("%d processed, %d copied ", processed, len(ids)), nil
+	return fmt.Sprintf("%d processed, %d copied, %missing ", processed, len(ids), missing), missing, nil
 }
 
 // getAggregators gets the aggregators from reference table
@@ -90,6 +87,9 @@ func (c *LoadClient) getSource(aggregators string, initId int64, endId int64) ([
 
 // insertTarget inserts the data into the target database
 func (c *LoadClient) insertTarget(rows [][]*string, txTarget interface{}) error {
+	if len(rows) == 0 {
+		return nil
+	}
 	clis := ""
 	for _, row := range rows {
 		clis += fmt.Sprintf("(%s),", *row[0])
@@ -104,21 +104,23 @@ func (c *LoadClient) insertTarget(rows [][]*string, txTarget interface{}) error 
 }
 
 // setJob sets the job with the last id processed
-func (c *LoadClient) setJob(job *domain.Job, txTarget interface{}) (int64, error) {
+func (c *LoadClient) setJob(job *domain.Job, txTarget interface{}) (int64, int64, error) {
 	last := job.Last + loadClientLimit
 	max, err := c.getMaxClient()
+	fmt.Println("max", max)
 	if err != nil {
-		return 0, err
+		return -1, -1, err
 	}
 	if last > max {
 		last = max
 	}
 	processed := last - job.Last
+	missing := max - last
 	job.Last = last
 	if err := job.Save(c.RepoTarget, txTarget); err != nil {
-		return 0, err
+		return -1, -1, err
 	}
-	return processed, nil
+	return processed, missing, nil
 }
 
 // getMaxClient gets the max id from the client table

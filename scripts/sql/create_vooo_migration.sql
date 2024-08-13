@@ -98,12 +98,14 @@ CREATE TABLE `reference` (
 DROP TABLE IF EXISTS `exec`;
 
 CREATE TABLE `exec` (
-  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `job_id` bigint(20) NOT NULL,
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `job_id` bigint NOT NULL,
   `start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `end` datetime NULL,
   `status` varchar(30) NOT NULL,
   `detail` varchar(255) NULL,
+  `missing` bigint NOT NULL DEFAULT '0',
+  `duration` decimal(10, 4) NOT NULL,
   KEY `job_id` (`job_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
