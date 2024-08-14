@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"regexp"
 	"unicode"
+	"time"
 
 	gmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -26,6 +27,7 @@ import (
 
 const (
 	logLevel = logger.Silent
+	timeout = time.Second * 10
 )
 
 // RepoMySql is the repository handler for the application
@@ -251,84 +253,6 @@ func (r *MySql) Exec(tx interface{}, sql string, args ...interface{}) (int64, er
 	return stx.RowsAffected, nil
 }
 
-// connect is a method that connects to the database
-func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
-	sshConn, err := sshConnect(ssh)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	db, err := sql.Open("mysql", dns)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	config := gorm.Config{Logger: logger.Default.LogMode(logLevel)}
-	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return gormDb, db, sshConn, nil
-}
-
-// sshConnect is a method that connects to the ssh server
-func sshConnect(ssh string) (*gssh.Client, error) {
-	if ssh == "" {
-		return nil, nil
-	}
-	var sshUser, sshKfile, sshHost, sshPort string
-	sshUser, sshKfile, sshHost, sshPort, err := parseSshDns(ssh)
-	if err != nil {
-		return nil, err
-	}
-	var agentClient agent.Agent
-	if conn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
-		defer conn.Close()
-		agentClient = agent.NewClient(conn)
-	}
-	pemBytes, err := os.ReadFile(sshKfile)
-	if err != nil {
-		return nil, err
-	}
-	signer, err := gssh.ParsePrivateKey(pemBytes)
-	if err != nil {
-		return nil, err
-	}
-	sshConfig := &gssh.ClientConfig{
-		User:            sshUser,
-		Auth:            []gssh.AuthMethod{gssh.PublicKeys(signer)},
-		HostKeyCallback: gssh.InsecureIgnoreHostKey(),
-	}
-	if agentClient != nil {
-		sshConfig.Auth = append(sshConfig.Auth, gssh.PublicKeysCallback(agentClient.Signers))
-	}
-	sshConn, err := gssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
-	if err != nil {
-		return nil, err
-	}
-	mysql.RegisterDialContext("mysql+tcp", func(_ context.Context, addr string) (net.Conn, error) {
-		return sshConn.Dial("tcp", addr)
-	})
-	return sshConn, nil
-}
-
-// parseSshDns is a method that parses the ssh dns
-func parseSshDns(ssh string) (string, string, string, string, error) {
-	pat := `^(\w+):(\w+)\(([^)]+)\)@(\w+)\(([^:]+):(\d+)\)$`
-	re := regexp.MustCompile(pat)
-	if !re.MatchString(ssh) {
-		return "", "", "", "", errors.New(port.ErrRepoSshInvalid)
-	}
-	m := re.FindStringSubmatch(ssh)
-	if len(m) != 7 {
-		return "", "", "", "", errors.New(port.ErrRepoSshInvalid)
-	}
-	if m[2] != "file" {
-		return "", "", "", "", errors.New(port.ErrRepoPassNotImplemented)
-	}
-	if m[4] != "tcp" {
-		return "", "", "", "", errors.New(port.ErrRepoProtoNotImplemented)
-	}
-	return m[1], m[3], m[5], m[6], nil
-}
 
 // find finds object based on obj, limit and extras params
 func (r *MySql) find(stx *gorm.DB, obj interface{}, limit int, lock bool, extras ...interface{}) (interface{}, error) {
@@ -468,4 +392,110 @@ func (r *MySql) queryFormatRow(values []interface{}) ([]*string, error) {
 		}
 	}
 	return row, nil
+}
+
+
+
+// connect is a function that connects to the database
+func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
+	sshConn, err := sshConnect(ssh)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	db, err := sql.Open("mysql", dns)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	config := gorm.Config{Logger: logger.Default.LogMode(logLevel)}
+	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return gormDb, db, sshConn, nil
+}
+
+// sshConnect is a method that connects to the ssh server
+func sshConnect(ssh string) (*gssh.Client, error) {
+	if ssh == "" {
+		return nil, nil
+	}
+	var sshUser, sshKfile, sshHost, sshPort string
+	sshUser, sshKfile, sshHost, sshPort, err := parseSshDns(ssh)
+	if err != nil {
+		return nil, err
+	}
+	var agentClient agent.Agent
+	if conn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
+		defer conn.Close()
+		agentClient = agent.NewClient(conn)
+	}
+	pemBytes, err := os.ReadFile(sshKfile)
+	if err != nil {
+		return nil, err
+	}
+	signer, err := gssh.ParsePrivateKey(pemBytes)
+	if err != nil {
+		return nil, err
+	}
+	sshConfig := &gssh.ClientConfig{
+		User:            sshUser,
+		Auth:            []gssh.AuthMethod{gssh.PublicKeys(signer)},
+		HostKeyCallback: gssh.InsecureIgnoreHostKey(),
+	}
+	if agentClient != nil {
+		sshConfig.Auth = append(sshConfig.Auth, gssh.PublicKeysCallback(agentClient.Signers))
+	}
+	// sshConn, err := gssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
+	sshConn, err := dialTimeout(sshHost, sshPort, sshConfig)
+	if err != nil {
+		return nil, err
+	}
+	mysql.RegisterDialContext("mysql+tcp", func(_ context.Context, addr string) (net.Conn, error) {
+		return sshConn.Dial("tcp", addr)
+	})
+	return sshConn, nil
+}
+
+// dialTimeout is a method that dials the ssh server with timeout
+func dialTimeout(sshHost, sshPort string, sshConfig *gssh.ClientConfig) (*gssh.Client, error) {
+	ch := make(chan *gssh.Client, 1)
+	ech := make(chan error, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	go func() {
+		conn, err := gssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)
+		if err != nil {
+			ech <- err
+			return
+		}
+		ch <- conn
+	}()
+	select {
+	case conn := <-ch:
+		return conn, nil
+	case err := <-ech:
+		return nil, err
+	case <-ctx.Done():
+		return nil, errors.New(port.ErrRepoSshTimeout)
+	}
+}
+
+// parseSshDns is a method that parses the ssh dns
+func parseSshDns(ssh string) (string, string, string, string, error) {
+	pat := `^(\w+):(\w+)\(([^)]+)\)@(\w+)\(([^:]+):(\d+)\)$`
+	re := regexp.MustCompile(pat)
+	if !re.MatchString(ssh) {
+		return "", "", "", "", errors.New(port.ErrRepoSshInvalid)
+	}
+	m := re.FindStringSubmatch(ssh)
+	if len(m) != 7 {
+		return "", "", "", "", errors.New(port.ErrRepoSshInvalid)
+	}
+	if m[2] != "file" {
+		return "", "", "", "", errors.New(port.ErrRepoPassNotImplemented)
+	}
+	if m[4] != "tcp" {
+		return "", "", "", "", errors.New(port.ErrRepoProtoNotImplemented)
+	}
+	return m[1], m[3], m[5], m[6], nil
 }

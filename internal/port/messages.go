@@ -18,4 +18,5 @@ const (
 	ErrReferenceNotDone        = "reference '%s' not done"
 	ErrAggregatorNotFound      = "aggregator not found"
 	ErrJobsNotFound            = "no jobs is found"
+	ErrRepoSshTimeout          = "ssh timeout connecting to database"
 )
