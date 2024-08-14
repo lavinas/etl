@@ -34,10 +34,16 @@ func (a *Args) GetParams() map[string]interface{} {
 // Run runs the command line handler
 func (c *CommandLine) Run() {
 	args := Args{}
-	p := arg.MustParse(&args)
-	if message, err := c.usecase.Run(&args); err != nil {
-		p.Fail(err.Error())
-	} else {
-		fmt.Printf("ok: %s\nexit status 0\n", message)
+	arg.MustParse(&args)
+	messageChan := make(chan string)
+	defer close(messageChan)
+	go c.usecase.Run(&args, messageChan)
+	for message := range messageChan {
+		switch message {
+		case "<end>": 
+			return
+		default:
+			fmt.Println(message)
+		}
 	}
 }

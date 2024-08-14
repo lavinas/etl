@@ -13,6 +13,7 @@ const (
 	success       = "%s in %.4f seconds"
 	errorStatus   = "error"
 	successStatus = "success"
+	channelEnd    = "<end>"
 )
 
 // Run is a struct that represents the use case
@@ -31,35 +32,72 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 }
 
 // Run runs app with given parameters
-func (r *Run) Run(args port.Args) (string, error) {
-	params := args.GetParams()
-	if jobId, ok := params["JobID"]; ok {
-		message, _, err := r.runJob(jobId.(int64))
-		return message, err
-	}
-	return r.runAll()
-}
-
-// runAll runs all jobs in sequence
-func (r *Run) runAll() (string, error) {
-	job := &domain.Job{}
-	jobs, err := job.GetAll(r.RepoTarget)
+func (r *Run) Run(args port.Args, messageChan chan string) error {
+	defer r.finishRun(messageChan, time.Now())
+	jobs, err := r.getJobsId(args, r.RepoTarget)
 	if err != nil {
-		return "", err
+		message := fmt.Sprintf("error: %s", err.Error())
+		r.sendMessage(messageChan, message)
+		return errors.New(message)
 	}
 	for _, j := range *jobs {
-		_, err := r.runUntil(&j)
+		err := r.runUntil(&j, messageChan)
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
-	return "not implemented", nil
+	return nil
+}
+
+// getJobsId
+func (r *Run) getJobsId(args port.Args, repo port.Repository) (*[]domain.Job, error) {
+	job := domain.Job{}
+	params := args.GetParams()
+	if jobId, ok := params["JobID"]; ok {
+		job.Id = jobId.(int64)
+		if err := job.Load(repo); err != nil {
+			return nil, err
+		}
+		return &[]domain.Job{job}, nil
+	}
+	jobs, err := job.GetAll(repo)
+	if err != nil {
+		return nil, err
+	}
+	return jobs, err
+}
+
+
+// finishRun finishes the run
+func (r *Run) finishRun(messageChan chan string, start time.Time) {
+	message := fmt.Sprintf("executed in %.4f seconds", time.Since(start).Seconds())
+	r.sendMessage(messageChan, message)
+	r.sendMessage(messageChan, channelEnd)
 }
 
 // runUntil runs all jobs until finish all registers
-func (r *Run) runUntil(job *domain.Job) (string, error) {
-	fmt.Println(job)
-	return "", nil
+func (r *Run) runUntil(job *domain.Job, messageChan chan string) error {
+	for {
+		message, missing, err := r.runJob(job.Id)
+		if err != nil {
+			message = fmt.Sprintf("%d (%s): Error: %s", job.Id, job.Name, message)
+			r.sendMessage(messageChan, message)
+			return errors.New(message)
+		}
+		message = fmt.Sprintf("%d (%s): Ok: %s", job.Id, job.Name, message)
+		r.sendMessage(messageChan, message)
+		if missing == 0 {
+			break
+		}
+	}
+	return nil
+}
+
+// sendMessage sends a message to the channel
+func (r *Run) sendMessage(messageChan chan string, message string) {
+	if messageChan != nil {
+		messageChan <- message
+	}
 }
 
 // Run runs a Job with a given id

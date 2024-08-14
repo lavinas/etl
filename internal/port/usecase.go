@@ -8,5 +8,5 @@ type RunAction interface {
 
 // UseCase is a interface that represents the use case to run
 type UseCase interface {
-	Run(Args) (string, error)
+	Run(args Args, messageChan chan string) error
 }

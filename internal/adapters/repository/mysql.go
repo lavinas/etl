@@ -394,8 +394,6 @@ func (r *MySql) queryFormatRow(values []interface{}) ([]*string, error) {
 	return row, nil
 }
 
-
-
 // connect is a function that connects to the database
 func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
 	sshConn, err := sshConnect(ssh)
