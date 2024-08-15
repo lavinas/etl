@@ -34,14 +34,15 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 // Run runs app with given parameters
 func (r *Run) Run(args port.Args, messageChan chan string) error {
 	defer r.finishRun(messageChan, time.Now())
-	jobs, err := r.getJobsId(args, r.RepoTarget)
+	jobId, shifts := r.getArgs(args)
+	jobs, err := r.getJobsId(jobId, r.RepoTarget)
 	if err != nil {
 		message := fmt.Sprintf("error: %s", err.Error())
 		r.sendMessage(messageChan, message)
 		return errors.New(message)
 	}
 	for _, j := range *jobs {
-		err := r.runUntil(&j, messageChan)
+		err := r.runUntil(&j, messageChan, shifts)
 		if err != nil {
 			return err
 		}
@@ -49,16 +50,29 @@ func (r *Run) Run(args port.Args, messageChan chan string) error {
 	return nil
 }
 
-// getJobsId
-func (r *Run) getJobsId(args port.Args, repo port.Repository) (*[]domain.Job, error) {
-	job := domain.Job{}
+// getArgs gets the arguments
+func (r *Run) getArgs(args port.Args) (int64, int64) {
 	params := args.GetParams()
-	if jobId, ok := params["JobID"]; ok {
-		job.Id = jobId.(int64)
-		if err := job.Load(repo); err != nil {
-			return nil, err
-		}
-		return &[]domain.Job{job}, nil
+	var jobId, shifts int64
+	if id, ok := params["JobID"]; ok {
+		jobId = id.(int64)
+	} else {
+		jobId = -1
+	}
+	if s, ok := params["Shifts"]; ok {
+		shifts = s.(int64)
+	} else {
+		shifts = -1
+
+	}
+	return jobId, shifts
+}
+
+// getJobsId
+func (r *Run) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, error) {
+	job := domain.Job{}
+	if jobId != -1 {
+		return &[]domain.Job{{Id: jobId}}, nil
 	}
 	jobs, err := job.GetAll(repo)
 	if err != nil {
@@ -76,7 +90,8 @@ func (r *Run) finishRun(messageChan chan string, start time.Time) {
 }
 
 // runUntil runs all jobs until finish all registers
-func (r *Run) runUntil(job *domain.Job, messageChan chan string) error {
+func (r *Run) runUntil(job *domain.Job, messageChan chan string, shifts int64) error {
+	count := int64(1)
 	for {
 		message, missing, err := r.runJob(job.Id)
 		if err != nil {
@@ -84,9 +99,9 @@ func (r *Run) runUntil(job *domain.Job, messageChan chan string) error {
 			r.sendMessage(messageChan, message)
 			return errors.New(message)
 		}
-		message = fmt.Sprintf("%d (%s): Ok: %s", job.Id, job.Name, message)
+		message = fmt.Sprintf("%d (%s): Ok: %s - shift %d", job.Id, job.Name, message, count)
 		r.sendMessage(messageChan, message)
-		if missing == 0 {
+		if missing == 0 || (shifts != -1 && count >= shifts) {
 			break
 		}
 	}
