@@ -19,4 +19,6 @@ const (
 	ErrAggregatorNotFound      = "aggregator not found"
 	ErrJobsNotFound            = "no jobs is found"
 	ErrRepoSshTimeout          = "ssh timeout connecting to database"
+	ErrFieldReferrerNotFound   = "referrer field not found in reference table"
+	ErrFieldReferredNotFound   = "referred field not found in reference table"
 )

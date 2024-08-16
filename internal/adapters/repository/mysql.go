@@ -9,8 +9,8 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"unicode"
 	"time"
+	"unicode"
 
 	gmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -27,7 +27,7 @@ import (
 
 const (
 	logLevel = logger.Silent
-	timeout = time.Second * 10
+	timeout  = time.Second * 10
 )
 
 // RepoMySql is the repository handler for the application
@@ -252,7 +252,6 @@ func (r *MySql) Exec(tx interface{}, sql string, args ...interface{}) (int64, er
 	}
 	return stx.RowsAffected, nil
 }
-
 
 // find finds object based on obj, limit and extras params
 func (r *MySql) find(stx *gorm.DB, obj interface{}, limit int, lock bool, extras ...interface{}) (interface{}, error) {

@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	copyLimit     = 1000
 	copyDisableFK = "SET FOREIGN_KEY_CHECKS = 0;"
 	copyEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
 	copyMaxClient = "SELECT max(%s) FROM %s;"
@@ -40,7 +39,7 @@ func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (str
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	limit, max, err := c.getLimits(j.Object, j.Field, j.Last)
+	limit, max, err := c.getLimits(j.Object, j.Field, j.Last, j.Limit)
 	if err != nil {
 		return "", -1, err
 	}
@@ -122,7 +121,7 @@ func (c *Copy) getRefPossibles(ref *References, min int64, max int64, txTarget i
 func (c *Copy) filterRef(field string, possibles map[int64]bool, cols map[string]int, rows [][]*string) ([][]*string, error) {
 	iField, ok := cols[field]
 	if !ok {
-		return nil, errors.New(port.ErrFieldNotFound)
+		return nil, errors.New(port.ErrFieldReferrerNotFound)
 	}
 	var filtered [][]*string
 	for _, row := range rows {
@@ -141,7 +140,7 @@ func (c *Copy) filterRef(field string, possibles map[int64]bool, cols map[string
 func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) (int64, int64, error) {
 	iField, ok := cols[field]
 	if !ok {
-		return 0, 0, errors.New(port.ErrFieldNotFound)
+		return 0, 0, errors.New(port.ErrFieldReferrerNotFound)
 	}
 	var min, max int64
 	for _, row := range rows {
@@ -243,11 +242,11 @@ func (c *Copy) getColumn(cols []string, field string) (int, error) {
 			return i, nil
 		}
 	}
-	return -1, errors.New(port.ErrFieldNotFound)
+	return -1, errors.New(port.ErrFieldReferredNotFound)
 }
 
 // getMaxClient gets the max id from the client table
-func (c *Copy) getLimits(object string, field string, last int64) (int64, int64, error) {
+func (c *Copy) getLimits(object string, field string, last int64, limit int64) (int64, int64, error) {
 	tx := c.RepoSource.Begin(loadClientSourceBase)
 	defer c.RepoSource.Rollback(tx)
 	q := fmt.Sprintf(copyMaxClient, field, object)
@@ -262,9 +261,9 @@ func (c *Copy) getLimits(object string, field string, last int64) (int64, int64,
 	if err != nil {
 		return -1, -1, err
 	}
-	limit := last + copyLimit
-	if limit > max {
-		limit = max
+	l := last + limit
+	if l > max {
+		l = max
 	}
-	return limit, max, nil
+	return l, max, nil
 }

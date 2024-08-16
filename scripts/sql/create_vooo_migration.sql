@@ -60,14 +60,15 @@ DROP TABLE IF EXISTS `job`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `job` (
-  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   `type` varchar(30) NOT NULL DEFAULT 'table',
   `action` varchar(30) NOT NULL DEFAULT 'insert',
   `base` varchar(100) NOT NULL,
   `object` varchar(100) NOT NULL,
   `field` varchar(100) NOT NULL DEFAULT 'id',
-  `last` bigint(20) NOT NULL DEFAULT '0'
+  `last` bigint NOT NULL DEFAULT '0',
+  `limit` bigint NOT NULL DEFAULT '1000'
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -79,8 +80,8 @@ DROP TABLE IF EXISTS `reference`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `reference` (
-  `referrer` bigint(20) NOT NULL,
-  `referred` bigint(20) NOT NULL,
+  `referrer` bigint NOT NULL,
+  `referred` bigint NOT NULL,
   `field_referrer` varchar(100) NOT NULL DEFAULT 'id',
   `field_referred` varchar(100) NOT NULL DEFAULT 'id',
   PRIMARY KEY (`referrer`, `referred`),

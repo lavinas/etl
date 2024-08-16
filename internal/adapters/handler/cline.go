@@ -9,7 +9,7 @@ import (
 
 // args is a struct that represents the command line arguments
 type Args struct {
-	JobID int64 `arg:"-i,--id" default:"-1" help:"id of the job to run. Default is all jobs"`
+	JobID  int64 `arg:"-i,--id" default:"-1" help:"id of the job to run. Default is all jobs"`
 	Shifts int64 `arg:"-s,--shifts" default:"-1" help:"Shifts to run. Default is ilimited. Values less than 1, 1 is assumed"`
 }
 
@@ -44,7 +44,7 @@ func (c *CommandLine) Run() {
 	go c.usecase.Run(&args, messageChan)
 	for message := range messageChan {
 		switch message {
-		case "<end>": 
+		case "<end>":
 			return
 		default:
 			fmt.Println(message)

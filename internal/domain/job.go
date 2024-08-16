@@ -24,6 +24,7 @@ type Job struct {
 	Object string `gorm:"type:varchar(255); not null"`
 	Field  string `gorm:"type:varchar(100); not null"`
 	Last   int64  `gorm:"type:bigint(20); not null"`
+	Limit  int64  `gorm:"type:bigint(20); not null"`
 }
 
 // Load loads the job entity

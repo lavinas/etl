@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	loadClientLimit      = 1000
 	loadClientSourceBase = "vooo_prod_backend"
 	loadClientAggregator = "SELECT id FROM aggregator_ref;"
 	loadClientSelect     = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"
@@ -43,7 +42,7 @@ func (c *LoadClient) Run(job port.Domain, refs interface{}, txTarget interface{}
 	if err != nil {
 		return "", -1, err
 	}
-	ids, err := c.getSource(aggregators, j.Last, j.Last+loadClientLimit)
+	ids, err := c.getSource(aggregators, j.Last, j.Last+j.Limit)
 	if err != nil {
 		return "", -1, err
 	}
@@ -105,7 +104,7 @@ func (c *LoadClient) insertTarget(rows [][]*string, txTarget interface{}) error 
 
 // setJob sets the job with the last id processed
 func (c *LoadClient) setJob(job *domain.Job, txTarget interface{}) (int64, int64, error) {
-	last := job.Last + loadClientLimit
+	last := job.Last + job.Limit
 	max, err := c.getMaxClient()
 	if err != nil {
 		return -1, -1, err

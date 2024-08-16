@@ -72,7 +72,11 @@ func (r *Run) getArgs(args port.Args) (int64, int64) {
 func (r *Run) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, error) {
 	job := domain.Job{}
 	if jobId != -1 {
-		return &[]domain.Job{{Id: jobId}}, nil
+		job.Id = jobId
+		if err := job.Load(repo); err != nil {
+			return nil, err
+		}
+		return &[]domain.Job{job}, nil
 	}
 	jobs, err := job.GetAll(repo)
 	if err != nil {
@@ -80,7 +84,6 @@ func (r *Run) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, error
 	}
 	return jobs, err
 }
-
 
 // finishRun finishes the run
 func (r *Run) finishRun(messageChan chan string, start time.Time) {
@@ -95,7 +98,7 @@ func (r *Run) runUntil(job *domain.Job, messageChan chan string, shifts int64) e
 	for {
 		message, missing, err := r.runJob(job.Id)
 		if err != nil {
-			message = fmt.Sprintf("%d (%s): Error: %s", job.Id, job.Name, message)
+			message = fmt.Sprintf("%d (%s): Error: %s", job.Id, job.Name, err.Error())
 			r.sendMessage(messageChan, message)
 			return errors.New(message)
 		}

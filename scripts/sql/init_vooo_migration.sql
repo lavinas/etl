@@ -9,11 +9,12 @@ insert into client_ref (id) values (1507); -- epag
 insert into client_ref (id) values (2210); -- tradio
 
 
-insert into job (id, name, type, action, base, object, field, last) values (100, 'cliente load', 'table', 'loadClient', 'vooo_migration', 'client_ref', 'id', 0);
-insert into job (id, name, type, action, base, object, field, last) values (200, 'cliente copy', 'table', 'copy', 'vooo_prod_backend', 'client', 'id', 0);
-insert into job (id, name, type, action, base, object, field, last) values (300, 'document copy', 'table', 'copy', 'vooo_prod_backend', 'document', 'id', 0);
-
+insert into job (id, name, type, action, base, object, field, last, limit) values (100, 'initial_load', 'table', 'loadClient', 'vooo_migration', 'client_ref', 'id', 0, 1000);
+insert into job (id, name, type, action, base, object, field, last, limit) values (200, 'cliente', 'table', 'copy', 'vooo_prod_backend', 'client', 'id', 0, 1000);
+insert into job (id, name, type, action, base, object, field, last, limit) values (300, 'document', 'table', 'copy', 'vooo_prod_backend', 'document', 'id', 0, 1000);
+insert into job (id, name, type, action, base, object, field, last, limit) values (400, 'connection', 'table', 'copy', 'vooo_prod_backend', 'connection', 'connection_id', 112705476, 100);
 insert into reference (referrer, referred, field_referrer, field_referred) values (200, 100, 'id', 'id');
 insert into reference (referrer, referred, field_referrer, field_referred) values (300, 200, 'id', 'id_document');
+insert into reference (referrer, referred, field_referrer, field_referred) values (400, 200, 'id_client', 'id');
 
 commit;
