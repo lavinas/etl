@@ -15,7 +15,7 @@ const (
 	copyEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
 	copyMaxClient = "SELECT max(%s) FROM %s;"
 	copySelect    = "SELECT * FROM %s.%s WHERE %s > %d and %s <= %d order by %s;"
-	copyInsert    = "INSERT INTO %s.%s %s VALUES %s;"
+	copyInsert    = "INSERT IGNORE INTO %s.%s %s VALUES %s;"
 )
 
 // Copy is a struct that represents the use case copy a object from database to another

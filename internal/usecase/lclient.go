@@ -13,7 +13,7 @@ const (
 	loadClientSourceBase = "vooo_prod_backend"
 	loadClientAggregator = "SELECT id FROM aggregator_ref;"
 	loadClientSelect     = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"
-	loadClientInsert     = "INSERT INTO client_ref VALUES %s;"
+	loadClientInsert     = "INSERT IGNORE INTO client_ref VALUES %s;"
 	loadClientMax        = "SELECT max(id) FROM client;"
 )
 
