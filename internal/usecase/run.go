@@ -164,7 +164,7 @@ func (r *Run) runAtomic(jobId int64, signal chan os.Signal) *runReturn {
 		r.duration = time.Since(now).Seconds()
 		return r
 	case <-signal:
-		return &runReturn{status: errorStatus, detail: "interrupted", missing: -1, duration: time.Since(now).Seconds()}
+		return &runReturn{status: errorStatus, detail: "interrupted gracefully", missing: -1, duration: time.Since(now).Seconds()}
 	}
 }
 
