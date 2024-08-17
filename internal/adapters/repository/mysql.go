@@ -27,7 +27,7 @@ import (
 
 const (
 	logLevel = logger.Silent
-	timeout  = time.Second * 10
+	timeout  = time.Second * 5
 )
 
 // RepoMySql is the repository handler for the application

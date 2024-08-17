@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 	"os"
+	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -125,9 +125,9 @@ func (r *Run) sendMessage(retMessage chan string, message string) {
 
 // RunReturn is a struct that represents the return of the Run
 type runReturn struct {
-	status string
-	detail string
-	missing int64
+	status   string
+	detail   string
+	missing  int64
 	duration float64
 }
 
