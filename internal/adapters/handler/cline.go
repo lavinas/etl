@@ -2,6 +2,8 @@ package handler
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
 
 	"github.com/alexflint/go-arg"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -39,10 +41,13 @@ func (a *Args) GetParams() map[string]interface{} {
 func (c *CommandLine) Run() {
 	args := Args{}
 	arg.MustParse(&args)
-	messageChan := make(chan string)
-	defer close(messageChan)
-	go c.usecase.Run(&args, messageChan)
-	for message := range messageChan {
+	ret := make(chan string)
+	defer close(ret)
+	sig := make(chan os.Signal, 1)
+	defer close(sig)
+	signal.Notify(sig, os.Interrupt)
+	go c.usecase.Run(&args, sig, ret)
+	for message := range ret {
 		switch message {
 		case "<end>":
 			return

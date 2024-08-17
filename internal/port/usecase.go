@@ -1,5 +1,9 @@
 package port
 
+import (
+	"os"
+)
+
 // RunAction is a interface that represents the action to run a specific job use case
 // It returns a message, a count of missing itens to process and an error
 type RunAction interface {
@@ -8,5 +12,5 @@ type RunAction interface {
 
 // UseCase is a interface that represents the use case to run
 type UseCase interface {
-	Run(args Args, messageChan chan string) error
+	Run(args Args, signal chan os.Signal, retMessage chan string) error
 }

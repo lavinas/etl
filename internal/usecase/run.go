@@ -1,9 +1,11 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
+	"os"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -14,6 +16,7 @@ const (
 	errorStatus   = "error"
 	successStatus = "success"
 	channelEnd    = "<end>"
+	runTimeout    = 5 * time.Second
 )
 
 // Run is a struct that represents the use case
@@ -32,17 +35,17 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 }
 
 // Run runs app with given parameters
-func (r *Run) Run(args port.Args, messageChan chan string) error {
-	defer r.finishRun(messageChan, time.Now())
+func (r *Run) Run(args port.Args, signal chan os.Signal, retMessage chan string) error {
+	defer r.finishRun(retMessage, time.Now())
 	jobId, shifts := r.getArgs(args)
 	jobs, err := r.getJobsId(jobId, r.RepoTarget)
 	if err != nil {
 		message := fmt.Sprintf("error: %s", err.Error())
-		r.sendMessage(messageChan, message)
+		r.sendMessage(retMessage, message)
 		return errors.New(message)
 	}
 	for _, j := range *jobs {
-		err := r.runUntil(&j, messageChan, shifts)
+		err := r.runUntil(&j, signal, retMessage, shifts)
 		if err != nil {
 			return err
 		}
@@ -93,19 +96,19 @@ func (r *Run) finishRun(messageChan chan string, start time.Time) {
 }
 
 // runUntil runs all jobs until finish all registers
-func (r *Run) runUntil(job *domain.Job, messageChan chan string, shifts int64) error {
+func (r *Run) runUntil(job *domain.Job, signal chan os.Signal, retMessage chan string, shifts int64) error {
 	count := int64(1)
 	for {
 		start := time.Now()
-		message, missing, err := r.runJob(job.Id)
+		message, missing, err := r.runJob(job.Id, signal)
 		exect := time.Since(start).Seconds()
 		if err != nil {
 			message = fmt.Sprintf("%d (%s): Error: %s in %.4f seconds", job.Id, job.Name, err.Error(), exect)
-			r.sendMessage(messageChan, message)
+			r.sendMessage(retMessage, message)
 			return errors.New(message)
 		}
 		message = fmt.Sprintf("%d (%s): Ok: %s - shift %d in %.4f seconds", job.Id, job.Name, message, count, exect)
-		r.sendMessage(messageChan, message)
+		r.sendMessage(retMessage, message)
 		if missing == 0 || (shifts != -1 && count >= shifts) {
 			break
 		}
@@ -114,71 +117,83 @@ func (r *Run) runUntil(job *domain.Job, messageChan chan string, shifts int64) e
 }
 
 // sendMessage sends a message to the channel
-func (r *Run) sendMessage(messageChan chan string, message string) {
-	if messageChan != nil {
-		messageChan <- message
+func (r *Run) sendMessage(retMessage chan string, message string) {
+	if retMessage != nil {
+		retMessage <- message
 	}
 }
 
+// RunReturn is a struct that represents the return of the Run
+type runReturn struct {
+	status string
+	detail string
+	missing int64
+	duration float64
+}
+
 // Run runs a Job with a given id
-func (r *Run) runJob(jobId int64) (string, int64, error) {
+func (r *Run) runJob(jobId int64, signal chan os.Signal) (string, int64, error) {
 	exec := &domain.Exec{}
 	if err := exec.Init(r.RepoTarget, jobId); err != nil {
 		return "", -1, err
 	}
-	status, detail, miss, dur := r.runPrepare(jobId)
-	if err := exec.SetStatus(r.RepoTarget, status, detail, miss, dur); err != nil {
+	ret := r.runAtomic(jobId, signal)
+	if err := exec.SetStatus(r.RepoTarget, ret.status, ret.detail, ret.missing, ret.duration); err != nil {
 		return "", -1, err
 	}
-	if status == "error" {
-		return "", -1, errors.New(detail)
+	if ret.status == "error" {
+		return "", -1, errors.New(ret.detail)
 	}
-	detail = fmt.Sprintf(success, detail, dur)
-	return detail, miss, nil
+	return fmt.Sprintf(success, ret.detail, ret.duration), ret.missing, nil
 }
 
 // runJob runs a job with a given id and returns the status, detail, missing and duration
-func (r *Run) runPrepare(jobId int64) (string, string, int64, float64) {
+func (r *Run) runAtomic(jobId int64, signal chan os.Signal) *runReturn {
 	now := time.Now()
-	var status, detail string
-	var miss int64
-	if message, m, err := r.runAtomic(jobId); err != nil {
-		status = errorStatus
-		detail = err.Error()
-		miss = -1
-	} else {
-		status = successStatus
-		detail = message
-		miss = m
+	ctx, close := context.WithTimeout(context.Background(), runTimeout)
+	defer close()
+	ret := make(chan *runReturn)
+	tx := r.RepoTarget.Begin("")
+	defer r.RepoTarget.Rollback(tx)
+	go r.runMain(jobId, ret, tx)
+	select {
+	case <-ctx.Done():
+		return &runReturn{status: errorStatus, detail: ctx.Err().Error(), missing: -1, duration: time.Since(now).Seconds()}
+	case r := <-ret:
+		r.duration = time.Since(now).Seconds()
+		return r
+	case <-signal:
+		return &runReturn{status: errorStatus, detail: "interrupted", missing: -1, duration: time.Since(now).Seconds()}
 	}
-	dur := time.Since(now).Seconds()
-	return status, detail, miss, dur
 }
 
 // run runs the use case
-func (r *Run) runAtomic(jobId int64) (string, int64, error) {
+func (r *Run) runMain(jobId int64, ret chan *runReturn, tx interface{}) {
 	job := &domain.Job{Id: jobId}
-	txTarget := r.RepoTarget.Begin("")
-	defer r.RepoTarget.Rollback(txTarget)
-	if err := job.LoadLock(r.RepoTarget, txTarget); err != nil {
-		return "", -1, err
+	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
+		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
+		return
 	}
-	refs, err := r.getReferences(jobId, txTarget)
+	refs, err := r.getReferences(jobId, tx)
 	if err != nil {
-		return "", -1, err
+		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
+		return
 	}
 	action, err := r.factory(job.Action)
 	if err != nil {
-		return "", -1, err
+		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
+		return
 	}
-	message, missing, err := action.Run(job, refs, txTarget)
+	message, missing, err := action.Run(job, refs, tx)
 	if err != nil {
-		return "", -1, err
+		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
+		return
 	}
-	if err := r.RepoTarget.Commit(txTarget); err != nil {
-		return "", -1, err
+	if err := r.RepoTarget.Commit(tx); err != nil {
+		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
+		return
 	}
-	return message, missing, nil
+	ret <- &runReturn{status: successStatus, detail: message, missing: missing, duration: -1}
 }
 
 // getReferences gets the references of the job
