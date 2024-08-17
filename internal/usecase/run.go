@@ -99,15 +99,13 @@ func (r *Run) finishRun(messageChan chan string, start time.Time) {
 func (r *Run) runUntil(job *domain.Job, signal chan os.Signal, retMessage chan string, shifts int64) error {
 	count := int64(1)
 	for {
-		start := time.Now()
 		message, missing, err := r.runJob(job.Id, signal)
-		exect := time.Since(start).Seconds()
 		if err != nil {
-			message = fmt.Sprintf("%d (%s): Error: %s in %.4f seconds", job.Id, job.Name, err.Error(), exect)
+			message = fmt.Sprintf("%d (%s) - %d: Error: %s", job.Id, job.Name, count, err.Error())
 			r.sendMessage(retMessage, message)
 			return errors.New(message)
 		}
-		message = fmt.Sprintf("%d (%s): Ok: %s - shift %d in %.4f seconds", job.Id, job.Name, message, count, exect)
+		message = fmt.Sprintf("%d (%s) - %d: Ok: %s", job.Id, job.Name, count, message)
 		r.sendMessage(retMessage, message)
 		if missing == 0 || (shifts != -1 && count >= shifts) {
 			break
