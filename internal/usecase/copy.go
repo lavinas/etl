@@ -40,12 +40,10 @@ func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (str
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	limit, max, err := c.getLimits(j.Object, j.Field, j.Last, j.Limit)
+	limit, missing, processed, err := c.getLimits(j.Object, j.Field, j.Last, j.Limit)
 	if err != nil {
 		return "", -1, err
 	}
-	missing := max - limit
-	processed := limit - j.Last
 	cols, rows, err := c.getSource(j, refs, limit)
 	if err != nil {
 		return "", -1, err
@@ -265,24 +263,26 @@ func (c *Copy) formatValue(col *string) string {
 }
 
 // getMaxClient gets the max id from the client table
-func (c *Copy) getLimits(object string, field string, last int64, limit int64) (int64, int64, error) {
+func (c *Copy) getLimits(object string, field string, last int64, limit int64) (int64, int64, int64, error) {
 	tx := c.RepoSource.Begin(loadClientSourceBase)
 	defer c.RepoSource.Rollback(tx)
 	q := fmt.Sprintf(copyMaxClient, field, object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
-		return -1, -1, err
+		return -1, -1, -1, err
 	}
 	if len(rows) == 0 || rows[0] == nil {
-		return -1, -1, errors.New(port.ErrFieldNotFound)
+		return -1, -1, -1, errors.New(port.ErrFieldNotFound)
 	}
 	max, err := strconv.ParseInt(*rows[0][0], 10, 64)
 	if err != nil {
-		return -1, -1, err
+		return -1, -1, -1, err
 	}
 	l := last + limit
 	if l > max {
 		l = max
 	}
-	return l, max, nil
+	missing := max - limit
+	processed := limit - last
+	return l, missing, processed, nil
 }
