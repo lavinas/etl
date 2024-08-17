@@ -112,6 +112,7 @@ func (r *Run) runUntil(job *domain.Job, signal chan os.Signal, retMessage chan s
 		if missing == 0 || (shifts != -1 && count >= shifts) {
 			break
 		}
+		count++
 	}
 	return nil
 }
