@@ -24,4 +24,5 @@ mysql/
 go.work
 go.work.sum
 
-
+# executables
+etl
