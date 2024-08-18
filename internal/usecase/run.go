@@ -35,40 +35,38 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 }
 
 // Run runs app with given parameters
-func (r *Run) Run(args port.Args, signal chan os.Signal, retMessage chan string) error {
-	defer r.finishRun(retMessage, time.Now())
-	jobId, shifts := r.getArgs(args)
-	jobs, err := r.getJobsId(jobId, r.RepoTarget)
-	if err != nil {
-		message := fmt.Sprintf("error: %s", err.Error())
-		r.sendMessage(retMessage, message)
-		return errors.New(message)
-	}
-	for _, j := range *jobs {
-		err := r.runUntil(&j, signal, retMessage, shifts)
+func (r *Run) Run(params *port.RunParams) error {
+	defer r.finishRun(params.RetMessage, time.Now())
+	count := int64(0)
+	for {
+		err := r.runCycle(params)
 		if err != nil {
 			return err
 		}
+		count++
+		if params.Repeat != 0 && count >= params.Repeat {
+			break
+		}
+		time.Sleep(time.Duration(params.Delay) * time.Second)
 	}
 	return nil
 }
 
-// getArgs gets the arguments
-func (r *Run) getArgs(args port.Args) (int64, int64) {
-	params := args.GetParams()
-	var jobId, shifts int64
-	if id, ok := params["JobID"]; ok {
-		jobId = id.(int64)
-	} else {
-		jobId = -1
+// runCycle runs a cycle of jobs
+func (r *Run) runCycle(params *port.RunParams) error {
+	jobs, err := r.getJobsId(params.JobID, r.RepoTarget)
+	if err != nil {
+		message := fmt.Sprintf("error: %s", err.Error())
+		r.sendMessage(params.RetMessage, message)
+		return errors.New(message)
 	}
-	if s, ok := params["Shifts"]; ok {
-		shifts = s.(int64)
-	} else {
-		shifts = -1
-
+	for _, j := range *jobs {
+		err := r.runJob(&j, params.Signal, params.RetMessage, params.Shifts)
+		if err != nil && params.ErrorSkip {
+			return err
+		}
 	}
-	return jobId, shifts
+	return nil
 }
 
 // getJobsId
@@ -96,10 +94,10 @@ func (r *Run) finishRun(messageChan chan string, start time.Time) {
 }
 
 // runUntil runs all jobs until finish all registers
-func (r *Run) runUntil(job *domain.Job, signal chan os.Signal, retMessage chan string, shifts int64) error {
+func (r *Run) runJob(job *domain.Job, signal chan os.Signal, retMessage chan string, shifts int64) error {
 	count := int64(1)
 	for {
-		message, missing, err := r.runJob(job.Id, signal)
+		message, missing, err := r.runJobCycle(job.Id, signal)
 		if err != nil {
 			message = fmt.Sprintf("%d (%s) - %d: Error: %s", job.Id, job.Name, count, err.Error())
 			r.sendMessage(retMessage, message)
@@ -131,7 +129,7 @@ type runReturn struct {
 }
 
 // Run runs a Job with a given id
-func (r *Run) runJob(jobId int64, signal chan os.Signal) (string, int64, error) {
+func (r *Run) runJobCycle(jobId int64, signal chan os.Signal) (string, int64, error) {
 	exec := &domain.Exec{}
 	if err := exec.Init(r.RepoTarget, jobId); err != nil {
 		return "", -1, err
