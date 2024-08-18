@@ -282,7 +282,7 @@ func (c *Copy) getLimits(object string, field string, last int64, limit int64) (
 	if l > max {
 		l = max
 	}
-	missing := max - limit
+	missing := max - l
 	processed := l - last
 	return l, missing, processed, nil
 }

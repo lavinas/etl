@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
@@ -51,20 +51,18 @@ func (a *Args) GetParams() map[string]interface{} {
 func (c *CommandLine) Run() {
 	args := Args{}
 	arg.MustParse(&args)
-	ret := make(chan string)
-	defer close(ret)
+	outs := make(chan *port.RunOut)
+	defer close(outs)
 	sig := make(chan os.Signal, 1)
 	defer close(sig)
 	signal.Notify(sig, os.Interrupt)
-	params := port.RunParams{Repeat: args.Repeat, Shifts: args.Shifts, ErrorSkip: args.ErrorSkip,
-		Delay: args.Delay, JobID: args.JobID, Signal: sig, RetMessage: ret}
-	go c.usecase.Run(&params)
-	for message := range ret {
-		switch message {
-		case "<end>":
-			return
-		default:
-			fmt.Println(message)
+	in := port.RunIn{Repeat: args.Repeat, Shifts: args.Shifts, ErrorSkip: args.ErrorSkip,
+		Delay: args.Delay, JobID: args.JobID, Signal: sig}
+	go c.usecase.Run(&in, outs)
+	for out := range outs {
+		if out.Status == port.FinishedStatus {
+			break
 		}
+		log.Printf("%s: %s\n", out.Status, out.Detail)
 	}
 }

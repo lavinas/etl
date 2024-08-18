@@ -3,8 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
@@ -12,11 +10,12 @@ import (
 )
 
 const (
-	success       = "%s in %.4f seconds"
-	errorStatus   = "error"
-	successStatus = "success"
-	channelEnd    = "<end>"
-	runTimeout    = 5 * time.Second
+	success          = "%s in %.4f seconds"
+	errorStatus      = "error"
+	successStatus    = "success"
+	interrupedStatus = "interrupted"
+	channelFinished  = "finished"
+	runTimeout       = 5 * time.Second
 )
 
 // Run is a struct that represents the use case
@@ -35,38 +34,146 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
 }
 
 // Run runs app with given parameters
-func (r *Run) Run(params *port.RunParams) error {
-	defer r.finishRun(params.RetMessage, time.Now())
+func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
+	if in == nil || out == nil {
+		panic("Run: Invalid input parameters")
+	}
+	defer r.finishRun(out, time.Now())
 	count := int64(0)
 	for {
-		err := r.runCycle(params)
-		if err != nil {
-			return err
-		}
-		count++
-		if params.Repeat != 0 && count >= params.Repeat {
+		if r.runCycle(in, out) {
 			break
 		}
-		time.Sleep(time.Duration(params.Delay) * time.Second)
+		count++
+		if (in.Repeat != 0 && count >= in.Repeat) {
+			break
+		}
+		time.Sleep(time.Duration(in.Delay) * time.Second)
 	}
-	return nil
 }
 
 // runCycle runs a cycle of jobs
-func (r *Run) runCycle(params *port.RunParams) error {
-	jobs, err := r.getJobsId(params.JobID, r.RepoTarget)
+func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut) bool {
+	jobs, err := r.getJobsId(in.JobID, r.RepoTarget)
 	if err != nil {
-		message := fmt.Sprintf("error: %s", err.Error())
-		r.sendMessage(params.RetMessage, message)
-		return errors.New(message)
+		ret := &port.RunOut{Status: port.ErrorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		r.sendOut(out, ret)
+		return true
 	}
 	for _, j := range *jobs {
-		err := r.runJob(&j, params.Signal, params.RetMessage, params.Shifts)
-		if err != nil && params.ErrorSkip {
-			return err
+		if r.runJob(&j, in, out) {
+			break
 		}
 	}
-	return nil
+	return false
+}
+
+// runUntil runs all jobs until finish all registers
+func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut) bool {
+	count := int64(1)
+	for {
+		if r.runJobCycle(job.Id, in, out) {
+			return true
+		}
+		if in.Shifts != 0 && count >= in.Shifts {
+			return false
+		}
+		count++
+	}
+}
+
+// runJobCycle runs a cycle of job
+func (r *Run) runJobCycle(jobId int64, in *port.RunIn, out chan *port.RunOut) bool {
+	exec := &domain.Exec{}
+	if err := exec.Init(r.RepoTarget, jobId); err != nil {
+		ret := &port.RunOut{Status: port.ErrorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		r.sendOut(out, ret)
+		return true
+	}
+	ret := r.runAtomic(jobId, in, out)
+	if err := exec.SetStatus(r.RepoTarget, ret.Status, ret.Detail, ret.Missing, ret.Duration); err != nil {
+		ret := &port.RunOut{Status: port.ErrorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		r.sendOut(out, ret)
+		return true
+	}
+	if ret.Status == port.InterrupedStatus || ret.Status == port.ErrorStatus {
+		return true
+	}
+	return false
+}
+
+// runJob runs a job with a given id and returns the status, detail, missing and duration
+func (r *Run) runAtomic(jobId int64, in *port.RunIn, out chan *port.RunOut) *port.RunOut {
+	now := time.Now()
+	ctx, close := context.WithTimeout(context.Background(), runTimeout)
+	defer close()
+	ret := make(chan *port.RunOut)
+	tx := r.RepoTarget.Begin("")
+	defer r.RepoTarget.Rollback(tx)
+	go r.runAtom(jobId, ret, tx)
+	select {
+	case <-ctx.Done():
+		ret := &port.RunOut{Status: port.ErrorStatus, Detail: "timeout", Missing: -1, Duration: time.Since(now).Seconds()}
+		out <- ret
+		return ret
+	case <- in.Signal:
+		ret := &port.RunOut{Status: port.InterrupedStatus, Detail: "stopped", Missing: -1, Duration: time.Since(now).Seconds()}
+		out <- ret
+		return ret
+	case r := <-ret:
+		r.Duration = time.Since(now).Seconds()
+		out <- r
+		return r
+	}
+}
+
+// run runs the use case
+func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{}) {
+	job := &domain.Job{Id: jobId}
+	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
+		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		out <- ret
+		return
+	}
+	refs, err := r.getReferences(jobId, tx)
+	if err != nil {
+		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		out <- ret
+		return
+	}
+	action, err := r.factory(job.Action)
+	if err != nil {
+		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		out <- ret
+		return
+	}
+	message, missing, err := action.Run(job, refs, tx)
+	if err != nil {
+		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		out <- ret
+		return
+	}
+	if err := r.RepoTarget.Commit(tx); err != nil {
+		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
+		out <- ret
+		return
+	}
+	ret := &port.RunOut{Status: successStatus, Detail: message, Missing: missing, Duration: -1}
+	out <- ret
+}
+
+
+// finishRun finishes the run
+func (r *Run) finishRun(out chan *port.RunOut, start time.Time) {
+	end := &port.RunOut{Status: port.FinishedStatus, Detail: "", Missing: -1, Duration: time.Since(start).Seconds()}
+	r.sendOut(out, end)
+}
+
+// sendMessage sends a message to the channel
+func (r *Run) sendOut(outChan chan *port.RunOut, out *port.RunOut) {
+	if outChan != nil {
+		outChan <- out
+	}
 }
 
 // getJobsId
@@ -86,112 +193,6 @@ func (r *Run) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, error
 	return jobs, err
 }
 
-// finishRun finishes the run
-func (r *Run) finishRun(messageChan chan string, start time.Time) {
-	message := fmt.Sprintf("executed in %.4f seconds", time.Since(start).Seconds())
-	r.sendMessage(messageChan, message)
-	r.sendMessage(messageChan, channelEnd)
-}
-
-// runUntil runs all jobs until finish all registers
-func (r *Run) runJob(job *domain.Job, signal chan os.Signal, retMessage chan string, shifts int64) error {
-	count := int64(1)
-	for {
-		message, missing, err := r.runJobCycle(job.Id, signal)
-		if err != nil {
-			message = fmt.Sprintf("%d (%s) - %d: Error: %s", job.Id, job.Name, count, err.Error())
-			r.sendMessage(retMessage, message)
-			return errors.New(message)
-		}
-		message = fmt.Sprintf("%d (%s) - %d: Ok: %s", job.Id, job.Name, count, message)
-		r.sendMessage(retMessage, message)
-		if missing == 0 || (shifts != -1 && count >= shifts) {
-			break
-		}
-		count++
-	}
-	return nil
-}
-
-// sendMessage sends a message to the channel
-func (r *Run) sendMessage(retMessage chan string, message string) {
-	if retMessage != nil {
-		retMessage <- message
-	}
-}
-
-// RunReturn is a struct that represents the return of the Run
-type runReturn struct {
-	status   string
-	detail   string
-	missing  int64
-	duration float64
-}
-
-// Run runs a Job with a given id
-func (r *Run) runJobCycle(jobId int64, signal chan os.Signal) (string, int64, error) {
-	exec := &domain.Exec{}
-	if err := exec.Init(r.RepoTarget, jobId); err != nil {
-		return "", -1, err
-	}
-	ret := r.runAtomic(jobId, signal)
-	if err := exec.SetStatus(r.RepoTarget, ret.status, ret.detail, ret.missing, ret.duration); err != nil {
-		return "", -1, err
-	}
-	if ret.status == "error" {
-		return "", -1, errors.New(ret.detail)
-	}
-	return fmt.Sprintf(success, ret.detail, ret.duration), ret.missing, nil
-}
-
-// runJob runs a job with a given id and returns the status, detail, missing and duration
-func (r *Run) runAtomic(jobId int64, signal chan os.Signal) *runReturn {
-	now := time.Now()
-	ctx, close := context.WithTimeout(context.Background(), runTimeout)
-	defer close()
-	ret := make(chan *runReturn)
-	tx := r.RepoTarget.Begin("")
-	defer r.RepoTarget.Rollback(tx)
-	go r.runMain(jobId, ret, tx)
-	select {
-	case <-ctx.Done():
-		return &runReturn{status: errorStatus, detail: ctx.Err().Error(), missing: -1, duration: time.Since(now).Seconds()}
-	case r := <-ret:
-		r.duration = time.Since(now).Seconds()
-		return r
-	case <-signal:
-		return &runReturn{status: errorStatus, detail: "interrupted gracefully", missing: -1, duration: time.Since(now).Seconds()}
-	}
-}
-
-// run runs the use case
-func (r *Run) runMain(jobId int64, ret chan *runReturn, tx interface{}) {
-	job := &domain.Job{Id: jobId}
-	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
-		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
-		return
-	}
-	refs, err := r.getReferences(jobId, tx)
-	if err != nil {
-		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
-		return
-	}
-	action, err := r.factory(job.Action)
-	if err != nil {
-		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
-		return
-	}
-	message, missing, err := action.Run(job, refs, tx)
-	if err != nil {
-		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
-		return
-	}
-	if err := r.RepoTarget.Commit(tx); err != nil {
-		ret <- &runReturn{status: errorStatus, detail: err.Error(), missing: -1, duration: -1}
-		return
-	}
-	ret <- &runReturn{status: successStatus, detail: message, missing: missing, duration: -1}
-}
 
 // getReferences gets the references of the job
 func (r *Run) getReferences(jobId int64, tx interface{}) ([]References, error) {

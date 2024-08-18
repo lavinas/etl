@@ -4,20 +4,34 @@ import (
 	"os"
 )
 
-// RunParams is a struct that represents the parameters to use case run
-type RunParams struct {
+const (
+	ErrorStatus      = "error"
+	SuccessStatus    = "success"
+	InterrupedStatus = "stopped"
+	FinishedStatus   = "<end>"
+)
+
+// RunIn is a struct that represents the input of the Run
+type RunIn struct {
 	Repeat     int64
 	Shifts     int64
 	ErrorSkip  bool
 	Delay      int64
 	JobID      int64
 	Signal     chan os.Signal
-	RetMessage chan string
+}
+
+// RunOut is a struct that represents the output of the Run
+type RunOut struct {
+	Status   string
+	Detail   string
+	Missing  int64
+	Duration float64
 }
 
 // UseCase is a interface that represents the use case to run
 type UseCase interface {
-	Run(params *RunParams) error
+	Run(*RunIn, chan *RunOut)
 }
 
 // RunAction is a interface that represents the action to run a specific job use case
