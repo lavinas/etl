@@ -165,13 +165,13 @@ func (r *Run) sleep(in *port.RunIn) bool {
 // finish sends a finish message to the channel
 func (r *Run) finish(repo port.Repository, out chan *port.RunOut, start time.Time) {
 	ret := port.RunOut{
-		JobID: -1, 
-		Shift: -1, 
-		Status: port.FinishedStatus, 
-		Detail: "finished signal", 
-		Start: start, 
+		JobID:    -1,
+		Shift:    -1,
+		Status:   port.FinishedStatus,
+		Detail:   "finished signal",
+		Start:    start,
 		Duration: time.Since(start).Seconds(),
-		More: -1,
+		More:     -1,
 	}
 	exec := &domain.Exec{}
 	if err := exec.Init(repo, -1, start, -1); err != nil {

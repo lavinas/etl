@@ -269,7 +269,7 @@ func (c *Copy) getLimits(object string, field string, last int64, limit int64) (
 	q := fmt.Sprintf(copyMaxClient, field, object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
-		return -1, -1, -1,  err
+		return -1, -1, -1, err
 	}
 	if len(rows) == 0 || rows[0] == nil {
 		return -1, -1, -1, errors.New(port.ErrFieldNotFound)
