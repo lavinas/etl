@@ -63,6 +63,6 @@ func (c *CommandLine) Run() {
 		if out.Status == port.FinishedStatus {
 			break
 		}
-		log.Printf("%s: %s\n", out.Status, out.Detail)
+		log.Println(out.String())
 	}
 }

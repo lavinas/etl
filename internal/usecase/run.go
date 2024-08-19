@@ -10,12 +10,7 @@ import (
 )
 
 const (
-	success          = "%s in %.4f seconds"
-	errorStatus      = "error"
-	successStatus    = "success"
-	interrupedStatus = "interrupted"
-	channelFinished  = "finished"
-	runTimeout       = 5 * time.Second
+	runTimeout = 5 * time.Second
 )
 
 // Run is a struct that represents the use case
@@ -38,88 +33,85 @@ func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 	if in == nil || out == nil {
 		panic("Run: Invalid input parameters")
 	}
-	defer r.finishRun(out, time.Now())
+	start := time.Now()
+	defer r.finish(r.RepoTarget, out, start)
 	count := int64(0)
 	for {
-		if r.runCycle(in, out) {
+		if r.runCycle(in, out, start) {
 			break
 		}
 		count++
-		if (in.Repeat != 0 && count >= in.Repeat) {
+		if in.Repeat != 0 && count >= in.Repeat {
 			break
 		}
-		time.Sleep(time.Duration(in.Delay) * time.Second)
+		if r.sleep(in) {
+			r.sendOut(out, -1, -1, -1, port.InterrupedStatus, "interrupted", start)
+			break
+		}
 	}
 }
 
 // runCycle runs a cycle of jobs
-func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut) bool {
+func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut, start time.Time) bool {
 	jobs, err := r.getJobsId(in.JobID, r.RepoTarget)
 	if err != nil {
-		ret := &port.RunOut{Status: port.ErrorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		r.sendOut(out, ret)
+		r.sendOut(out, -1, -1, -1, port.ErrorStatus, err.Error(), start)
 		return true
 	}
 	for _, j := range *jobs {
-		if r.runJob(&j, in, out) {
-			break
+		ret := r.runJob(&j, in, out, start)
+		if r.getOut(ret, in.ErrorSkip) {
+			return true
 		}
 	}
 	return false
 }
 
 // runUntil runs all jobs until finish all registers
-func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut) bool {
-	count := int64(1)
+func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut, start time.Time) *port.RunOut {
+	shift := int64(1)
 	for {
-		if r.runJobCycle(job.Id, in, out) {
-			return true
+		ret := r.runJobCycle(job.Id, in, out, start, shift)
+		if r.getOut(ret, in.ErrorSkip) {
+			return ret
 		}
-		if in.Shifts != 0 && count >= in.Shifts {
-			return false
+		if ret.More == 0 {
+			return ret
 		}
-		count++
+		if in.Shifts != 0 && shift >= in.Shifts {
+			return ret
+		}
+		shift++
 	}
 }
 
 // runJobCycle runs a cycle of job
-func (r *Run) runJobCycle(jobId int64, in *port.RunIn, out chan *port.RunOut) bool {
+func (r *Run) runJobCycle(jobId int64, in *port.RunIn, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
 	exec := &domain.Exec{}
-	if err := exec.Init(r.RepoTarget, jobId); err != nil {
-		ret := &port.RunOut{Status: port.ErrorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		r.sendOut(out, ret)
-		return true
+	if err := exec.Init(r.RepoTarget, jobId, start, shift); err != nil {
+		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
-	ret := r.runAtomic(jobId, in, out)
-	if err := exec.SetStatus(r.RepoTarget, ret.Status, ret.Detail, ret.Missing, ret.Duration); err != nil {
-		ret := &port.RunOut{Status: port.ErrorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		r.sendOut(out, ret)
-		return true
+	ret := r.runAtomic(jobId, in, out, start, shift)
+	if err := exec.SetStatus(r.RepoTarget, ret); err != nil {
+		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
-	if ret.Status == port.InterrupedStatus || ret.Status == port.ErrorStatus {
-		return true
-	}
-	return false
+	return ret
 }
 
-// runJob runs a job with a given id and returns the status, detail, missing and duration
-func (r *Run) runAtomic(jobId int64, in *port.RunIn, out chan *port.RunOut) *port.RunOut {
+// runJob runs a job with a given id and returns output struct
+func (r *Run) runAtomic(jobId int64, in *port.RunIn, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
 	now := time.Now()
 	ctx, close := context.WithTimeout(context.Background(), runTimeout)
 	defer close()
 	ret := make(chan *port.RunOut)
 	tx := r.RepoTarget.Begin("")
 	defer r.RepoTarget.Rollback(tx)
-	go r.runAtom(jobId, ret, tx)
+	go r.runAtom(jobId, ret, tx, start, shift)
 	select {
 	case <-ctx.Done():
-		ret := &port.RunOut{Status: port.ErrorStatus, Detail: "timeout", Missing: -1, Duration: time.Since(now).Seconds()}
-		out <- ret
-		return ret
-	case <- in.Signal:
-		ret := &port.RunOut{Status: port.InterrupedStatus, Detail: "stopped", Missing: -1, Duration: time.Since(now).Seconds()}
-		out <- ret
-		return ret
+		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, "timeout", start)
+	case <-in.Signal:
+		return r.sendOut(out, jobId, shift, -1, port.InterrupedStatus, "interrupted", start)
 	case r := <-ret:
 		r.Duration = time.Since(now).Seconds()
 		out <- r
@@ -128,52 +120,68 @@ func (r *Run) runAtomic(jobId int64, in *port.RunIn, out chan *port.RunOut) *por
 }
 
 // run runs the use case
-func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{}) {
+func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{}, start time.Time, shift int64) *port.RunOut {
 	job := &domain.Job{Id: jobId}
 	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
-		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		out <- ret
-		return
+		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
 	refs, err := r.getReferences(jobId, tx)
 	if err != nil {
-		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		out <- ret
-		return
+		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
 	action, err := r.factory(job.Action)
 	if err != nil {
-		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		out <- ret
-		return
+		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
-	message, missing, err := action.Run(job, refs, tx)
+	message, more, err := action.Run(job, refs, tx)
 	if err != nil {
-		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		out <- ret
-		return
+		return r.sendOut(out, jobId, shift, more, port.ErrorStatus, err.Error(), start)
 	}
 	if err := r.RepoTarget.Commit(tx); err != nil {
-		ret := &port.RunOut{Status: errorStatus, Detail: err.Error(), Missing: -1, Duration: -1}
-		out <- ret
-		return
+		return r.sendOut(out, jobId, shift, more, port.ErrorStatus, err.Error(), start)
 	}
-	ret := &port.RunOut{Status: successStatus, Detail: message, Missing: missing, Duration: -1}
-	out <- ret
-}
 
-
-// finishRun finishes the run
-func (r *Run) finishRun(out chan *port.RunOut, start time.Time) {
-	end := &port.RunOut{Status: port.FinishedStatus, Detail: "", Missing: -1, Duration: time.Since(start).Seconds()}
-	r.sendOut(out, end)
+	return r.sendOut(out, jobId, shift, more, port.SuccessStatus, message, start)
 }
 
 // sendMessage sends a message to the channel
-func (r *Run) sendOut(outChan chan *port.RunOut, out *port.RunOut) {
-	if outChan != nil {
-		outChan <- out
+func (r *Run) sendOut(out chan *port.RunOut, id, shift, more int64, status, detail string, start time.Time) *port.RunOut {
+	dur := time.Since(start).Seconds()
+	ret := &port.RunOut{JobID: id, Shift: shift, Status: status, Detail: detail, Duration: dur, More: more}
+	out <- ret
+	return ret
+}
+
+// sleep sleeps for a given time or until a signal is received
+func (r *Run) sleep(in *port.RunIn) bool {
+	select {
+	case <-in.Signal:
+		return true
+	case <-time.After(time.Duration(in.Delay) * time.Second):
+		return false
 	}
+}
+
+// finish sends a finish message to the channel
+func (r *Run) finish(repo port.Repository, out chan *port.RunOut, start time.Time) {
+	ret := port.RunOut{JobID: -1, Shift: -1, Status: port.FinishedStatus, Detail: "finished signal", Start: start, Duration: time.Since(start).Seconds()}
+	exec := &domain.Exec{}
+	if err := exec.Init(repo, -1, start, -1); err != nil {
+		r.sendOut(out, -1, -1, -1, port.ErrorStatus, err.Error(), start)
+		r.sendOut(out, -1, -1, -1, port.FinishedStatus, "", start)
+		return
+	}
+	if err := exec.SetStatus(repo, &ret); err != nil {
+		r.sendOut(out, -1, -1, -1, port.ErrorStatus, err.Error(), start)
+		r.sendOut(out, -1, -1, -1, port.FinishedStatus, "", start)
+		return
+	}
+	out <- &ret
+}
+
+// getOut returns true if the RunOut has an error or is interrupted
+func (r *Run) getOut(ret *port.RunOut, skipError bool) bool {
+	return (ret.Status == port.ErrorStatus && skipError) || ret.Status == port.InterrupedStatus
 }
 
 // getJobsId
@@ -192,7 +200,6 @@ func (r *Run) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, error
 	}
 	return jobs, err
 }
-
 
 // getReferences gets the references of the job
 func (r *Run) getReferences(jobId int64, tx interface{}) ([]References, error) {

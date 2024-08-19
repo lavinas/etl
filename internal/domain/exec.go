@@ -9,22 +9,24 @@ import (
 )
 
 type Exec struct {
-	Id       int64      `gorm:"type:bigint; not null; primaryKey"`
-	JobId    int64      `gorm:"type:bigint; not null"`
-	Start    time.Time  `gorm:"type:datetime; not null"`
-	End      *time.Time `gorm:"type:datetime; null"`
-	Status   string     `gorm:"type:varchar(20); not null"`
-	Detail   string     `gorm:"type:text; not null"`
-	Missing  int64      `gorm:"type:bigint; not null"`
-	Duration float64    `gorm:"type:decimal(10,4); not null"`
+	Id       int64     `gorm:"type:bigint; not null; primaryKey"`
+	JobId    int64     `gorm:"type:bigint; not null"`
+	Shift    int64     `gorm:"type:bigint; not null"`
+	Status   string    `gorm:"type:varchar(20); not null"`
+	Detail   string    `gorm:"type:text; not null"`
+	Start    time.Time `gorm:"type:datetime; not null"`
+	Duration float64   `gorm:"type:decimal(10,4); not null"`
+	More     int64     `gorm:"type:bigint; not null"`
 }
 
 // Init initializes the log entity
-func (l *Exec) Init(repo port.Repository, jobId int64) error {
-	l.Start = time.Now()
-	l.Status = "running"
-	l.Detail = ""
+func (l *Exec) Init(repo port.Repository, jobId int64, start time.Time, shift int64) error {
 	l.JobId = jobId
+	l.Shift = shift
+	l.Status = "running"
+	l.Start = start
+	l.Duration = -1
+	l.More = -1
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	if err := repo.Add(tx, l); err != nil {
@@ -47,13 +49,11 @@ func (l *Exec) LoadLock(repo port.Repository, tx interface{}) error {
 }
 
 // SetStatus sets the status of the log entity
-func (l *Exec) SetStatus(repo port.Repository, status string, detail string, missing int64, duration float64) error {
-	now := time.Now()
-	l.End = &now
-	l.Status = status
-	l.Detail = detail
-	l.Missing = missing
-	l.Duration = duration
+func (l *Exec) SetStatus(repo port.Repository, out *port.RunOut) error {
+	l.Status = out.Status
+	l.Detail = out.Detail
+	l.Duration = out.Duration
+	l.More = out.More
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	if err := repo.Save(tx, l); err != nil {

@@ -42,25 +42,25 @@ func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (str
 	}
 	limit, missing, processed, err := c.getLimits(j.Object, j.Field, j.Last, j.Limit)
 	if err != nil {
-		return "", -1, err
+		return "", missing, err
 	}
 	cols, rows, err := c.getSource(j, refs, limit)
 	if err != nil {
-		return "", -1, err
+		return "", missing, err
 	}
 	if rows, err = c.filterRefs(refs, cols, rows, txTarget); err != nil {
-		return "", -1, err
+		return "", missing, err
 	}
 	cols, rows, err = c.getAllSource(j, rows)
 	if err != nil {
-		return "", -1, err
+		return "", missing, err
 	}
 	_, err = c.putSource(txTarget, c.mountInsert(j.Base, j.Object, cols, rows))
 	if err != nil {
-		return "", -1, err
+		return "", missing, err
 	}
 	if err := c.setJob(j, limit, txTarget); err != nil {
-		return "", -1, err
+		return "", missing, err
 	}
 	return fmt.Sprintf("%d rows processed, %d copied, %d missing", processed, len(rows), missing), missing, nil
 }
@@ -269,7 +269,7 @@ func (c *Copy) getLimits(object string, field string, last int64, limit int64) (
 	q := fmt.Sprintf(copyMaxClient, field, object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
-		return -1, -1, -1, err
+		return -1, -1, -1,  err
 	}
 	if len(rows) == 0 || rows[0] == nil {
 		return -1, -1, -1, errors.New(port.ErrFieldNotFound)
@@ -284,5 +284,6 @@ func (c *Copy) getLimits(object string, field string, last int64, limit int64) (
 	}
 	missing := max - l
 	processed := l - last
+
 	return l, missing, processed, nil
 }

@@ -97,22 +97,18 @@ CREATE TABLE `reference` (
 --
 
 DROP TABLE IF EXISTS `exec`;
-
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `exec` (
   `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `job_id` bigint NOT NULL,
-  `start` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `end` datetime NULL,
-  `status` varchar(30) NOT NULL,
-  `detail` varchar(255) NULL,
-  `missing` bigint NOT NULL DEFAULT '0',
+  `shift` bigint NOT NULL,
+  `status` varchar(20) NOT NULL,
+  `detail` varchar(255) NOT NULL,
+  `start` datetime NOT NULL,
   `duration` decimal(10, 4) NOT NULL,
-  KEY `job_id` (`job_id`)
+  `more` bigint NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-
--- 
--- Inserting data into table `job`
---
 
 
 # ending tables
