@@ -284,6 +284,5 @@ func (c *Copy) getLimits(object string, field string, last int64, limit int64) (
 	}
 	missing := max - l
 	processed := l - last
-
 	return l, missing, processed, nil
 }
