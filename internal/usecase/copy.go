@@ -16,7 +16,7 @@ const (
 	copyMaxClient = "SELECT max(%s) FROM %s;"
 	copySelectAll = "SELECT * FROM %s.%s WHERE %s in (%s) order by %s;"
 	copySelectF   = "SELECT %s FROM %s.%s WHERE %s > %d and %s <= %d;"
-	copyInsert    = "INSERT IGNORE INTO %s.%s %s VALUES %s;"
+	copyInsert    = "REPLACE INTO %s.%s %s VALUES %s;"
 )
 
 // Copy is a struct that represents the use case copy a object from database to another

@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	runTimeout = 5 * time.Second
+	runTimeout = 30 * time.Second
 )
 
 // Run is a struct that represents the use case
@@ -225,8 +225,8 @@ func (r *Run) getReferences(jobId int64, tx interface{}) ([]References, error) {
 		if err := j.LoadLock(r.RepoTarget, tx); err != nil {
 			return nil, err
 		}
-		ret[i] = References{Id: j.Id, Name: j.Name, Base: j.Base, Object: j.Object, Last: j.Last,
-			FieldReferrer: re.FieldReferrer, FieldReferred: re.FieldReferred}
+		ret[i] = References{Id: j.Id, Name: j.Name, Base: j.Base, Object: j.Object, Field: j.Field, 
+			Last: j.Last, Limit: j.Limit, FieldReferrer: re.FieldReferrer, FieldReferred: re.FieldReferred}
 	}
 	return ret, nil
 }
@@ -238,6 +238,8 @@ func (r *Run) factory(action string) (port.RunAction, error) {
 		return NewLoadClient(r.RepoSource, r.RepoTarget), nil
 	case "copy":
 		return NewCopy(r.RepoSource, r.RepoTarget), nil
+	case "update":
+		return NewUpdate(r.RepoSource, r.RepoTarget), nil
 	}
 	return nil, errors.New(port.ErrActionNotFound)
 }
