@@ -9,9 +9,9 @@ type References struct {
 	Name          string
 	Base          string
 	Object        string
-	Field		  string
+	Field         string
 	Last          int64
-	Limit		  int64
+	Limit         int64
 	FieldReferrer string
 	FieldReferred string
 }

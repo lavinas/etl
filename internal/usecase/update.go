@@ -11,9 +11,12 @@ import (
 const (
 	updateDisableFK = "SET FOREIGN_KEY_CHECKS = 0;"
 	updateEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
-	updateSelectId  = "SELECT %s FROM %s.%s WHERE %s > %d and %s <= %d;"
+	updateGetFields = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s';"
+	updateSelectID1 = "SELECT %s, md5(%s) FROM %s.%s WHERE %s > %d and %s <= %d order by 1;"
+	updateSelectID2 = "SELECT %s, md5(%s) FROM %s.%s WHERE %s in (%s) order by 1;"
 	updateSelectAll = "SELECT * FROM %s.%s WHERE %s in (%s);"
 	updateInsert    = "REPLACE INTO %s.%s(%s) VALUES %s;"
+	returnMessage  = "%d processed, %d updated, %d missing"
 )
 
 // Update is a struct that represents the use case update a object from database
@@ -38,44 +41,136 @@ func (c *Update) Run(job port.Domain, refs interface{}, txTarget interface{}) (s
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	ids, end, missing, err := c.getIds(j, r)
+	ids, end, missing, processed, updated, err := c.getIds(j, r, txTarget)
 	if err != nil {
 		return "", -1, err
 	}
+	if err := c.update(j, ids, end, txTarget); err != nil {
+		return "", -1, err
+	}
+	if err := c.RepoTarget.Commit(txTarget); err != nil {
+		return "", -1, err
+	}
+	message := fmt.Sprintf(returnMessage, processed, updated, missing)
+	return message, missing, nil
+}
+
+// getIds gets the ids from source and target when any field is different
+func (c *Update) getIds(j *domain.Job, refs []References, txTarget interface{}) ([][]*string, int64, int64, int64, int64, error) {
+	idsTarget, fields, end, missing, err := c.getTargetIds(j, refs, txTarget)
+	if err != nil {
+		return nil, -1, -1, -1, -1, err
+	}
+	if len(idsTarget) == 0 {
+		return idsTarget, end, missing, 0, 0, nil
+	}
+	idsSource, err := c.getSourceIds(j, fields, idsTarget, txTarget)
+	if err != nil {
+		return nil, -1, -1, -1, -1, err
+	}
+	if len(idsSource) != len(idsTarget) {
+		return nil, -1, -1, -1, -1, errors.New(port.ErrInvalidUpdateSource)
+	}
+	ids, err := c.getDifferentIds(idsSource, idsTarget)
+	if err != nil {
+		return nil, -1, -1, -1, -1, err
+	}
+	processed := int64(len(idsTarget))
+	updated := int64(len(ids))
+	return ids, end, missing, processed, updated, nil
+}
+
+// update get from source and update target
+func (c *Update) update(j *domain.Job, ids [][]*string, end int64, txTarget interface{}) error {
 	if len(ids) == 0 {
-		return "0 processed, 0 updated, 0 missing", 0, nil
+		return nil
 	}
 	cols, rows, err := c.getSource(j, ids)
 	if err != nil {
-		return "", -1, err
+		return err
 	}
 	if len(rows) != len(ids) {
-		return "", -1, errors.New(port.ErrInvalidUpdateSource)
+		return errors.New(port.ErrInvalidUpdateSource)
 	}
 	if err := c.updateTarget(j, cols, rows, txTarget); err != nil {
-		return "", -1, err
+		return err
 	}
 	if err := c.setJob(j, end, txTarget); err != nil {
-		return "", -1, err
+		return err
 	}
-	fmt.Println("count: ", len(rows), len(cols))
-	return "", missing, nil
+	return nil
 }
 
-// getSourceid gets the ids from target table
-func (c *Update) getIds(j *domain.Job, refs []References) ([][]*string, int64, int64, error) {
-	init, end, missing, err := c.getLimits(j, refs)
-	if err != nil {
-		return nil, -1, -1, err
-	}
-	q := fmt.Sprintf(updateSelectId, j.Field, j.Base, j.Object, j.Field, init, j.Field, end)
-	tx := c.RepoTarget.Begin(refs[0].Base)
+// getFields gets the fields from target table
+func (c *Update) getFields(j *domain.Job) (string, error) {
+	q := fmt.Sprintf(updateGetFields, j.Base, j.Object)
+	tx := c.RepoTarget.Begin(j.Base)
 	defer c.RepoTarget.Rollback(tx)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
-		return nil, -1, -1, err
+		return "", err
 	}
-	return rows, end, missing, nil
+	mountedFields, err := c.mountFields(rows)
+	if err != nil {
+		return "", err
+	}
+	return mountedFields, nil
+}
+
+// mountDFields mounts the fields to a string
+func (c *Update) mountFields(fields [][]*string) (string, error) {
+	if len(fields) == 0 {
+		return "", errors.New(port.ErrInvalidUpdateFields)
+	}
+	ret := ""
+	pat := "ifnull(%s, ''), "
+	for _, field := range fields {
+		ret += fmt.Sprintf(pat, *field[0])
+	}
+	return ret[:len(ret)-2], nil
+}
+
+// getSourceid gets the ids from target table
+func (c *Update) getTargetIds(j *domain.Job, refs []References, tx interface{}) ([][]*string, string, int64, int64, error) {
+	fields, err := c.getFields(j)
+	if err != nil {
+		return nil, "", -1, -1, err
+	}
+	init, end, missing, err := c.getLimits(j, refs)
+	if err != nil {
+		return nil, fields, -1, -1, err
+	}
+	q := fmt.Sprintf(updateSelectID1, j.Field, fields, j.Base, j.Object, j.Field, init, j.Field, end)
+	_, rows, err := c.RepoTarget.Query(tx, q)
+	if err != nil {
+		return nil, fields, -1, -1, err
+	}
+	return rows, fields, end, missing, nil
+}
+
+// getSourceid gets the ids from target table
+func (c *Update) getSourceIds(j *domain.Job, fields string, idsTarget [][]*string, tx interface{}) ([][]*string, error) {
+	mountedIds := c.mountIds(idsTarget)
+	q := fmt.Sprintf(updateSelectID2, j.Field, fields, j.Base, j.Object, j.Field, mountedIds)
+	_, rows, err := c.RepoSource.Query(tx, q)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// matchIds matches the ids from source and target
+func (c *Update) getDifferentIds(idsSource [][]*string, idsTarget [][]*string) ([][]*string, error) {
+	ret := make([][]*string, len(idsSource))
+	if len(idsSource) != len(idsTarget) {
+		return nil, errors.New(port.ErrInvalidUpdateSource)
+	}
+	for i, id := range idsSource {
+		if *id[1] != *idsTarget[i][1] {
+			ret = append(ret, id)
+		}
+	}
+	return ret, nil
 }
 
 // getLimits gets the limits to update
@@ -117,11 +212,16 @@ func (c *Update) mountIds(ids [][]*string) string {
 // updateTarget updates the target table
 func (c *Update) updateTarget(j *domain.Job, cols []string, rows [][]*string, txTarget interface{}) error {
 	q := fmt.Sprintf(updateInsert, j.Base, j.Object, c.mountCols(cols), c.mountRows(rows))
-	_, err := c.RepoTarget.Exec(txTarget, q)
+	_, err := c.RepoTarget.Exec(txTarget, updateDisableFK)
 	if err != nil {
 		return err
 	}
-	if err := c.RepoTarget.Commit(txTarget); err != nil {
+	_, err = c.RepoTarget.Exec(txTarget, q)
+	if err != nil {
+		return err
+	}
+	_, err = c.RepoTarget.Exec(txTarget, updateEnableFK)
+	if err != nil {
 		return err
 	}
 	return nil

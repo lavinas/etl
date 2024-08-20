@@ -62,6 +62,9 @@ func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (str
 	if err := c.setJob(j, limit, txTarget); err != nil {
 		return "", missing, err
 	}
+	if err := c.RepoTarget.Commit(txTarget); err != nil {
+		return "", missing, err
+	}
 	return fmt.Sprintf("%d rows processed, %d copied, %d missing", processed, len(rows), missing), missing, nil
 }
 

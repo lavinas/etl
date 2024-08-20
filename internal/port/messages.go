@@ -23,4 +23,5 @@ const (
 	ErrFieldReferredNotFound    = "referred field not found in reference table"
 	ErrInvalidUpadateReferences = "invalid update references. Just one reference is allowed"
 	ErrInvalidUpdateSource      = "source and ids have different length"
+	ErrInvalidUpdateFields      = "no fields field found on update"
 )
