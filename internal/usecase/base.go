@@ -4,6 +4,10 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
+const (
+	InLimit = int64(5000)
+)
+
 type References struct {
 	Id            int64
 	Name          string

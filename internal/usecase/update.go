@@ -90,7 +90,11 @@ func (c *Update) getLimits(j *domain.Job, refs []References, init int64) (bool, 
 			init = 0
 		}
 	}
-	end := init + refs[0].Limit
+	step := refs[0].Limit
+	if step > InLimit {
+		step = InLimit
+	}
+	end := init + step
 	if end > refs[0].Last {
 		end = refs[0].Last
 	}

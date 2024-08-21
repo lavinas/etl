@@ -182,13 +182,29 @@ func (c *Copy) getAllSource(j *domain.Job, rows [][]*string) ([]string, [][]*str
 	if len(rows) == 0 {
 		return nil, nil, nil
 	}
+	txSource := c.RepoSource.Begin(j.Base)
+	defer c.RepoSource.Rollback(txSource)
+	rrows := make([][]*string, 0)
+	cols := make([]string, 0)
+	last := int64(len(rows))
+	for i := int64(0); i < last; i += InLimit {
+		col, row, err := c.getAllSourceStep(j, rows[i:min(i+InLimit,last)], txSource)
+		if err != nil {
+			return nil, nil, err
+		}
+		rrows = append(rrows, row...)
+		cols = col
+	}
+	return cols, rrows, nil
+}
+
+// getAllSource steps the source data for the insert
+func (c *Copy) getAllSourceStep(j *domain.Job, rows [][]*string, txSource interface{}) ([]string, [][]*string, error) {
 	ids := ""
 	for _, row := range rows {
 		ids += *row[0] + ", "
 	}
 	ids = ids[:len(ids)-2]
-	txSource := c.RepoSource.Begin(j.Base)
-	defer c.RepoSource.Rollback(txSource)
 	sql := fmt.Sprintf(copySelectAll, j.Base, j.Object, j.Field, ids, j.Field)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
