@@ -3,14 +3,12 @@ package usecase
 import (
 	"context"
 	"errors"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
-)
-
-const (
-	runTimeout = 30 * time.Second
 )
 
 // Run is a struct that represents the use case
@@ -19,11 +17,12 @@ type Run struct {
 }
 
 // NewRun creates a new use case
-func NewRun(repoSource port.Repository, repoTarget port.Repository) *Run {
+func NewRun(repoSource port.Repository, repoTarget port.Repository, signal chan os.Signal) *Run {
 	return &Run{
 		Base: Base{
 			RepoSource: repoSource,
 			RepoTarget: repoTarget,
+			Signal:     signal,
 		},
 	}
 }
@@ -71,7 +70,7 @@ func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut, start time.Time) b
 func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut, start time.Time) *port.RunOut {
 	shift := int64(1)
 	for {
-		ret := r.runJobCycle(job.Id, in, out, start, shift)
+		ret := r.runJobCycle(job.Id, out, start, shift)
 		if r.getOut(ret, in.ErrorSkip) {
 			return ret
 		}
@@ -86,12 +85,12 @@ func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut, sta
 }
 
 // runJobCycle runs a cycle of job
-func (r *Run) runJobCycle(jobId int64, in *port.RunIn, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
+func (r *Run) runJobCycle(jobId int64, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
 	exec := &domain.Exec{}
 	if err := exec.Init(r.RepoTarget, jobId, start, shift); err != nil {
 		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
-	ret := r.runAtomic(jobId, in, out, start, shift)
+	ret := r.runAtomic(jobId, out, start, shift)
 	if err := exec.SetStatus(r.RepoTarget, ret); err != nil {
 		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
@@ -99,28 +98,47 @@ func (r *Run) runJobCycle(jobId int64, in *port.RunIn, out chan *port.RunOut, st
 }
 
 // runJob runs a job with a given id and returns output struct
-func (r *Run) runAtomic(jobId int64, in *port.RunIn, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
+func (r *Run) runAtomic(jobId int64, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
 	now := time.Now()
-	ctx, close := context.WithTimeout(context.Background(), runTimeout)
+	var close context.CancelFunc
+	r.Ctx, close = context.WithTimeout(context.Background(), port.RunTimeout)
 	defer close()
-	ret := make(chan *port.RunOut)
+	run := make(chan *port.RunOut)
 	tx := r.RepoTarget.Begin("")
 	defer r.RepoTarget.Rollback(tx)
-	go r.runAtom(jobId, ret, tx, start, shift)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go r.runAtom(jobId, run, tx, start, shift, &wg)
+	go r.runWait(&wg)
+	ret := &port.RunOut{}
+	wait := false
 	select {
-	case <-ctx.Done():
-		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, "timeout", start)
-	case <-in.Signal:
-		return r.sendOut(out, jobId, shift, -1, port.InterrupedStatus, "interrupted", start)
-	case r := <-ret:
+	case <-r.Ctx.Done():
+		ret = r.sendOut(out, jobId, shift, -1, port.ErrorStatus, "timeout", start)
+	case <-r.Signal:
+		ret = r.sendOut(out, jobId, shift, -1, port.InterrupedStatus, "interrupted", start)
+	case r := <-run:
 		r.Duration = time.Since(now).Seconds()
 		out <- r
-		return r
+		ret = r
+		wait = true
 	}
+	if wait {
+		wg.Wait()
+	}
+	return ret
+}
+
+// runWait waits for a given time
+func (r *Run) runWait(wg *sync.WaitGroup) {
+	time.Sleep(port.DbRelief)
+	wg.Done()
 }
 
 // run runs the use case
-func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{}, start time.Time, shift int64) *port.RunOut {
+func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{},
+	start time.Time, shift int64, wg *sync.WaitGroup) *port.RunOut {
+	defer wg.Done()
 	job := &domain.Job{Id: jobId}
 	if err := job.LoadLock(r.RepoTarget, tx); err != nil {
 		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
@@ -140,7 +158,6 @@ func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{}, start 
 	if err := r.RepoTarget.Commit(tx); err != nil {
 		return r.sendOut(out, jobId, shift, more, port.ErrorStatus, err.Error(), start)
 	}
-
 	return r.sendOut(out, jobId, shift, more, port.SuccessStatus, message, start)
 }
 
@@ -155,7 +172,7 @@ func (r *Run) sendOut(out chan *port.RunOut, id, shift, more int64, status, deta
 // sleep sleeps for a given time or until a signal is received
 func (r *Run) sleep(in *port.RunIn) bool {
 	select {
-	case <-in.Signal:
+	case <-r.Signal:
 		return true
 	case <-time.After(time.Duration(in.Delay) * time.Second):
 		return false
@@ -233,13 +250,14 @@ func (r *Run) getReferences(jobId int64, tx interface{}) ([]References, error) {
 
 // factoryAction creates a new action use case
 func (r *Run) factory(action string) (port.RunAction, error) {
+	base := Base{RepoSource: r.RepoSource, RepoTarget: r.RepoTarget, Ctx: r.Ctx, Signal: r.Signal}
 	switch action {
 	case "loadClient":
-		return NewLoadClient(r.RepoSource, r.RepoTarget), nil
+		return &LoadClient{Base: base}, nil
 	case "copy":
-		return NewCopy(r.RepoSource, r.RepoTarget), nil
+		return &Copy{Base: base}, nil
 	case "update":
-		return NewUpdate(r.RepoSource, r.RepoTarget), nil
+		return &Update{Base: base}, nil
 	}
 	return nil, errors.New(port.ErrActionNotFound)
 }

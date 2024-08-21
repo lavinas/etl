@@ -1,6 +1,9 @@
 package usecase
 
 import (
+	"context"
+	"os"
+
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
@@ -24,6 +27,9 @@ type References struct {
 type Base struct {
 	RepoSource port.Repository
 	RepoTarget port.Repository
+	Ctx        context.Context
+	Signal     chan os.Signal
+
 }
 
 // NewBase creates a new use case

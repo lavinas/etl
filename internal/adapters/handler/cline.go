@@ -2,8 +2,6 @@ package handler
 
 import (
 	"log"
-	"os"
-	"os/signal"
 
 	"github.com/alexflint/go-arg"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -53,11 +51,8 @@ func (c *CommandLine) Run() {
 	arg.MustParse(&args)
 	outs := make(chan *port.RunOut)
 	defer close(outs)
-	sig := make(chan os.Signal, 1)
-	defer close(sig)
-	signal.Notify(sig, os.Interrupt)
 	in := port.RunIn{Repeat: args.Repeat, Shifts: args.Shifts, ErrorSkip: args.ErrorSkip,
-		Delay: args.Delay, JobID: args.JobID, Signal: sig}
+		Delay: args.Delay, JobID: args.JobID}
 	go c.usecase.Run(&in, outs)
 	for out := range outs {
 		if out.Status == port.FinishedStatus {

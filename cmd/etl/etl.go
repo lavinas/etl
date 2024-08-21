@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/lavinas/vooo-etl/internal/adapters/handler"
 	"github.com/lavinas/vooo-etl/internal/adapters/repository"
@@ -23,8 +24,12 @@ func main() {
 		log.Fatal(err)
 	}
 	defer repoTarget.Close()
+	// interrupt signal
+	sig := make(chan os.Signal, 1)
+	defer close(sig)
+	signal.Notify(sig, os.Interrupt)
 	// get usecase
-	run := usecase.NewRun(repoSource, repoTarget)
+	run := usecase.NewRun(repoSource, repoTarget, sig)
 	// get and run the handler
 	handler := handler.NewLine(run)
 	handler.Run()

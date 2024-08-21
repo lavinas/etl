@@ -5,33 +5,16 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-const (
-	copyDisableFK = "SET FOREIGN_KEY_CHECKS = 0;"
-	copyEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
-	copyMaxClient = "SELECT max(%s) FROM %s;"
-	copySelectAll = "SELECT * FROM %s.%s WHERE %s in (%s) order by %s;"
-	copySelectF   = "SELECT %s FROM %s.%s WHERE %s > %d and %s <= %d;"
-	copyInsert    = "REPLACE INTO %s.%s %s VALUES %s;"
-)
-
 // Copy is a struct that represents the use case copy a object from database to another
 type Copy struct {
 	Base
-}
-
-// NewCopy creates a new use case
-func NewCopy(repoSource port.Repository, repoTarget port.Repository) *Copy {
-	return &Copy{
-		Base: Base{
-			RepoSource: repoSource,
-			RepoTarget: repoTarget,
-		},
-	}
 }
 
 // Run runs the use case
@@ -100,7 +83,7 @@ func (c *Copy) filterRefs(refereces interface{}, cols []string, rows [][]*string
 
 // getRefPossibles gets the possible references
 func (c *Copy) getRefPossibles(ref *References, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
-	sql := fmt.Sprintf(copySelectF, ref.FieldReferred, ref.Base, ref.Object, ref.FieldReferred, min-1, ref.FieldReferred, max)
+	sql := fmt.Sprintf(port.CopySelectF, ref.FieldReferred, ref.Base, ref.Object, ref.FieldReferred, min-1, ref.FieldReferred, max)
 	_, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
 		return nil, err
@@ -169,7 +152,7 @@ func (c *Copy) getSource(j *domain.Job, references interface{}, limit int64) ([]
 	fields = fields[:len(fields)-2]
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
-	sql := fmt.Sprintf(copySelectF, fields, j.Base, j.Object, j.Field, j.Last, j.Field, limit)
+	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Field, j.Last, j.Field, limit)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -182,13 +165,13 @@ func (c *Copy) getAllSource(j *domain.Job, rows [][]*string) ([]string, [][]*str
 	if len(rows) == 0 {
 		return nil, nil, nil
 	}
+	var cols []string
+	var rrows [][]*string
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
-	rrows := make([][]*string, 0)
-	cols := make([]string, 0)
 	last := int64(len(rows))
 	for i := int64(0); i < last; i += InLimit {
-		col, row, err := c.getAllSourceStep(j, rows[i:min(i+InLimit,last)], txSource)
+		col, row, err := c.getAllSouceAtomic(j, rows[i:min(i+InLimit, last)], txSource)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -198,14 +181,42 @@ func (c *Copy) getAllSource(j *domain.Job, rows [][]*string) ([]string, [][]*str
 	return cols, rrows, nil
 }
 
+// runWait waits for the run to finish or db relief time
+func (c *Copy) getAllSouceAtomic(j *domain.Job, rows [][]*string, txSource interface{}) ([]string, [][]*string, error) {
+	var cols []string
+	var row [][]*string
+	var err error
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	chn := make(chan bool, 1)
+	go func(chn chan bool) {
+		cols, row, err = c.getAllSourceAtom(j, rows, txSource)
+		wg.Done()
+		chn <- true
+	}(chn)
+	go func() {
+		time.Sleep(port.DbRelief)
+		wg.Done()
+	}()
+	select {
+	case <-chn:
+		wg.Wait()
+	case <-c.Ctx.Done():
+		return nil, nil, errors.New(port.ErrTimeout)
+	case <- c.Signal:
+		return nil, nil, errors.New(port.ErrInterrupted)
+	}
+	return cols, row, err
+}
+
 // getAllSource steps the source data for the insert
-func (c *Copy) getAllSourceStep(j *domain.Job, rows [][]*string, txSource interface{}) ([]string, [][]*string, error) {
+func (c *Copy) getAllSourceAtom(j *domain.Job, rows [][]*string, txSource interface{}) ([]string, [][]*string, error) {
 	ids := ""
 	for _, row := range rows {
 		ids += *row[0] + ", "
 	}
 	ids = ids[:len(ids)-2]
-	sql := fmt.Sprintf(copySelectAll, j.Base, j.Object, j.Field, ids, j.Field)
+	sql := fmt.Sprintf(port.CopySelectAll, j.Base, j.Object, j.Field, ids, j.Field)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -218,7 +229,7 @@ func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
 	if cmd == "" {
 		return 0, nil
 	}
-	_, err := c.RepoTarget.Exec(txTarget, copyDisableFK)
+	_, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK)
 	if err != nil {
 		return 0, err
 	}
@@ -226,7 +237,7 @@ func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	done, err := c.RepoTarget.Exec(txTarget, copyEnableFK)
+	done, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK)
 	if err != nil {
 		return 0, err
 	}
@@ -260,7 +271,7 @@ func (c *Copy) mountInsert(base string, tablename string, cols []string, rows []
 		}
 		values += fmt.Sprintf("(%s), ", value[:len(value)-2])
 	}
-	return fmt.Sprintf(copyInsert, base, tablename, strCols, values[:len(values)-2])
+	return fmt.Sprintf(port.CopyInsert, base, tablename, strCols, values[:len(values)-2])
 }
 
 // formatValue formats the value to insert
@@ -280,9 +291,9 @@ func (c *Copy) formatValue(col *string) string {
 
 // getMaxClient gets the max id from the client table
 func (c *Copy) getLimits(object string, field string, last int64, limit int64) (int64, int64, int64, error) {
-	tx := c.RepoSource.Begin(loadClientSourceBase)
+	tx := c.RepoSource.Begin(port.CopySourceBase)
 	defer c.RepoSource.Rollback(tx)
-	q := fmt.Sprintf(copyMaxClient, field, object)
+	q := fmt.Sprintf(port.CopyMaxClient, field, object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
 		return -1, -1, -1, err

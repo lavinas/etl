@@ -9,13 +9,11 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"time"
 	"unicode"
 
 	gmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"gorm.io/gorm/logger"
 
 	"github.com/go-sql-driver/mysql"
 	gssh "golang.org/x/crypto/ssh"
@@ -23,11 +21,6 @@ import (
 
 	"github.com/lavinas/vooo-etl/internal/port"
 	"github.com/lavinas/vooo-etl/pkg"
-)
-
-const (
-	logLevel = logger.Silent
-	timeout  = time.Second * 5
 )
 
 // RepoMySql is the repository handler for the application
@@ -403,7 +396,7 @@ func connect(dns string, ssh string) (*gorm.DB, *sql.DB, *gssh.Client, error) {
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	config := gorm.Config{Logger: logger.Default.LogMode(logLevel)}
+	config := gorm.Config{Logger: port.LoggerType}
 	gormDb, err := gorm.Open(gmysql.New(gmysql.Config{Conn: db}), &config)
 	if err != nil {
 		return nil, nil, nil, err
@@ -457,7 +450,7 @@ func sshConnect(ssh string) (*gssh.Client, error) {
 func dialTimeout(sshHost, sshPort string, sshConfig *gssh.ClientConfig) (*gssh.Client, error) {
 	ch := make(chan *gssh.Client, 1)
 	ech := make(chan error, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), port.ConnectionTimeout)
 	defer cancel()
 	go func() {
 		conn, err := gssh.Dial("tcp", fmt.Sprintf("%s:%s", sshHost, sshPort), sshConfig)

@@ -4,35 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-const (
-	updateDisableFK = "SET FOREIGN_KEY_CHECKS = 0;"
-	updateEnableFK  = "SET FOREIGN_KEY_CHECKS = 1;"
-	updateGetFields = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s';"
-	updateSelectID1 = "SELECT %s, md5(concat(%s)) FROM %s.%s WHERE %s > %d and %s <= %d order by 1;"
-	updateSelectID2 = "SELECT %s, md5(concat(%s)) FROM %s.%s WHERE %s in (%s) order by 1;"
-	updateSelectAll = "SELECT * FROM %s.%s WHERE %s in (%s);"
-	updateInsert    = "REPLACE INTO %s.%s(%s) VALUES %s;"
-	returnMessage   = "%d processed, %d updated"
-)
-
 // Update is a struct that represents the use case update a object from database
 type Update struct {
 	Base
-}
-
-// NewUpdate creates a new use case
-func NewUpdate(repoSource port.Repository, repoTarget port.Repository) *Update {
-	return &Update{
-		Base: Base{
-			RepoSource: repoSource,
-			RepoTarget: repoTarget,
-		},
-	}
 }
 
 // Run runs the use case
@@ -42,7 +23,7 @@ func (c *Update) Run(job port.Domain, refs interface{}, txTarget interface{}) (s
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	ids, end, processed, updated, err := c.getIds(j, r, txTarget)
+	ids, end, processed, updated, err := c.getIdsWait(j, r, txTarget)
 	if err != nil {
 		return "", -1, err
 	}
@@ -52,34 +33,56 @@ func (c *Update) Run(job port.Domain, refs interface{}, txTarget interface{}) (s
 	if err := c.setJob(j, end, txTarget); err != nil {
 		return "", -1, err
 	}
-	message := fmt.Sprintf(returnMessage, processed, updated)
+	message := fmt.Sprintf(port.UpdateReturnMessage, processed, updated)
 	return message, 0, nil
 }
 
 // getIds gets the ids from source and target when any field is different
-func (c *Update) getIds(j *domain.Job, refs []References, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
+func (c *Update) getIdsWait(j *domain.Job, refs []References, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
 	fields, err := c.getFields(j, txTarget)
 	if err != nil {
 		return nil, -1, -1, -1, err
 	}
 	retIds := make([][]*string, 0)
 	var init, end, processed, updated int64
-	var cont bool
+	var out bool
+	wg := sync.WaitGroup{}
 	for {
-		cont, init, end = c.getLimits(j, refs, init)
-		if !cont {
-			break
-		}
-		ids, proc, upd, err := c.getIdsPart(j, fields, init, end, txTarget)
+		wg.Add(2)
+		go func() {
+			end, out, err = c.getIdsSum(j, refs, fields, init, &retIds, &processed, &updated, txTarget)
+			wg.Done()
+		}()
+		go func() {
+			time.Sleep(port.DbRelief)
+			wg.Done()
+		}()
 		if err != nil {
 			return nil, -1, -1, -1, err
 		}
-		retIds = append(retIds, ids...)
-		processed += int64(proc)
-		updated += int64(upd)
+		if out {
+			break
+		}
 		init = end
+		wg.Wait()
 	}
 	return retIds, end, processed, updated, nil
+}
+
+// getIdsCycle gets the ids in a cycle loop
+func (c *Update) getIdsSum(j *domain.Job, refs []References, fields string, init int64, ids *[][]*string, proc *int64, upd *int64, txTarget interface{}) (int64, bool, error) {
+	getOut, i, end := c.getLimits(j, refs, init)
+	if getOut {
+		return 0, true, nil
+	}
+	id, p, u, err := c.getIds(j, fields, i, end, txTarget)
+	if err != nil {
+		return 0, false, err
+	}
+	*ids = append(*ids, id...)
+	*proc += p
+	*upd += u
+	return end, false, nil
 }
 
 // getLimits gets the limits from source
@@ -98,11 +101,11 @@ func (c *Update) getLimits(j *domain.Job, refs []References, init int64) (bool, 
 	if end > refs[0].Last {
 		end = refs[0].Last
 	}
-	return init < end, init, end
+	return init >= end, init, end
 }
 
 // getIdsPart gets the ids from source and target when any field is different in parts
-func (c *Update) getIdsPart(j *domain.Job, fields string, init, end int64, txTarget interface{}) ([][]*string, int64, int64, error) {
+func (c *Update) getIds(j *domain.Job, fields string, init, end int64, txTarget interface{}) ([][]*string, int64, int64, error) {
 	idsTarget, err := c.getTargetIds(j, fields, init, end, txTarget)
 	if err != nil {
 		return nil, 0, 0, err
@@ -144,7 +147,7 @@ func (c *Update) update(j *domain.Job, ids [][]*string, txTarget interface{}) er
 
 // getFields gets the fields from target table
 func (c *Update) getFields(j *domain.Job, tx interface{}) (string, error) {
-	q := fmt.Sprintf(updateGetFields, j.Base, j.Object)
+	q := fmt.Sprintf(port.UpdateGetFields, j.Base, j.Object)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
 		return "", err
@@ -171,7 +174,7 @@ func (c *Update) mountFields(fields [][]*string) (string, error) {
 
 // getSourceid gets the ids from target table
 func (c *Update) getTargetIds(j *domain.Job, fields string, init, end int64, tx interface{}) ([][]*string, error) {
-	q := fmt.Sprintf(updateSelectID1, j.Field, fields, j.Base, j.Object, j.Field, init, j.Field, end)
+	q := fmt.Sprintf(port.UpdateSelectID1, j.Field, fields, j.Base, j.Object, j.Field, init, j.Field, end)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
 		return nil, err
@@ -183,7 +186,7 @@ func (c *Update) getTargetIds(j *domain.Job, fields string, init, end int64, tx 
 func (c *Update) getSourceIds(j *domain.Job, fields string, idsTarget [][]*string) ([][]*string, error) {
 	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
-	q := fmt.Sprintf(updateSelectID2, j.Field, fields, j.Base, j.Object, j.Field, c.mountIds(idsTarget))
+	q := fmt.Sprintf(port.UpdateSelectID2, j.Field, fields, j.Base, j.Object, j.Field, c.mountIds(idsTarget))
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
 		return nil, err
@@ -207,7 +210,7 @@ func (c *Update) getDifferentIds(idsSource [][]*string, idsTarget [][]*string) (
 
 // getSource gets the source data
 func (c *Update) getSource(j *domain.Job, ids [][]*string) ([]string, [][]*string, error) {
-	q := fmt.Sprintf(updateSelectAll, j.Base, j.Object, j.Field, c.mountIds(ids))
+	q := fmt.Sprintf(port.UpdateSelectAll, j.Base, j.Object, j.Field, c.mountIds(ids))
 	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
 	cols, rows, err := c.RepoSource.Query(tx, q)
@@ -228,8 +231,8 @@ func (c *Update) mountIds(ids [][]*string) string {
 
 // updateTarget updates the target table
 func (c *Update) updateTarget(j *domain.Job, cols []string, rows [][]*string, txTarget interface{}) error {
-	q := fmt.Sprintf(updateInsert, j.Base, j.Object, c.mountCols(cols), c.mountRows(rows))
-	_, err := c.RepoTarget.Exec(txTarget, updateDisableFK)
+	q := fmt.Sprintf(port.UpdateInsert, j.Base, j.Object, c.mountCols(cols), c.mountRows(rows))
+	_, err := c.RepoTarget.Exec(txTarget, port.UpdateDisableFK)
 	if err != nil {
 		return err
 	}
@@ -237,7 +240,7 @@ func (c *Update) updateTarget(j *domain.Job, cols []string, rows [][]*string, tx
 	if err != nil {
 		return err
 	}
-	_, err = c.RepoTarget.Exec(txTarget, updateEnableFK)
+	_, err = c.RepoTarget.Exec(txTarget, port.UpdateEnableFK)
 	if err != nil {
 		return err
 	}

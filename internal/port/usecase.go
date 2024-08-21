@@ -2,7 +2,6 @@ package port
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -21,7 +20,6 @@ type RunIn struct {
 	ErrorSkip bool
 	Delay     int64
 	JobID     int64
-	Signal    chan os.Signal
 }
 
 // RunOut is a struct that represents the output of the Run

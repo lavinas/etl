@@ -9,27 +9,9 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-const (
-	loadClientSourceBase = "vooo_prod_backend"
-	loadClientAggregator = "SELECT id FROM aggregator_ref;"
-	loadClientSelect     = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"
-	loadClientInsert     = "INSERT IGNORE INTO client_ref VALUES %s;"
-	loadClientMax        = "SELECT max(id) FROM client;"
-)
-
 // Copy is a struct that represents the use case copy a object from database to another
 type LoadClient struct {
 	Base
-}
-
-// NewCopy creates a new use case
-func NewLoadClient(repoSource port.Repository, repoTarget port.Repository) *LoadClient {
-	return &LoadClient{
-		Base: Base{
-			RepoSource: repoSource,
-			RepoTarget: repoTarget,
-		},
-	}
 }
 
 // Run runs the use case
@@ -58,7 +40,7 @@ func (c *LoadClient) Run(job port.Domain, refs interface{}, txTarget interface{}
 
 // getAggregators gets the aggregators from reference table
 func (c *LoadClient) getAggregators(txTarget interface{}) (string, error) {
-	_, rows, err := c.RepoTarget.Query(txTarget, loadClientAggregator)
+	_, rows, err := c.RepoTarget.Query(txTarget, port.LoadClientAggregator)
 	if err != nil {
 		return "", err
 	}
@@ -74,9 +56,9 @@ func (c *LoadClient) getAggregators(txTarget interface{}) (string, error) {
 
 // getSource gets the source data from the database
 func (c *LoadClient) getSource(aggregators string, initId int64, endId int64) ([][]*string, error) {
-	tx := c.RepoSource.Begin(loadClientSourceBase)
+	tx := c.RepoSource.Begin(port.LoadClientSourceBase)
 	defer c.RepoSource.Rollback(tx)
-	query := fmt.Sprintf(loadClientSelect, aggregators, initId, endId)
+	query := fmt.Sprintf(port.LoadClientSelect, aggregators, initId, endId)
 	_, rows, err := c.RepoSource.Query(tx, query)
 	if err != nil {
 		return nil, err
@@ -94,7 +76,7 @@ func (c *LoadClient) insertTarget(rows [][]*string, txTarget interface{}) error 
 		clis += fmt.Sprintf("(%s),", *row[0])
 	}
 	clis = clis[:len(clis)-1]
-	query := fmt.Sprintf(loadClientInsert, clis)
+	query := fmt.Sprintf(port.LoadClientInsert, clis)
 	_, err := c.RepoTarget.Exec(txTarget, query)
 	if err != nil {
 		return err
@@ -123,9 +105,9 @@ func (c *LoadClient) setJob(job *domain.Job, txTarget interface{}) (int64, int64
 
 // getMaxClient gets the max id from the client table
 func (c *LoadClient) getMaxClient() (int64, error) {
-	tx := c.RepoSource.Begin(loadClientSourceBase)
+	tx := c.RepoSource.Begin(port.LoadClientSourceBase)
 	defer c.RepoSource.Rollback(tx)
-	_, rows, err := c.RepoSource.Query(tx, loadClientMax)
+	_, rows, err := c.RepoSource.Query(tx, port.LoadClientMax)
 	if err != nil {
 		return 0, err
 	}
