@@ -301,6 +301,10 @@ func (c *Copy) getLimits(object string, field string, last int64, limit int64) (
 	if len(rows) == 0 || rows[0] == nil {
 		return -1, -1, -1, errors.New(port.ErrFieldNotFound)
 	}
+	if len(rows[0]) == 0 || rows[0][0] == nil {
+		return 0, 0, 0, nil
+	}
+
 	max, err := strconv.ParseInt(*rows[0][0], 10, 64)
 	if err != nil {
 		return -1, -1, -1, err
