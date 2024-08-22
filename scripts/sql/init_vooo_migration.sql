@@ -1,28 +1,28 @@
-use vooo_migration;
 
--- insert into aggregator_ref
-insert into aggregator_ref (id) values (11);
+-- INSERTING INITIAL DATA
+use vooo_prod_backend;
+
+SET FOREIGN_KEY_CHECKS = 0;
+-- aggregator
+INSERT INTO `aggregator` (`id`,`id_client`,`name`) VALUES (11,1076,'Destaxa');
+-- client
+INSERT INTO `client` (`id`,`economic_group_id`,`id_address`,`id_contact`,`id_document`,`id_author`,`headquarter_id`,`id_aggregator`,`name`,`trading`,`brand`,`status`,`created_at`,`updated_at`) VALUES (1076,NULL,NULL,NULL,1076,1,NULL,11,'Nexu','Nexu Tecnologia Em Capturas E Processamento De Transacoes Ltda','Nexu',1,'2020-08-18 20:20:05','2020-08-20 08:59:50');
+INSERT INTO `client` (`id`,`economic_group_id`,`id_address`,`id_contact`,`id_document`,`id_author`,`headquarter_id`,`id_aggregator`,`name`,`trading`,`brand`,`status`,`created_at`,`updated_at`) VALUES (1507,NULL,NULL,NULL,1507,3579,NULL,1,'EPLP Tecnologia de Pagamentos LTDA','EPLP Tecnologia de Pagamentos LTDA','EPAG',1,'2021-10-14 12:05:35','2021-10-25 18:37:21');
+INSERT INTO `client` (`id`,`economic_group_id`,`id_address`,`id_contact`,`id_document`,`id_author`,`headquarter_id`,`id_aggregator`,`name`,`trading`,`brand`,`status`,`created_at`,`updated_at`) VALUES (2210,NULL,NULL,NULL,2207,3579,NULL,1,'Tradio Pagamentos Ltda','Tradio Pagamentos Ltda','Tradio Bank',1,'2023-11-09 17:31:55','2023-11-13 13:13:48');
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- INSERTING MIGRATION OBJECTS
+
+use vooo_prod_migration;
+
+-- jobs
+insert into job (id, name, type, action, base, object, field, last, `limit`) values (100, 'vooo_prod_backend.aggregador', 'table', 'none', 'vooo_prod_backend', 'aggregator', 'id', 0, 5000);
+insert into job (id, name, type, action, base, object, field, last, `limit`) values (200, 'vooo_prod_backend.client', 'table', 'copy', 'vooo_prod_backend', 'client', 'id', 0, 5000);
 
 
--- insert into client_ref
-insert into client_ref (id) values (1507); -- epag
-insert into client_ref (id) values (2210); -- tradio
-
-
--- insert into job
-insert into job (id, name, type, action, base, object, field, last, limit) values (100, 'initial_load', 'table', 'loadClient', 'vooo_migration', 'client_ref', 'id', 0, 30000);
-insert into job (id, name, type, action, base, object, field, last, limit) values (200, 'cliente', 'table', 'copy', 'vooo_prod_backend', 'client', 'id', 0, 30000);
-insert into job (id, name, type, action, base, object, field, last, limit) values (300, 'document', 'table', 'copy', 'vooo_prod_backend', 'document', 'id', 0, 30000);
-insert into job (id, name, type, action, base, object, field, last, limit) values (400, 'connection', 'table', 'copy', 'vooo_prod_backend', 'connection', 'connection_id', 112705476, 30000);
-insert into job (id, name, type, action, base, object, field, last, `limit`) values (500, 'connection_item', 'table', 'copy', 'vooo_prod_backend', 'connection_item', 'item_id', 824131765, 30000);
-insert into job (id, name, type, action, base, object, field, last, `limit`) values (600, 'connection_item', 'table', 'update', 'vooo_prod_backend', 'connection_item', 'item_id', 824131765, 30000);
-
--- insert into reference
-insert into reference (referrer, referred, field_referrer, field_referred) values (200, 100, 'id', 'id');
-insert into reference (referrer, referred, field_referrer, field_referred) values (300, 200, 'id', 'id_document');
-insert into reference (referrer, referred, field_referrer, field_referred) values (400, 200, 'id_client', 'id');
-insert into reference (referrer, referred, field_referrer, field_referred) values (500, 400, 'connection_id', 'connection_id');
-insert into reference (referrer, referred, field_referrer, field_referred) values (600, 500, 'item_id', 'item_id');
+-- reference
+insert into reference(referrer, referred, field_referrer, field_referred) values (200, 100, 'id_aggregator', 'id');
 
 
 commit;

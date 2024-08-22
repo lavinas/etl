@@ -141,6 +141,9 @@ func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{},
 	if err != nil {
 		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
+	if action == nil {
+		return r.sendOut(out, job.Id, 0, 0, port.SuccessStatus, "none action", time.Now())
+	}
 	message, more, err := action.Run(job, refs, tx)
 	if err != nil {
 		return r.sendOut(out, jobId, shift, more, port.ErrorStatus, err.Error(), start)
@@ -248,6 +251,8 @@ func (r *Run) factory(action string) (port.RunAction, error) {
 		return &Copy{Base: base}, nil
 	case "update":
 		return &Update{Base: base}, nil
+	case "none":
+		return nil, nil
 	}
 	return nil, errors.New(port.ErrActionNotFound)
 }

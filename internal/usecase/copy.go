@@ -107,6 +107,9 @@ func (c *Copy) filterRef(field string, possibles map[int64]bool, cols map[string
 	}
 	var filtered [][]*string
 	for _, row := range rows {
+		if row[iField] == nil {
+			continue
+		}
 		val, err := strconv.ParseInt(*row[iField], 10, 64)
 		if err != nil {
 			return nil, err
@@ -124,8 +127,12 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 	if !ok {
 		return 0, 0, errors.New(port.ErrFieldReferrerNotFound)
 	}
+
 	var min, max int64
 	for _, row := range rows {
+		if row[iField] == nil {
+			continue
+		}
 		val, err := strconv.ParseInt(*row[iField], 10, 64)
 		if err != nil {
 			return 0, 0, err
