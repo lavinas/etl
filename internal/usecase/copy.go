@@ -170,8 +170,8 @@ func (c *Copy) getAllSource(j *domain.Job, rows [][]*string) ([]string, [][]*str
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
 	last := int64(len(rows))
-	for i := int64(0); i < last; i += InLimit {
-		col, row, err := c.getAllSouceAtomic(j, rows[i:min(i+InLimit, last)], txSource)
+	for i := int64(0); i < last; i += port.InLimit {
+		col, row, err := c.getAllSouceAtomic(j, rows[i:min(i+port.InLimit, last)], txSource)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -203,7 +203,7 @@ func (c *Copy) getAllSouceAtomic(j *domain.Job, rows [][]*string, txSource inter
 		wg.Wait()
 	case <-c.Ctx.Done():
 		return nil, nil, errors.New(port.ErrTimeout)
-	case <- c.Signal:
+	case <-c.Signal:
 		return nil, nil, errors.New(port.ErrInterrupted)
 	}
 	return cols, row, err

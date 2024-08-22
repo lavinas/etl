@@ -30,8 +30,8 @@ const (
 	ErrInvalidUpadateReferences = "invalid update references. Just one reference is allowed"
 	ErrInvalidUpdateSource      = "source and ids have different length"
 	ErrInvalidUpdateFields      = "no fields field found on update"
-	ErrTimeout				    = "timeout"
-	ErrInterrupted			  = "interrupted"
+	ErrTimeout                  = "timeout"
+	ErrInterrupted              = "interrupted"
 )
 
 // queries
@@ -58,10 +58,11 @@ const (
 // usecases variables
 var (
 	RunTimeout           = 30 * time.Second
-	DbRelief             = 100 * time.Millisecond
+	DbRelief             = 0 * time.Millisecond
 	LoadClientSourceBase = "vooo_prod_backend"
 	CopySourceBase       = "vooo_prod_backend"
 	UpdateReturnMessage  = "%d processed, %d updated"
+	InLimit			     = int64(5000)
 )
 
 // MySQL variables

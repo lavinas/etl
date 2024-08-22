@@ -90,49 +90,39 @@ func (r *Run) runJobCycle(jobId int64, out chan *port.RunOut, start time.Time, s
 	if err := exec.Init(r.RepoTarget, jobId, start, shift); err != nil {
 		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
-	ret := r.runAtomic(jobId, out, start, shift)
+	tx := r.RepoTarget.Begin("")
+	defer r.RepoTarget.Rollback(tx)
+	var close context.CancelFunc
+	r.Ctx, close = context.WithTimeout(context.Background(), port.RunTimeout)
+	defer close()
+	ret := r.runWait(jobId, out, start, shift, tx)
 	if err := exec.SetStatus(r.RepoTarget, ret); err != nil {
 		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
 	}
 	return ret
 }
 
-// runJob runs a job with a given id and returns output struct
-func (r *Run) runAtomic(jobId int64, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
-	now := time.Now()
-	var close context.CancelFunc
-	r.Ctx, close = context.WithTimeout(context.Background(), port.RunTimeout)
-	defer close()
+// runWait waits for a given time
+func (r *Run) runWait(jobId int64, out chan *port.RunOut, start time.Time, shift int64, tx interface{}) *port.RunOut {
 	run := make(chan *port.RunOut)
-	tx := r.RepoTarget.Begin("")
-	defer r.RepoTarget.Rollback(tx)
 	wg := sync.WaitGroup{}
 	wg.Add(2)
+	go func() {
+		time.Sleep(port.DbRelief)
+		wg.Done()
+	}()
 	go r.runAtom(jobId, run, tx, start, shift, &wg)
-	go r.runWait(&wg)
-	ret := &port.RunOut{}
-	wait := false
 	select {
 	case <-r.Ctx.Done():
-		ret = r.sendOut(out, jobId, shift, -1, port.ErrorStatus, "timeout", start)
+		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, "timeout", start)
 	case <-r.Signal:
-		ret = r.sendOut(out, jobId, shift, -1, port.InterrupedStatus, "interrupted", start)
+		return r.sendOut(out, jobId, shift, -1, port.InterrupedStatus, "interrupted", start)
 	case r := <-run:
-		r.Duration = time.Since(now).Seconds()
-		out <- r
-		ret = r
-		wait = true
-	}
-	if wait {
 		wg.Wait()
+		r.Duration = time.Since(start).Seconds()
+		out <- r
+		return r
 	}
-	return ret
-}
-
-// runWait waits for a given time
-func (r *Run) runWait(wg *sync.WaitGroup) {
-	time.Sleep(port.DbRelief)
-	wg.Done()
 }
 
 // run runs the use case

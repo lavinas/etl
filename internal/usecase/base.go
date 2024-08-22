@@ -7,9 +7,6 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-const (
-	InLimit = int64(5000)
-)
 
 type References struct {
 	Id            int64
@@ -29,7 +26,6 @@ type Base struct {
 	RepoTarget port.Repository
 	Ctx        context.Context
 	Signal     chan os.Signal
-
 }
 
 // NewBase creates a new use case

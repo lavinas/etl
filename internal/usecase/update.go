@@ -23,7 +23,7 @@ func (c *Update) Run(job port.Domain, refs interface{}, txTarget interface{}) (s
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	ids, end, processed, updated, err := c.getIdsWait(j, r, txTarget)
+	ids, end, processed, updated, err := c.getIdsLoop(j, r, txTarget)
 	if err != nil {
 		return "", -1, err
 	}
@@ -38,94 +38,73 @@ func (c *Update) Run(job port.Domain, refs interface{}, txTarget interface{}) (s
 }
 
 // getIds gets the ids from source and target when any field is different
-func (c *Update) getIdsWait(j *domain.Job, refs []References, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
-	fields, err := c.getFields(j, txTarget)
-	if err != nil {
-		return nil, -1, -1, -1, err
-	}
+func (c *Update) getIdsLoop(j *domain.Job, refs []References, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
 	retIds := make([][]*string, 0)
-	var init, end, processed, updated int64
-	var out bool
-	wg := sync.WaitGroup{}
-	for {
-		wg.Add(2)
-		go func() {
-			end, out, err = c.getIdsSum(j, refs, fields, init, &retIds, &processed, &updated, txTarget)
-			wg.Done()
-		}()
-		go func() {
-			time.Sleep(port.DbRelief)
-			wg.Done()
-		}()
+	var updated int64
+	idsTarget, fields, end, err := c.getTargetIds(j, refs, txTarget)
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+	lim := int64(len(idsTarget))
+	for i := int64(0); i < lim; i += port.InLimit {
+		ids := idsTarget[i:min(i+port.InLimit, lim)]
+		parcIds, u, err := c.getFielteredIds(j,fields, ids)
 		if err != nil {
 			return nil, -1, -1, -1, err
 		}
-		if out {
-			break
-		}
-		init = end
+		retIds = append(retIds, parcIds...)
+		updated += u
+	}
+	return retIds, end, lim, updated, nil
+}
+
+// getIdsWait gets the ids from source and target when any field is different
+func (c *Update) getFielteredIds(j *domain.Job, fields string, ids [][]*string) ([][]*string, int64, error) {
+	var updated int64
+	var id [][]*string
+	var err error
+	wg := sync.WaitGroup{}
+	chn := make(chan bool)
+	wg.Add(2)
+	go func(chn chan bool) {
+		id, updated, err = c.getFielteredIdsAtom(j, fields, ids)
+		wg.Done()
+		chn <- true
+	}(chn)
+	go func() {
+		time.Sleep(port.DbRelief)
+		wg.Done()
+	}()
+	select {
+	case <-chn:
 		wg.Wait()
+	case <-c.Ctx.Done():
+		return nil, -1, errors.New(port.ErrTimeout)
+	case <-c.Signal:
+		return nil, -1, errors.New(port.ErrInterrupted)
 	}
-	return retIds, end, processed, updated, nil
-}
-
-// getIdsCycle gets the ids in a cycle loop
-func (c *Update) getIdsSum(j *domain.Job, refs []References, fields string, init int64, ids *[][]*string, proc *int64, upd *int64, txTarget interface{}) (int64, bool, error) {
-	getOut, i, end := c.getLimits(j, refs, init)
-	if getOut {
-		return 0, true, nil
-	}
-	id, p, u, err := c.getIds(j, fields, i, end, txTarget)
-	if err != nil {
-		return 0, false, err
-	}
-	*ids = append(*ids, id...)
-	*proc += p
-	*upd += u
-	return end, false, nil
-}
-
-// getLimits gets the limits from source
-func (c *Update) getLimits(j *domain.Job, refs []References, init int64) (bool, int64, int64) {
-	if init == 0 {
-		init = refs[0].Last - j.Limit
-		if init < 0 {
-			init = 0
-		}
-	}
-	step := refs[0].Limit
-	if step > InLimit {
-		step = InLimit
-	}
-	end := init + step
-	if end > refs[0].Last {
-		end = refs[0].Last
-	}
-	return init >= end, init, end
+	return id, updated, err
 }
 
 // getIdsPart gets the ids from source and target when any field is different in parts
-func (c *Update) getIds(j *domain.Job, fields string, init, end int64, txTarget interface{}) ([][]*string, int64, int64, error) {
-	idsTarget, err := c.getTargetIds(j, fields, init, end, txTarget)
-	if err != nil {
-		return nil, 0, 0, err
-	}
+func (c *Update) getFielteredIdsAtom(j *domain.Job, fields string, idsTarget [][]*string) ([][]*string, int64, error) {
 	if len(idsTarget) == 0 {
-		return idsTarget, 0, 0, nil
+		return idsTarget, 0, nil
 	}
 	idsSource, err := c.getSourceIds(j, fields, idsTarget)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, 0, err
 	}
 	if len(idsSource) != len(idsTarget) {
-		return nil, -0, 0, errors.New(port.ErrInvalidUpdateSource)
+		return nil, 0, errors.New(port.ErrInvalidUpdateSource)
 	}
 	ids, err := c.getDifferentIds(idsSource, idsTarget)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, 0, err
 	}
-	return ids, int64(len(idsTarget)), int64(len(ids)), nil
+	return ids, int64(len(ids)), nil
 }
+
 
 // update get from source and update target
 func (c *Update) update(j *domain.Job, ids [][]*string, txTarget interface{}) error {
@@ -173,13 +152,22 @@ func (c *Update) mountFields(fields [][]*string) (string, error) {
 }
 
 // getSourceid gets the ids from target table
-func (c *Update) getTargetIds(j *domain.Job, fields string, init, end int64, tx interface{}) ([][]*string, error) {
+func (c *Update) getTargetIds(j *domain.Job, refs []References, tx interface{}) ([][]*string, string, int64, error) {
+	fields, err := c.getFields(j, tx)
+	if err != nil {
+		return nil, "", 0, err
+	}
+	init := refs[0].Last - j.Limit
+	if init < 0 {
+		init = 0
+	}
+	end := refs[0].Last
 	q := fmt.Sprintf(port.UpdateSelectID1, j.Field, fields, j.Base, j.Object, j.Field, init, j.Field, end)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
-		return nil, err
+		return nil, "", 0, err
 	}
-	return rows, nil
+	return rows, fields, refs[0].Last, nil
 }
 
 // getSourceid gets the ids from target table
