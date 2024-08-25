@@ -19,11 +19,10 @@ type Update struct {
 // Run runs the use case
 func (c *Update) Run(job port.Domain, txTarget interface{}) (string, int64, error) {
 	j := job.(*domain.Job)
-	r := refs.([]Ref)
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	ids, end, processed, updated, err := c.getIdsLoop(j, r, txTarget)
+	ids, end, processed, updated, err := c.getIdsLoop(j, txTarget)
 	if err != nil {
 		return "", -1, err
 	}
@@ -38,10 +37,10 @@ func (c *Update) Run(job port.Domain, txTarget interface{}) (string, int64, erro
 }
 
 // getIds gets the ids from source and target when any field is different
-func (c *Update) getIdsLoop(j *domain.Job, refs []Ref, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
+func (c *Update) getIdsLoop(j *domain.Job, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
 	retIds := make([][]*string, 0)
 	var updated int64
-	idsTarget, fields, end, err := c.getTargetIds(j, refs, txTarget)
+	idsTarget, fields, end, err := c.getTargetIds(j, txTarget)
 	if err != nil {
 		return nil, 0, 0, 0, err
 	}
@@ -151,29 +150,32 @@ func (c *Update) mountFields(fields [][]*string) (string, error) {
 }
 
 // getSourceid gets the ids from target table
-func (c *Update) getTargetIds(j *domain.Job, refs []Ref, tx interface{}) ([][]*string, string, int64, error) {
+func (c *Update) getTargetIds(j *domain.Job, tx interface{}) ([][]*string, string, int64, error) {
 	fields, err := c.getFields(j, tx)
 	if err != nil {
 		return nil, "", 0, err
 	}
-	init := refs[0].Last - j.Limit
+	last := j.Refs[0].Job.Keys[0].Last
+	step := j.Keys[0].Step
+	field := j.Keys[0].Name
+	init := last - step
 	if init < 0 {
 		init = 0
 	}
-	end := refs[0].Last
-	q := fmt.Sprintf(port.UpdateSelectID1, j.Field, fields, j.Base, j.Object, j.Field, init, j.Field, end)
+	q := fmt.Sprintf(port.UpdateSelectID1, field, fields, j.Base, j.Object, field, init, field, last)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
 		return nil, "", 0, err
 	}
-	return rows, fields, refs[0].Last, nil
+	return rows, fields, last, nil
 }
 
 // getSourceid gets the ids from target table
 func (c *Update) getSourceIds(j *domain.Job, fields string, idsTarget [][]*string) ([][]*string, error) {
 	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
-	q := fmt.Sprintf(port.UpdateSelectID2, j.Field, fields, j.Base, j.Object, j.Field, c.mountIds(idsTarget))
+	field := j.Keys[0].Name
+	q := fmt.Sprintf(port.UpdateSelectID2, field, fields, j.Base, j.Object, field, c.mountIds(idsTarget))
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
 		return nil, err
@@ -189,6 +191,7 @@ func (c *Update) getDifferentIds(idsSource [][]*string, idsTarget [][]*string) (
 	}
 	for i, id := range idsSource {
 		if *id[1] != *idsTarget[i][1] {
+			fmt.Println(*id[0], *idsTarget[i][0], *id[1], *idsTarget[i][1])
 			ret = append(ret, id)
 		}
 	}
@@ -197,7 +200,8 @@ func (c *Update) getDifferentIds(idsSource [][]*string, idsTarget [][]*string) (
 
 // getSource gets the source data
 func (c *Update) getSource(j *domain.Job, ids [][]*string) ([]string, [][]*string, error) {
-	q := fmt.Sprintf(port.UpdateSelectAll, j.Base, j.Object, j.Field, c.mountIds(ids))
+	field := j.Keys[0].Name
+	q := fmt.Sprintf(port.UpdateSelectAll, j.Base, j.Object, field, c.mountIds(ids))
 	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
 	cols, rows, err := c.RepoSource.Query(tx, q)
@@ -257,9 +261,9 @@ func (c *Update) mountRows(rows [][]*string) string {
 }
 
 // setJob sets the job last id
-func (c *Update) setJob(job *domain.Job, last int64, txTarget interface{}) error {
-	job.Last = last
-	if err := job.Save(c.RepoTarget, txTarget); err != nil {
+func (c *Update) setJob(j *domain.Job, last int64, txTarget interface{}) error {
+	j.Keys[0].Last = last
+	if err := j.Keys[0].Save(c.RepoTarget, txTarget); err != nil {
 		return err
 	}
 	return nil

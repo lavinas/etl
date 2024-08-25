@@ -2,6 +2,7 @@ package port
 
 import (
 	"gorm.io/gorm/logger"
+	"math"
 	"time"
 )
 
@@ -54,6 +55,11 @@ const (
 	UpdateSelectID2      = "SELECT %s, md5(concat(%s)) FROM %s.%s WHERE %s in (%s) order by 1;"
 	UpdateSelectAll      = "SELECT * FROM %s.%s WHERE %s in (%s);"
 	UpdateInsert         = "REPLACE INTO %s.%s(%s) VALUES %s;"
+)
+
+// domain variables
+var (
+	Int64Nil = int64(math.MinInt64)
 )
 
 // usecases variables

@@ -9,7 +9,7 @@ import (
 
 // Job represents the job entity of application
 type Job struct {
-	Id     int64   `gorm:"type:bigint(20); not null; primaryKey"`
+	Id     int64    `gorm:"type:bigint(20); not null; primaryKey"`
 	Name   string   `gorm:"type:varchar(100); not null"`
 	Type   string   `gorm:"type:varchar(30); not null"`
 	Action string   `gorm:"type:varchar(30); not null"`
@@ -45,24 +45,19 @@ func (j *Job) Load(repo port.Repository, tx interface{}, lock bool) error {
 	} else if !ok {
 		return errors.New(port.ErrJobNotFound)
 	}
-	jobKey := JobKey{JobId: j.Id}
-	if keys, err := jobKey.Find(repo, tx, false); err != nil {
+	jobKey := JobKey{}
+	if keys, err := jobKey.FindByJobId(j.Id, repo, tx); err != nil {
 		return err
 	} else {
 		j.Keys = keys
 	}
-	ref := Ref{Referrer: j.Id}
-	if refs, err := ref.Find(repo, tx, false); err != nil {
+	ref := Ref{}
+	if refs, err := ref.FindByReferrer(j.Id, repo, tx); err != nil {
 		return err
 	} else {
 		j.Refs = refs
 	}
 	return nil
-}
-
-// Save saves the job entity
-func (j *Job) Save(repo port.Repository, tx interface{}) error {
-	return repo.Save(tx, j)
 }
 
 // TableName returns the table name of the job entity

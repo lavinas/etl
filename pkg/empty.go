@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	// "fmt"
 	"math"
 	"time"
 
@@ -11,11 +10,11 @@ import (
 var (
 	// EmptyMap is a map with no elements
 	EmptyMap = map[interface{}]interface{}{
-		reflect.TypeOf(int64(0)):    math.MinInt64,
-		reflect.TypeOf(int32(0)):    math.MinInt32,
-		reflect.TypeOf(int16(0)):    math.MinInt16,
-		reflect.TypeOf(int8(0)):     math.MinInt8,
-		reflect.TypeOf(int(0)):      math.MinInt,
+		reflect.TypeOf(int64(0)):    int64(math.MinInt64),
+		reflect.TypeOf(int32(0)):    int32(math.MinInt32),
+		reflect.TypeOf(int16(0)):    int16(math.MinInt16),
+		reflect.TypeOf(int8(0)):     int8(math.MinInt8),
+		reflect.TypeOf(int(0)):      int(math.MinInt),
 		reflect.TypeOf(float64(0)):  "NaN",
 		reflect.TypeOf(time.Time{}): time.Time{},
 		reflect.TypeOf(""):          "",

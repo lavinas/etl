@@ -16,10 +16,20 @@ SET FOREIGN_KEY_CHECKS = 1;
 use vooo_migration;
 -- jobs
 insert into job (id, name, type, action, base, object) values (100, 'vooo_prod_backend.aggregador', 'table', 'none', 'vooo_prod_backend', 'aggregator');
+insert into job_key(id, job_id, name, last, step) values (100, 100, 'id', 10000, 5000);
 insert into job (id, name, type, action, base, object) values (200, 'vooo_prod_backend.client', 'table', 'copy', 'vooo_prod_backend', 'client');
 insert into job_key(id, job_id, name, last, step) values (200, 200, 'id', -1, 5000);
+insert into job (id, name, type, action, base, object) values (1000, 'vooo_prod_backend.client', 'table', 'update', 'vooo_prod_backend', 'client');
+insert into job_key(id, job_id, name, last, step) values (1000, 1000, 'id', -1, 5000);
+
 -- reference
 insert into ref(id, referrer, referred) values (200, 200, 100);
 insert into ref_key(id, ref_id, referrer, referred) values (200, 200, 'id_aggregator', 'id');
+
+insert into ref(id, referrer, referred) values (1000, 1000, 200);
+insert into ref_key(id, ref_id, referrer, referred) values (1000, 1000, 'id', 'id');
+
+
+
 
 commit;

@@ -6,20 +6,17 @@ import (
 
 // JobKey represents the key entity of jobs
 type JobKey struct {
-	Id    int64 `gorm:"type:bigint; not null; primaryKey"`
-	JobId int64 `gorm:"type:bigint; not null; index"`
+	Id    int64  `gorm:"type:bigint; not null; primaryKey"`
+	JobId int64  `gorm:"type:bigint; not null; index"`
 	Name  string `gorm:"type:varchar(100); not null"`
-	Last  int64 `gorm:"type:bigint; not null"`
-	Step  int64 `gorm:"type:bigint; not null"`
+	Last  int64  `gorm:"type:bigint; not null"`
+	Step  int64  `gorm:"type:bigint; not null"`
 }
 
 // Find finds all job keys based on the job key entity
-func (j *JobKey) Find(repo port.Repository, tx interface{}, lock bool) ([]JobKey, error) {
-	if tx == nil {
-		tx = repo.Begin("")
-		defer repo.Rollback(tx)
-	}
-	jobKeys, _, err := repo.Find(tx, j, -1, lock)
+func (j *JobKey) FindByJobId(jobId int64, repo port.Repository, tx interface{}) ([]JobKey, error) {
+	key := JobKey{JobId: jobId, Id: port.Int64Nil, Last: port.Int64Nil, Step: port.Int64Nil}
+	jobKeys, _, err := repo.Find(tx, &key, -1, false)
 	if err != nil {
 		return nil, err
 	}
@@ -30,6 +27,14 @@ func (j *JobKey) Find(repo port.Repository, tx interface{}, lock bool) ([]JobKey
 	keys := jobKeys.(*[]JobKey)
 	ret = append(ret, *keys...)
 	return ret, nil
+}
+
+// Save saves the job key entity
+func (j *JobKey) Save(repo port.Repository, tx interface{}) error {
+	if err := repo.Save(tx, j); err != nil {
+		return err
+	}
+	return nil
 }
 
 // TableName returns the table name of the job key entity

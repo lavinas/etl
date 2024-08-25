@@ -14,12 +14,13 @@ type Ref struct {
 }
 
 // Find finds all refs based on the ref entity
-func (r *Ref) Find(repo port.Repository, tx interface{}, lock bool) ([]Ref, error) {
+func (r *Ref) FindByReferrer(referrer int64, repo port.Repository, tx interface{}) ([]Ref, error) {
 	if tx == nil {
 		tx = repo.Begin("")
 		defer repo.Rollback(tx)
 	}
-	refs, _, err := repo.Find(tx, r, -1, lock)
+	ref := Ref{Referrer: referrer, Id: port.Int64Nil, Referred: port.Int64Nil}
+	refs, _, err := repo.Find(tx, &ref, -1, false)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +40,8 @@ func (r *Ref) Find(repo port.Repository, tx interface{}, lock bool) ([]Ref, erro
 
 // mountRerturn mounts the return value of the ref entity
 func (r *Ref) getDependencies(repo port.Repository, tx interface{}) error {
-	refKey := RefKey{RefId: r.Id}
-	if keys, err := refKey.Find(repo, tx, false); err != nil {
+	refKey := RefKey{}
+	if keys, err := refKey.FindByRefId(r.Id, repo, tx); err != nil {
 		return err
 	} else {
 		r.Keys = keys

@@ -6,19 +6,20 @@ import (
 
 // RefKey represents the key entity of references
 type RefKey struct {
-	Id       int64 `gorm:"type:bigint(20); not null; primaryKey"`
-	RefId    int64 `gorm:"type:bigint(20); not null; index"`
+	Id       int64  `gorm:"type:bigint(20); not null; primaryKey"`
+	RefId    int64  `gorm:"type:bigint(20); not null; index"`
 	Referrer string `gorm:"type:varchar(100); not null"`
 	Referred string `gorm:"type:varchar(100); not null"`
 }
 
 // Find finds all ref keys based on the ref key entity
-func (r *RefKey) Find(repo port.Repository, tx interface{}, lock bool) ([]RefKey, error) {
+func (r *RefKey) FindByRefId(refId int64, repo port.Repository, tx interface{}) ([]RefKey, error) {
 	if tx == nil {
 		tx = repo.Begin("")
 		defer repo.Rollback(tx)
 	}
-	refKeys, _, err := repo.Find(tx, &RefKey{}, -1, lock)
+	rk := RefKey{RefId: refId, Id: port.Int64Nil}
+	refKeys, _, err := repo.Find(tx, &rk, -1, false)
 	if err != nil {
 		return nil, err
 	}

@@ -44,7 +44,7 @@ func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 			break
 		}
 		if r.sleep(in) {
-			r.sendOut(out, "", -1, -1, port.InterrupedStatus, "interrupted", start)
+			r.sendOut(out, -1, -1, -1, port.InterrupedStatus, "interrupted", start)
 			break
 		}
 	}
@@ -54,7 +54,7 @@ func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut, start time.Time) bool {
 	jobs, err := r.getJobsId(in.JobID, r.RepoTarget)
 	if err != nil {
-		r.sendOut(out, "", -1, -1, port.ErrorStatus, err.Error(), start)
+		r.sendOut(out, -1, -1, -1, port.ErrorStatus, err.Error(), start)
 		return true
 	}
 	for _, j := range *jobs {
@@ -85,7 +85,7 @@ func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut, sta
 }
 
 // runJobCycle runs a cycle of job
-func (r *Run) runJobCycle(jobId string, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
+func (r *Run) runJobCycle(jobId int64, out chan *port.RunOut, start time.Time, shift int64) *port.RunOut {
 	exec := &domain.Log{}
 	if err := exec.Init(r.RepoTarget, jobId, start, shift); err != nil {
 		return r.sendOut(out, jobId, shift, -1, port.ErrorStatus, err.Error(), start)
@@ -103,7 +103,7 @@ func (r *Run) runJobCycle(jobId string, out chan *port.RunOut, start time.Time, 
 }
 
 // runWait waits for a given time
-func (r *Run) runWait(jobId string, out chan *port.RunOut, start time.Time, shift int64, tx interface{}) *port.RunOut {
+func (r *Run) runWait(jobId int64, out chan *port.RunOut, start time.Time, shift int64, tx interface{}) *port.RunOut {
 	run := make(chan *port.RunOut)
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -126,7 +126,7 @@ func (r *Run) runWait(jobId string, out chan *port.RunOut, start time.Time, shif
 }
 
 // run runs the use case
-func (r *Run) runAtom(jobId string, out chan *port.RunOut, tx interface{},
+func (r *Run) runAtom(jobId int64, out chan *port.RunOut, tx interface{},
 	start time.Time, shift int64, wg *sync.WaitGroup) *port.RunOut {
 	defer wg.Done()
 	job := &domain.Job{Id: jobId}
@@ -151,7 +151,7 @@ func (r *Run) runAtom(jobId string, out chan *port.RunOut, tx interface{},
 }
 
 // sendMessage sends a message to the channel
-func (r *Run) sendOut(out chan *port.RunOut, id string, shift, more int64, status, detail string, start time.Time) *port.RunOut {
+func (r *Run) sendOut(out chan *port.RunOut, id int64, shift, more int64, status, detail string, start time.Time) *port.RunOut {
 	dur := time.Since(start).Seconds()
 	ret := &port.RunOut{JobID: id, Shift: shift, Status: status, Detail: detail, Duration: dur, More: more}
 	out <- ret
@@ -171,7 +171,7 @@ func (r *Run) sleep(in *port.RunIn) bool {
 // finish sends a finish message to the channel
 func (r *Run) finish(repo port.Repository, out chan *port.RunOut, start time.Time) {
 	ret := port.RunOut{
-		JobID:    "",
+		JobID:    -1,
 		Shift:    -1,
 		Status:   port.FinishedStatus,
 		Detail:   "finished signal",
@@ -180,14 +180,14 @@ func (r *Run) finish(repo port.Repository, out chan *port.RunOut, start time.Tim
 		More:     -1,
 	}
 	log := &domain.Log{}
-	if err := log.Init(repo, "", start, -1); err != nil {
-		r.sendOut(out, "", -1, -1, port.ErrorStatus, err.Error(), start)
-		r.sendOut(out, "", -1, -1, port.FinishedStatus, "", start)
+	if err := log.Init(repo, -1, start, -1); err != nil {
+		r.sendOut(out, -1, -1, -1, port.ErrorStatus, err.Error(), start)
+		r.sendOut(out, -1, -1, -1, port.FinishedStatus, "", start)
 		return
 	}
 	if err := log.SetStatus(repo, &ret); err != nil {
-		r.sendOut(out, "", -1, -1, port.ErrorStatus, err.Error(), start)
-		r.sendOut(out, "", -1, -1, port.FinishedStatus, "", start)
+		r.sendOut(out, -1, -1, -1, port.ErrorStatus, err.Error(), start)
+		r.sendOut(out, -1, -1, -1, port.FinishedStatus, "", start)
 		return
 	}
 	out <- &ret
@@ -199,9 +199,9 @@ func (r *Run) getOut(ret *port.RunOut, skipError bool) bool {
 }
 
 // getJobsId
-func (r *Run) getJobsId(jobId string, repo port.Repository) (*[]domain.Job, error) {
+func (r *Run) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, error) {
 	job := domain.Job{}
-	if jobId != "" {
+	if jobId != -1 {
 		job.Id = jobId
 		if err := job.Load(repo, nil, false); err != nil {
 			return nil, err

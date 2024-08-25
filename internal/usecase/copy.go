@@ -31,7 +31,7 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if err != nil {
 		return "", missing, err
 	}
-	if rows, err = c.filterRefs(refs, cols, rows, txTarget); err != nil {
+	if rows, err = c.filterRefs(j, cols, rows, txTarget); err != nil {
 		return "", missing, err
 	}
 	cols, rows, err = c.getAllSource(j, rows)
@@ -65,15 +65,15 @@ func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx int
 		if err != nil {
 			return nil, err
 		}
-		last, _ := strconv.ParseInt(ref.Job.Keys[0].Last, 10, 64)
+		last := ref.Job.Keys[0].Last
 		if max > last {
-			return nil, fmt.Errorf(port.ErrReferenceNotDone, ref.Name)
+			return nil, fmt.Errorf(port.ErrReferenceNotDone, ref.Job.Name)
 		}
 		possibles, err := c.getRefPossibles(&ref, min, max, tx)
 		if err != nil {
 			return nil, err
 		}
-		rows, err = c.filterRef(ref.FieldReferrer, possibles, colsMap, rows)
+		rows, err = c.filterRef(ref.Keys[0].Referrer, possibles, colsMap, rows)
 		if err != nil {
 			return nil, err
 		}
@@ -82,8 +82,11 @@ func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx int
 }
 
 // getRefPossibles gets the possible references
-func (c *Copy) getRefPossibles(ref *Ref, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
-	sql := fmt.Sprintf(port.CopySelectF, ref.FieldReferred, ref.Base, ref.Object, ref.FieldReferred, min-1, ref.FieldReferred, max)
+func (c *Copy) getRefPossibles(ref *domain.Ref, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
+	base := ref.Job.Base
+	object := ref.Job.Object
+	field := ref.Keys[0].Referred
+	sql := fmt.Sprintf(port.CopySelectF, field, base, object, field, min-1, field, max)
 	_, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
 		return nil, err
@@ -221,7 +224,7 @@ func (c *Copy) getAllSourceAtom(j *domain.Job, rows [][]*string, txSource interf
 		ids += *row[0] + ", "
 	}
 	ids = ids[:len(ids)-2]
-	sql := fmt.Sprintf(port.CopySelectAll, j.Base, j.Object, j.Field, ids, j.Field)
+	sql := fmt.Sprintf(port.CopySelectAll, j.Base, j.Object, j.Keys[0].Name, ids, j.Keys[0].Name)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -250,9 +253,9 @@ func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
 }
 
 // setJob sets the job last id
-func (c *Copy) setJob(job *domain.Job, last int64, txTarget interface{}) error {
-	job.Last = last
-	if err := job.Save(c.RepoTarget, txTarget); err != nil {
+func (c *Copy) setJob(j *domain.Job, last int64, txTarget interface{}) error {
+	j.Keys[0].Last = last
+	if err := j.Keys[0].Save(c.RepoTarget, txTarget); err != nil {
 		return err
 	}
 	return nil
@@ -313,8 +316,8 @@ func (c *Copy) getLimits(j *domain.Job) (int64, int64, int64, error) {
 	if err != nil {
 		return -1, -1, -1, err
 	}
-	last, _ := strconv.ParseInt(j.Keys[0].Last, 10, 64)
-	step, _ := strconv.ParseInt(j.Keys[0].Step, 10, 64)
+	last := j.Keys[0].Last
+	step := j.Keys[0].Step
 	l := last + step
 	if l > max {
 		l = max

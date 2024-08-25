@@ -10,7 +10,7 @@ const (
 	SuccessStatus    = "success"
 	InterrupedStatus = "interrupted"
 	FinishedStatus   = "finished"
-	stringOutput     = "Run: %s - %d: %s - %s in %.4f seconds"
+	stringOutput     = "Run: %d - %d: %s - %s in %.4f seconds"
 )
 
 // RunIn is a struct that represents the input of the Run
@@ -19,12 +19,12 @@ type RunIn struct {
 	Shifts    int64
 	ErrorSkip bool
 	Delay     int64
-	JobID     string
+	JobID     int64
 }
 
 // RunOut is a struct that represents the output of the Run
 type RunOut struct {
-	JobID    string
+	JobID    int64
 	Shift    int64
 	Status   string
 	Detail   string

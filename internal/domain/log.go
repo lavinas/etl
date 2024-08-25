@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -19,12 +18,8 @@ type Log struct {
 }
 
 // Init initializes the log entity
-func (l *Log) Init(repo port.Repository, jobId string, start time.Time, shift int64) error {
-	j, err := strconv.ParseInt(jobId, 10, 64)
-	if err != nil {
-		return err
-	}
-	l.JobId = j
+func (l *Log) Init(repo port.Repository, jobId int64, start time.Time, shift int64) error {
+	l.JobId = jobId
 	l.Shift = shift
 	l.Status = "running"
 	l.Start = start

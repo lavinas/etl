@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"strconv"
 
 	"github.com/alexflint/go-arg"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -13,7 +14,7 @@ type Args struct {
 	Shifts    int64  `arg:"-s,--shifts" default:"1" help:"Shifts to run. Default is 1. <= 0 is all shifts"`
 	ErrorSkip bool   `arg:"-e,--error" default:"false" help:"Skip errors beetwen jobs. Default is false"`
 	Delay     int64  `arg:"-d,--delay" default:"30" help:"Delay between runs in seconds. Default is 30 seconds"`
-	JobID     string `arg:"-i,--id" default:"" help:"id of the job to run. Default is all jobs"`
+	JobID     string `arg:"-i,--id" default:"-1" help:"id of the job to run. Default is all jobs"`
 }
 
 // CommandLine is a struct that represents the command line handler
@@ -49,8 +50,12 @@ func (c *CommandLine) Run() {
 	arg.MustParse(&args)
 	outs := make(chan *port.RunOut)
 	defer close(outs)
+	jobId, err := strconv.ParseInt(args.JobID, 10, 64)
+	if err != nil || jobId < -1 {
+		jobId = -1
+	}
 	in := port.RunIn{Repeat: args.Repeat, Shifts: args.Shifts, ErrorSkip: args.ErrorSkip,
-		Delay: args.Delay, JobID: args.JobID}
+		Delay: args.Delay, JobID: jobId}
 	go c.usecase.Run(&in, outs)
 	for out := range outs {
 		if out.Status == port.FinishedStatus {

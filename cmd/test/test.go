@@ -16,7 +16,7 @@ func main() {
 	defer repo.Close()
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
-	job := domain.Job{Id: "200"}
+	job := domain.Job{Id: 200}
 	err = job.Load(repo, tx, false)
 	if err != nil {
 		panic(err)
