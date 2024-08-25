@@ -1,14 +1,13 @@
 package domain
 
 import (
-	"errors"
 	"strconv"
 	"time"
 
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-type Exec struct {
+type Log struct {
 	Id       int64     `gorm:"type:bigint; not null; primaryKey"`
 	JobId    int64     `gorm:"type:bigint; not null"`
 	Shift    int64     `gorm:"type:bigint; not null"`
@@ -20,8 +19,12 @@ type Exec struct {
 }
 
 // Init initializes the log entity
-func (l *Exec) Init(repo port.Repository, jobId int64, start time.Time, shift int64) error {
-	l.JobId = jobId
+func (l *Log) Init(repo port.Repository, jobId string, start time.Time, shift int64) error {
+	j, err := strconv.ParseInt(jobId, 10, 64)
+	if err != nil {
+		return err
+	}
+	l.JobId = j
 	l.Shift = shift
 	l.Status = "running"
 	l.Start = start
@@ -38,18 +41,8 @@ func (l *Exec) Init(repo port.Repository, jobId int64, start time.Time, shift in
 	return nil
 }
 
-// LoadLock loads the job entity with lock
-func (l *Exec) LoadLock(repo port.Repository, tx interface{}) error {
-	if ok, err := repo.Get(tx, l, strconv.FormatInt(l.Id, 10), true); err != nil {
-		return err
-	} else if !ok {
-		return errors.New(port.ErrJobNotFound)
-	}
-	return nil
-}
-
 // SetStatus sets the status of the log entity
-func (l *Exec) SetStatus(repo port.Repository, out *port.RunOut) error {
+func (l *Log) SetStatus(repo port.Repository, out *port.RunOut) error {
 	l.Status = out.Status
 	l.Detail = out.Detail
 	l.Duration = out.Duration
@@ -66,6 +59,6 @@ func (l *Exec) SetStatus(repo port.Repository, out *port.RunOut) error {
 }
 
 // TableName returns the table name of the log entity
-func (l *Exec) TableName() string {
-	return "exec"
+func (l *Log) TableName() string {
+	return "log"
 }

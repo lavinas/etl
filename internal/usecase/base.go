@@ -7,8 +7,8 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-
-type References struct {
+// Ref is a struct that represents the reference entity of application
+type Ref struct {
 	Id            int64
 	Name          string
 	Base          string

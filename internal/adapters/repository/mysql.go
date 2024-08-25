@@ -134,7 +134,8 @@ func (r *MySql) Get(tx interface{}, obj interface{}, id string, lock bool) (bool
 			return false, stx.Error
 		}
 	}
-	stx = stx.Table(obj.(port.Domain).TableName()).First(obj, "ID = ?", id)
+	stx = stx.Table(obj.(port.Domain).TableName())
+	stx = stx.First(obj, "ID = ?", id)
 	if stx.Error == nil {
 		return true, nil
 	}

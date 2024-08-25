@@ -17,9 +17,9 @@ type Update struct {
 }
 
 // Run runs the use case
-func (c *Update) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, int64, error) {
+func (c *Update) Run(job port.Domain, txTarget interface{}) (string, int64, error) {
 	j := job.(*domain.Job)
-	r := refs.([]References)
+	r := refs.([]Ref)
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
@@ -38,7 +38,7 @@ func (c *Update) Run(job port.Domain, refs interface{}, txTarget interface{}) (s
 }
 
 // getIds gets the ids from source and target when any field is different
-func (c *Update) getIdsLoop(j *domain.Job, refs []References, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
+func (c *Update) getIdsLoop(j *domain.Job, refs []Ref, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
 	retIds := make([][]*string, 0)
 	var updated int64
 	idsTarget, fields, end, err := c.getTargetIds(j, refs, txTarget)
@@ -48,7 +48,7 @@ func (c *Update) getIdsLoop(j *domain.Job, refs []References, txTarget interface
 	lim := int64(len(idsTarget))
 	for i := int64(0); i < lim; i += port.InLimit {
 		ids := idsTarget[i:min(i+port.InLimit, lim)]
-		parcIds, u, err := c.getFielteredIds(j,fields, ids)
+		parcIds, u, err := c.getFielteredIds(j, fields, ids)
 		if err != nil {
 			return nil, -1, -1, -1, err
 		}
@@ -105,7 +105,6 @@ func (c *Update) getFielteredIdsAtom(j *domain.Job, fields string, idsTarget [][
 	return ids, int64(len(ids)), nil
 }
 
-
 // update get from source and update target
 func (c *Update) update(j *domain.Job, ids [][]*string, txTarget interface{}) error {
 	if len(ids) == 0 {
@@ -152,7 +151,7 @@ func (c *Update) mountFields(fields [][]*string) (string, error) {
 }
 
 // getSourceid gets the ids from target table
-func (c *Update) getTargetIds(j *domain.Job, refs []References, tx interface{}) ([][]*string, string, int64, error) {
+func (c *Update) getTargetIds(j *domain.Job, refs []Ref, tx interface{}) ([][]*string, string, int64, error) {
 	fields, err := c.getFields(j, tx)
 	if err != nil {
 		return nil, "", 0, err

@@ -26,80 +26,74 @@ SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 DROP DATABASE IF EXISTS `vooo_migration`;
 CREATE DATABASE `vooo_migration`;
 USE `vooo_migration`;
-
 # starting tables
-
---
--- Table structure for table `aggregator`
---
-
-DROP TABLE IF EXISTS `aggregator_ref`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `aggregator_ref` (
-  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `ref_client`
-
-DROP TABLE IF EXISTS `client_ref`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `client_ref` (
-  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
 --
 -- Table structure for table `job`
 --
-
 DROP TABLE IF EXISTS `job`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `job` (
   `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
-  `type` varchar(30) NOT NULL DEFAULT 'table',
-  `action` varchar(30) NOT NULL DEFAULT 'insert',
+  `type` varchar(30) NOT NULL,
+  `action` varchar(30) NOT NULL,
   `base` varchar(100) NOT NULL,
-  `object` varchar(100) NOT NULL,
-  `field` varchar(100) NOT NULL DEFAULT 'id',
-  `last` bigint NOT NULL DEFAULT '0',
-  `limit` bigint NOT NULL DEFAULT '1000'
+  `object` varchar(100) NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `reference`
---
-
-DROP TABLE IF EXISTS `reference`;
+DROP TABLE IF EXISTS `job_key`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `reference` (
+CREATE TABLE `job_key` (
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `job_id` bigint NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `last` bigint NOT NULL,
+  `step` bigint NOT NULL,
+  key `job_id` (`job_id`),
+  CONSTRAINT `job_key_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+--
+-- Table structure for table `ref`
+--
+DROP TABLE IF EXISTS `ref`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ref` (
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `referrer` bigint NOT NULL,
   `referred` bigint NOT NULL,
-  `field_referrer` varchar(100) NOT NULL DEFAULT 'id',
-  `field_referred` varchar(100) NOT NULL DEFAULT 'id',
-  PRIMARY KEY (`referrer`, `referred`),
+  UNIQUE KEY `referrer_uk` (`referrer`,`referred`),
   KEY `referred` (`referred`),
   KEY `referrer` (`referrer`),
   CONSTRAINT `reference_ibfk_1` FOREIGN KEY (`referrer`) REFERENCES `job` (`id`) ON DELETE CASCADE,
   CONSTRAINT `reference_ibfk_2` FOREIGN KEY (`referred`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
+--
+-- Table structure for table `ref_key`
+--
+DROP TABLE IF EXISTS `ref_key`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ref_key` (
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `ref_id` bigint NOT NULL,
+  `referrer` varchar(100) NOT NULL,
+  `referred` varchar(100) NOT NULL,
+  key `ref_id_key` (`ref_id`),
+  CONSTRAINT `ref_key_ibfk_1` FOREIGN KEY (`ref_id`) REFERENCES `ref` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 --
 -- Table structure for table `log`
 --
-
-DROP TABLE IF EXISTS `exec`;
+DROP TABLE IF EXISTS `log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `exec` (
+CREATE TABLE `log` (
   `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `job_id` bigint NOT NULL,
   `shift` bigint NOT NULL,
@@ -109,7 +103,7 @@ CREATE TABLE `exec` (
   `duration` decimal(10, 4) NOT NULL,
   `more` bigint NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 # ending tables
 

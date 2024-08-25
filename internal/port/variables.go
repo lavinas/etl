@@ -32,6 +32,7 @@ const (
 	ErrInvalidUpdateFields      = "no fields field found on update"
 	ErrTimeout                  = "timeout"
 	ErrInterrupted              = "interrupted"
+	ErrJobKeyNotFound           = "job key not found"
 )
 
 // queries
@@ -62,7 +63,7 @@ var (
 	LoadClientSourceBase = "vooo_prod_backend"
 	CopySourceBase       = "vooo_prod_backend"
 	UpdateReturnMessage  = "%d processed, %d updated"
-	InLimit			     = int64(5000)
+	InLimit              = int64(5000)
 )
 
 // MySQL variables

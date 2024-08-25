@@ -9,11 +9,11 @@ import (
 
 // args is a struct that represents the command line arguments
 type Args struct {
-	Repeat    int64 `arg:"-r,--repeat" default:"1" help:"Repeat jobs n times. Default is 1. <=0 is ilimited"`
-	Shifts    int64 `arg:"-s,--shifts" default:"1" help:"Shifts to run. Default is 1. <= 0 is all shifts"`
-	ErrorSkip bool  `arg:"-e,--error" default:"false" help:"Skip errors beetwen jobs. Default is false"`
-	Delay     int64 `arg:"-d,--delay" default:"30" help:"Delay between runs in seconds. Default is 30 seconds"`
-	JobID     int64 `arg:"-i,--id" default:"-1" help:"id of the job to run. Default is all jobs"`
+	Repeat    int64  `arg:"-r,--repeat" default:"1" help:"Repeat jobs n times. Default is 1. <=0 is ilimited"`
+	Shifts    int64  `arg:"-s,--shifts" default:"1" help:"Shifts to run. Default is 1. <= 0 is all shifts"`
+	ErrorSkip bool   `arg:"-e,--error" default:"false" help:"Skip errors beetwen jobs. Default is false"`
+	Delay     int64  `arg:"-d,--delay" default:"30" help:"Delay between runs in seconds. Default is 30 seconds"`
+	JobID     string `arg:"-i,--id" default:"" help:"id of the job to run. Default is all jobs"`
 }
 
 // CommandLine is a struct that represents the command line handler
@@ -39,9 +39,7 @@ func (a *Args) GetParams() map[string]interface{} {
 	if ret["delay"] = a.Delay; a.Delay <= 0 {
 		ret["delay"] = 30
 	}
-	if ret["jobID"] = a.JobID; a.JobID <= -1 {
-		ret["jobID"] = -1
-	}
+	ret["jobID"] = a.JobID
 	return ret
 }
 

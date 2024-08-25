@@ -18,16 +18,16 @@ type Copy struct {
 }
 
 // Run runs the use case
-func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (string, int64, error) {
+func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error) {
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	limit, missing, processed, err := c.getLimits(j.Object, j.Field, j.Last, j.Limit)
+	limit, missing, processed, err := c.getLimits(j)
 	if err != nil {
 		return "", missing, err
 	}
-	cols, rows, err := c.getSource(j, refs, limit)
+	cols, rows, err := c.getSource(j, limit)
 	if err != nil {
 		return "", missing, err
 	}
@@ -49,24 +49,24 @@ func (c *Copy) Run(job port.Domain, refs interface{}, txTarget interface{}) (str
 }
 
 // filterRefs filters the references
-func (c *Copy) filterRefs(refereces interface{}, cols []string, rows [][]*string, tx interface{}) ([][]*string, error) {
+func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx interface{}) ([][]*string, error) {
 	if len(rows) == 0 {
 		return rows, nil
 	}
-	refs := refereces.([]References)
-	if len(refs) == 0 {
+	if len(j.Refs) == 0 {
 		return rows, nil
 	}
 	colsMap := make(map[string]int)
 	for i, col := range cols {
 		colsMap[col] = i
 	}
-	for _, ref := range refs {
-		min, max, err := c.getRefRange(ref.FieldReferrer, colsMap, rows)
+	for _, ref := range j.Refs {
+		min, max, err := c.getRefRange(ref.Keys[0].Referrer, colsMap, rows)
 		if err != nil {
 			return nil, err
 		}
-		if max > ref.Last {
+		last, _ := strconv.ParseInt(ref.Job.Keys[0].Last, 10, 64)
+		if max > last {
 			return nil, fmt.Errorf(port.ErrReferenceNotDone, ref.Name)
 		}
 		possibles, err := c.getRefPossibles(&ref, min, max, tx)
@@ -82,7 +82,7 @@ func (c *Copy) filterRefs(refereces interface{}, cols []string, rows [][]*string
 }
 
 // getRefPossibles gets the possible references
-func (c *Copy) getRefPossibles(ref *References, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
+func (c *Copy) getRefPossibles(ref *Ref, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
 	sql := fmt.Sprintf(port.CopySelectF, ref.FieldReferred, ref.Base, ref.Object, ref.FieldReferred, min-1, ref.FieldReferred, max)
 	_, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
@@ -127,7 +127,6 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 	if !ok {
 		return 0, 0, errors.New(port.ErrFieldReferrerNotFound)
 	}
-
 	var min, max int64
 	for _, row := range rows {
 		if row[iField] == nil {
@@ -148,18 +147,17 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 }
 
 // getSource gets the source data for the insert
-func (c *Copy) getSource(j *domain.Job, references interface{}, limit int64) ([]string, [][]*string, error) {
-	fields := j.Field + ", "
-	refs := references.([]References)
-	for _, ref := range refs {
-		if ref.FieldReferrer != j.Field {
-			fields += ref.FieldReferrer + ", "
+func (c *Copy) getSource(j *domain.Job, limit int64) ([]string, [][]*string, error) {
+	fields := j.Keys[0].Name + ", "
+	for _, ref := range j.Refs {
+		if ref.Keys[0].Referrer != j.Keys[0].Name {
+			fields += ref.Keys[0].Referrer + ", "
 		}
 	}
 	fields = fields[:len(fields)-2]
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
-	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Field, j.Last, j.Field, limit)
+	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Keys[0].Name, j.Keys[0].Last, j.Keys[0].Name, limit)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -297,10 +295,10 @@ func (c *Copy) formatValue(col *string) string {
 }
 
 // getMaxClient gets the max id from the client table
-func (c *Copy) getLimits(object string, field string, last int64, limit int64) (int64, int64, int64, error) {
+func (c *Copy) getLimits(j *domain.Job) (int64, int64, int64, error) {
 	tx := c.RepoSource.Begin(port.CopySourceBase)
 	defer c.RepoSource.Rollback(tx)
-	q := fmt.Sprintf(port.CopyMaxClient, field, object)
+	q := fmt.Sprintf(port.CopyMaxClient, j.Keys[0].Name, j.Object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
 		return -1, -1, -1, err
@@ -311,12 +309,13 @@ func (c *Copy) getLimits(object string, field string, last int64, limit int64) (
 	if len(rows[0]) == 0 || rows[0][0] == nil {
 		return 0, 0, 0, nil
 	}
-
 	max, err := strconv.ParseInt(*rows[0][0], 10, 64)
 	if err != nil {
 		return -1, -1, -1, err
 	}
-	l := last + limit
+	last, _ := strconv.ParseInt(j.Keys[0].Last, 10, 64)
+	step, _ := strconv.ParseInt(j.Keys[0].Step, 10, 64)
+	l := last + step
 	if l > max {
 		l = max
 	}
