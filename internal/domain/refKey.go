@@ -6,8 +6,8 @@ import (
 
 // RefKey represents the key entity of references
 type RefKey struct {
-	Id       string `gorm:"type:bigint(20); not null; primaryKey"`
-	RefId    string `gorm:"type:bigint(20); not null; index"`
+	Id       int64 `gorm:"type:bigint(20); not null; primaryKey"`
+	RefId    int64 `gorm:"type:bigint(20); not null; index"`
 	Referrer string `gorm:"type:varchar(100); not null"`
 	Referred string `gorm:"type:varchar(100); not null"`
 }

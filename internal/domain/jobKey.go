@@ -6,11 +6,11 @@ import (
 
 // JobKey represents the key entity of jobs
 type JobKey struct {
-	Id    string `gorm:"type:bigint; not null; primaryKey"`
-	JobId string `gorm:"type:bigint; not null; index"`
+	Id    int64 `gorm:"type:bigint; not null; primaryKey"`
+	JobId int64 `gorm:"type:bigint; not null; index"`
 	Name  string `gorm:"type:varchar(100); not null"`
-	Last  string `gorm:"type:bigint; not null"`
-	Step  string `gorm:"type:bigint; not null"`
+	Last  int64 `gorm:"type:bigint; not null"`
+	Step  int64 `gorm:"type:bigint; not null"`
 }
 
 // Find finds all job keys based on the job key entity

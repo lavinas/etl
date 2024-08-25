@@ -2,17 +2,18 @@ package domain
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
 // Job represents the job entity of application
 type Job struct {
-	Id     string   `gorm:"type:bigint(20); not null; primaryKey"`
+	Id     int64   `gorm:"type:bigint(20); not null; primaryKey"`
 	Name   string   `gorm:"type:varchar(100); not null"`
 	Type   string   `gorm:"type:varchar(30); not null"`
-	Base   string   `gorm:"type:varchar(255); not null"`
 	Action string   `gorm:"type:varchar(30); not null"`
+	Base   string   `gorm:"type:varchar(255); not null"`
 	Object string   `gorm:"type:varchar(255); not null"`
 	Keys   []JobKey `gorm:"-"`
 	Refs   []Ref    `gorm:"-"`
@@ -38,7 +39,8 @@ func (j *Job) Load(repo port.Repository, tx interface{}, lock bool) error {
 		tx = repo.Begin("")
 		defer repo.Rollback(tx)
 	}
-	if ok, err := repo.Get(tx, j, j.Id, lock); err != nil {
+	id := strconv.FormatInt(j.Id, 10)
+	if ok, err := repo.Get(tx, j, id, lock); err != nil {
 		return err
 	} else if !ok {
 		return errors.New(port.ErrJobNotFound)

@@ -6,9 +6,9 @@ import (
 
 // Ref represents the reference entity of application
 type Ref struct {
-	Id       string   `gorm:"type:bigint; not null; primaryKey"`
-	Referrer string   `gorm:"type:bigint; not null; primaryKey"`
-	Referred string   `gorm:"type:bigint; not null; primaryKey"`
+	Id       int64    `gorm:"type:bigint; not null; primaryKey"`
+	Referrer int64    `gorm:"type:bigint; not null; primaryKey"`
+	Referred int64    `gorm:"type:bigint; not null; primaryKey"`
 	Keys     []RefKey `gorm:"-"`
 	Job      Job      `gorm:"-"`
 }
