@@ -45,7 +45,7 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if err := j.SetKeysLast(limit, c.RepoTarget, txTarget); err != nil {
 		return "", missing, err
 	}
-	return fmt.Sprintf("%d rows processed, %d copied, %d missing", processed, len(rows), missing), missing, nil
+	return fmt.Sprintf(port.CopyReturnMessage, processed, len(rows), missing), missing, nil
 }
 
 // filterRefs filters the references

@@ -22,14 +22,14 @@ func (c *Update) Run(job port.Domain, txTarget interface{}) (string, int64, erro
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
-	ids, end, processed, updated, err := c.getIdsLoop(j, txTarget)
+	ids, ends, processed, updated, err := c.getIds(j, txTarget)
 	if err != nil {
 		return "", -1, err
 	}
 	if err := c.update(j, ids, txTarget); err != nil {
 		return "", -1, err
 	}
-	if err := c.setJob(j, end, txTarget); err != nil {
+	if err := j.SetKeysLast(ends, c.RepoTarget, txTarget); err != nil {
 		return "", -1, err
 	}
 	message := fmt.Sprintf(port.UpdateReturnMessage, processed, updated)
@@ -37,24 +37,24 @@ func (c *Update) Run(job port.Domain, txTarget interface{}) (string, int64, erro
 }
 
 // getIds gets the ids from source and target when any field is different
-func (c *Update) getIdsLoop(j *domain.Job, txTarget interface{}) ([][]*string, int64, int64, int64, error) {
+func (c *Update) getIds(j *domain.Job, txTarget interface{}) ([][]*string, []int64, int64, int64, error) {
 	retIds := make([][]*string, 0)
 	var updated int64
-	idsTarget, fields, end, err := c.getTargetIds(j, txTarget)
+	idsTarget, fields, ends, err := c.getTargetIds(j, txTarget)
 	if err != nil {
-		return nil, 0, 0, 0, err
+		return nil, nil, -1, -1, err
 	}
 	lim := int64(len(idsTarget))
 	for i := int64(0); i < lim; i += port.InLimit {
 		ids := idsTarget[i:min(i+port.InLimit, lim)]
 		parcIds, u, err := c.getFielteredIds(j, fields, ids)
 		if err != nil {
-			return nil, -1, -1, -1, err
+			return nil, nil, -1, -1, err
 		}
 		retIds = append(retIds, parcIds...)
 		updated += u
 	}
-	return retIds, end, lim, updated, nil
+	return retIds, ends, lim, updated, nil
 }
 
 // getIdsWait gets the ids from source and target when any field is different
@@ -150,14 +150,29 @@ func (c *Update) mountFields(fields [][]*string) (string, error) {
 }
 
 // getSourceid gets the ids from target table
-func (c *Update) getTargetIds(j *domain.Job, tx interface{}) ([][]*string, string, int64, error) {
+func (c *Update) getTargetIds(j *domain.Job, tx interface{}) ([][]*string, string, []int64, error) {
 	fields, err := c.getFields(j, tx)
 	if err != nil {
-		return nil, "", 0, err
+		return nil, "", nil, err
 	}
-	last := j.Refs[0].Job.Keys[0].Last
-	step := j.Keys[0].Step
-	field := j.Keys[0].Name
+	rows := [][]*string{}
+	lasts := []int64{}
+	for i := range j.Keys {
+		ids, last, err := c.getTargetIdsByKey(j, i, fields, tx)
+		if err != nil {
+			return nil, "", nil, err
+		}
+		rows = append(rows, ids...)
+		lasts = append(lasts, last)
+	}
+	return rows, fields, lasts, nil
+}
+
+// getTargetIdsByKey gets the ids from target table by key
+func (c *Update) getTargetIdsByKey(j *domain.Job, i int, fields string, tx interface{}) ([][]*string, int64, error) {
+	last := j.Refs[0].Job.Keys[i].Last
+	step := j.Keys[i].Step
+	field := j.Keys[i].Name
 	init := last - step
 	if init < 0 {
 		init = 0
@@ -165,9 +180,9 @@ func (c *Update) getTargetIds(j *domain.Job, tx interface{}) ([][]*string, strin
 	q := fmt.Sprintf(port.UpdateSelectID1, field, fields, j.Base, j.Object, field, init, field, last)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
-		return nil, "", 0, err
+		return nil, 0, err
 	}
-	return rows, fields, last, nil
+	return rows, last, nil
 }
 
 // getSourceid gets the ids from target table
@@ -259,14 +274,6 @@ func (c *Update) mountRows(rows [][]*string) string {
 	return ret[:len(ret)-1]
 }
 
-// setJob sets the job last id
-func (c *Update) setJob(j *domain.Job, last int64, txTarget interface{}) error {
-	j.Keys[0].Last = last
-	if err := j.Keys[0].Save(c.RepoTarget, txTarget); err != nil {
-		return err
-	}
-	return nil
-}
 
 // formatValue formats the value to insert
 func (c *Update) formatValue(col *string) string {

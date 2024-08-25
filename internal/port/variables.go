@@ -70,6 +70,7 @@ var (
 	LoadClientSourceBase = "vooo_prod_backend"
 	CopySourceBase       = "vooo_prod_backend"
 	UpdateReturnMessage  = "%d processed, %d updated"
+	CopyReturnMessage    = "%d rows processed, %d copied, %d missing"
 	InLimit              = int64(5000)
 )
 
