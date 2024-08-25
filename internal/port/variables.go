@@ -34,6 +34,7 @@ const (
 	ErrTimeout                  = "timeout"
 	ErrInterrupted              = "interrupted"
 	ErrJobKeyNotFound           = "job key not found"
+	ErrKeysLength               = "keys length is different"
 )
 
 // queries

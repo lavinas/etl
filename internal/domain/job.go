@@ -45,6 +45,32 @@ func (j *Job) Load(repo port.Repository, tx interface{}, lock bool) error {
 	} else if !ok {
 		return errors.New(port.ErrJobNotFound)
 	}
+	if err := j.loadDependencies(repo, tx); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetKeysLast sets the last key of the job entity
+func (j *Job) SetKeysLast(lasts []int64, repo port.Repository, tx interface{}) error {
+	if len(j.Keys) != len(lasts) {
+		return errors.New(port.ErrKeysLength)
+	}
+	for i, key := range j.Keys {
+		if err := key.SetLast(lasts[i], repo, tx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// TableName returns the table name of the job entity
+func (j *Job) TableName() string {
+	return "job"
+}
+
+// loadDependencies loads the job entity with dependencies
+func (j *Job) loadDependencies(repo port.Repository, tx interface{}) error {
 	jobKey := JobKey{}
 	if keys, err := jobKey.FindByJobId(j.Id, repo, tx); err != nil {
 		return err
@@ -58,9 +84,4 @@ func (j *Job) Load(repo port.Repository, tx interface{}, lock bool) error {
 		j.Refs = refs
 	}
 	return nil
-}
-
-// TableName returns the table name of the job entity
-func (j *Job) TableName() string {
-	return "job"
 }

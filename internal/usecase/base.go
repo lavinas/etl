@@ -7,19 +7,6 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-// Ref is a struct that represents the reference entity of application
-type Ref struct {
-	Id            int64
-	Name          string
-	Base          string
-	Object        string
-	Field         string
-	Last          int64
-	Limit         int64
-	FieldReferrer string
-	FieldReferred string
-}
-
 // Base is a struct that represents the base use case
 type Base struct {
 	RepoSource port.Repository

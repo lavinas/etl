@@ -42,7 +42,7 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if err != nil {
 		return "", missing, err
 	}
-	if err := c.setJob(j, limit, txTarget); err != nil {
+	if err := j.SetKeysLast(limit, c.RepoTarget, txTarget); err != nil {
 		return "", missing, err
 	}
 	return fmt.Sprintf("%d rows processed, %d copied, %d missing", processed, len(rows), missing), missing, nil
@@ -50,33 +50,42 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 
 // filterRefs filters the references
 func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx interface{}) ([][]*string, error) {
-	if len(rows) == 0 {
-		return rows, nil
-	}
-	if len(j.Refs) == 0 {
+	if len(rows) == 0 || len(j.Refs) == 0 {
 		return rows, nil
 	}
 	colsMap := make(map[string]int)
 	for i, col := range cols {
 		colsMap[col] = i
 	}
-	for _, ref := range j.Refs {
-		min, max, err := c.getRefRange(ref.Keys[0].Referrer, colsMap, rows)
-		if err != nil {
-			return nil, err
+	var err error
+	for r := range j.Refs {
+		for i := range j.Refs[r].Keys {
+			rows, err = c.filterRefbyKey(j, r, i, colsMap, rows, tx)
+			if err != nil {
+				return nil, err
+			}
 		}
-		last := ref.Job.Keys[0].Last
-		if max > last {
-			return nil, fmt.Errorf(port.ErrReferenceNotDone, ref.Job.Name)
-		}
-		possibles, err := c.getRefPossibles(&ref, min, max, tx)
-		if err != nil {
-			return nil, err
-		}
-		rows, err = c.filterRef(ref.Keys[0].Referrer, possibles, colsMap, rows)
-		if err != nil {
-			return nil, err
-		}
+	}
+	return rows, nil
+}
+
+// filterRefbyKey filters the references by key
+func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, rows [][]*string, tx interface{}) ([][]*string, error) {
+	min, max, err := c.getRefRange(j.Refs[r].Keys[i].Referrer, cols, rows)
+	if err != nil {
+		return nil, err
+	}
+	last := j.Refs[r].Job.Keys[i].Last
+	if max > last {
+		return nil, fmt.Errorf(port.ErrReferenceNotDone, j.Refs[r].Job.Name)
+	}
+	possibles, err := c.getRefPossibles(&j.Refs[r], min, max, tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err = c.filterRef(j.Refs[r].Keys[i].Referrer, possibles, cols, rows)
+	if err != nil {
+		return nil, err
 	}
 	return rows, nil
 }
@@ -150,17 +159,48 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 }
 
 // getSource gets the source data for the insert
-func (c *Copy) getSource(j *domain.Job, limit int64) ([]string, [][]*string, error) {
-	fields := j.Keys[0].Name + ", "
-	for _, ref := range j.Refs {
-		if ref.Keys[0].Referrer != j.Keys[0].Name {
-			fields += ref.Keys[0].Referrer + ", "
-		}
+func (c *Copy) getSource(j *domain.Job, limit []int64) ([]string, [][]*string, error) {
+	fields, err := c.mountSourceFields(j)
+	if err != nil {
+		return nil, nil, err
 	}
-	fields = fields[:len(fields)-2]
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
-	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Keys[0].Name, j.Keys[0].Last, j.Keys[0].Name, limit)
+	cols := []string{}
+	rows := [][]*string{}
+	for i := range j.Keys {
+		co, ro, err := c.getSourceByKey(j, i, fields, limit[i], txSource)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(ro) != 0 {
+			cols = co
+			rows = append(rows, ro...)
+		}
+	}
+	return cols, rows, nil
+}
+
+// mountSourceFields mounts the source fields name for the select
+func (c *Copy) mountSourceFields(j *domain.Job) (string, error) {
+	ret := ""
+	for _, key := range j.Keys {
+		ret += key.Name + ", "
+	}
+	for _, ref := range j.Refs {
+		for _, key := range ref.Keys {
+			ret += key.Referrer + ", "
+		}
+	}
+	if ret == "" {
+		return "", errors.New(port.ErrFieldNotFound)
+	}
+	return ret[:len(ret)-2], nil
+}
+
+// getSourceByKey gets the source data for the insert
+func (c *Copy) getSourceByKey(j *domain.Job, i int, fields string, limit int64, txSource interface{}) ([]string, [][]*string, error) {
+	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Keys[i].Name, j.Keys[i].Last, j.Keys[i].Name, limit)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -252,15 +292,6 @@ func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
 	return done, nil
 }
 
-// setJob sets the job last id
-func (c *Copy) setJob(j *domain.Job, last int64, txTarget interface{}) error {
-	j.Keys[0].Last = last
-	if err := j.Keys[0].Save(c.RepoTarget, txTarget); err != nil {
-		return err
-	}
-	return nil
-}
-
 // mountInsert mounts the insert sql
 func (c *Copy) mountInsert(base string, tablename string, cols []string, rows [][]*string) string {
 	if len(rows) == 0 {
@@ -298,16 +329,29 @@ func (c *Copy) formatValue(col *string) string {
 }
 
 // getMaxClient gets the max id from the client table
-func (c *Copy) getLimits(j *domain.Job) (int64, int64, int64, error) {
+func (c *Copy) getLimits(j *domain.Job) ([]int64, int64, int64, error) {
 	tx := c.RepoSource.Begin(port.CopySourceBase)
 	defer c.RepoSource.Rollback(tx)
-	q := fmt.Sprintf(port.CopyMaxClient, j.Keys[0].Name, j.Object)
+	limits := make([]int64, len(j.Keys))
+	var missing, processed int64
+	for i := range j.Keys {
+		l, m, p, err := c.getKeyLimit(j, i, tx)
+		if err != nil {
+			return nil, -1, -1, err
+		}
+		limits[i] = l
+		missing += m
+		processed += p
+	}
+	return limits, missing, processed, nil
+}
+
+// getKeyLimit gets the limit of the job key
+func (c *Copy) getKeyLimit(j *domain.Job, i int, tx interface{}) (int64, int64, int64, error) {
+	q := fmt.Sprintf(port.CopyMaxClient, j.Keys[i].Name, j.Object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
 		return -1, -1, -1, err
-	}
-	if len(rows) == 0 || rows[0] == nil {
-		return -1, -1, -1, errors.New(port.ErrFieldNotFound)
 	}
 	if len(rows[0]) == 0 || rows[0][0] == nil {
 		return 0, 0, 0, nil
@@ -316,13 +360,9 @@ func (c *Copy) getLimits(j *domain.Job) (int64, int64, int64, error) {
 	if err != nil {
 		return -1, -1, -1, err
 	}
-	last := j.Keys[0].Last
-	step := j.Keys[0].Step
-	l := last + step
+	l := j.Keys[i].Last + j.Keys[i].Step
 	if l > max {
 		l = max
 	}
-	missing := max - l
-	processed := l - last
-	return l, missing, processed, nil
+	return l, max - l, l - j.Keys[i].Last, nil
 }

@@ -37,6 +37,15 @@ func (j *JobKey) Save(repo port.Repository, tx interface{}) error {
 	return nil
 }
 
+// SetLast sets the last key of the job key entity
+func (j *JobKey) SetLast(last int64, repo port.Repository, tx interface{}) error {
+	j.Last = last
+	if err := repo.Save(tx, j); err != nil {
+		return err
+	}
+	return nil
+}
+
 // TableName returns the table name of the job key entity
 func (j *JobKey) TableName() string {
 	return "job_key"

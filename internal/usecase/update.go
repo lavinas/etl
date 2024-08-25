@@ -191,7 +191,6 @@ func (c *Update) getDifferentIds(idsSource [][]*string, idsTarget [][]*string) (
 	}
 	for i, id := range idsSource {
 		if *id[1] != *idsTarget[i][1] {
-			fmt.Println(*id[0], *idsTarget[i][0], *id[1], *idsTarget[i][1])
 			ret = append(ret, id)
 		}
 	}
