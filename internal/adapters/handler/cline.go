@@ -10,11 +10,13 @@ import (
 
 // args is a struct that represents the command line arguments
 type Args struct {
+	Action    string `arg:"-a,--action" default:"run" help:"Action to run. Default is run"`
 	Repeat    int64  `arg:"-r,--repeat" default:"1" help:"Repeat jobs n times. Default is 1. <=0 is ilimited"`
 	Shifts    int64  `arg:"-s,--shifts" default:"1" help:"Shifts to run. Default is 1. <= 0 is all shifts"`
 	ErrorSkip bool   `arg:"-e,--error" default:"false" help:"Skip errors beetwen jobs. Default is false"`
 	Delay     int64  `arg:"-d,--delay" default:"30" help:"Delay between runs in seconds. Default is 30 seconds"`
 	JobID     string `arg:"-i,--id" default:"-1" help:"id of the job to run. Default is all jobs"`
+	Schema    string `arg:"-c,--schema" default:"" help:"Schema to run. Default is all schemas"`
 }
 
 // CommandLine is a struct that represents the command line handler

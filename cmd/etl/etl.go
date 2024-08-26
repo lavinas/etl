@@ -29,8 +29,8 @@ func main() {
 	defer close(sig)
 	signal.Notify(sig, os.Interrupt)
 	// get usecase
-	run := usecase.NewRun(repoSource, repoTarget, sig)
+	usecase := usecase.NewUseCase(repoSource, repoTarget, sig)
 	// get and run the handler
-	handler := handler.NewLine(run)
+	handler := handler.NewLine(usecase)
 	handler.Run()
 }
