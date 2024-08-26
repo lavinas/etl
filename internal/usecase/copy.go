@@ -79,7 +79,7 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 	if max > last {
 		return nil, fmt.Errorf(port.ErrReferenceNotDone, j.Refs[r].Job.Name)
 	}
-	possibles, err := c.getRefPossibles(&j.Refs[r], min, max, tx)
+	possibles, err := c.getRefPossibles(&j.Refs[r], i, min, max, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -91,10 +91,10 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 }
 
 // getRefPossibles gets the possible references
-func (c *Copy) getRefPossibles(ref *domain.Ref, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
+func (c *Copy) getRefPossibles(ref *domain.Ref, i int, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
 	base := ref.Job.Base
 	object := ref.Job.Object
-	field := ref.Keys[0].Referred
+	field := ref.Keys[i].Referred
 	sql := fmt.Sprintf(port.CopySelectF, field, base, object, field, min-1, field, max)
 	_, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
@@ -259,18 +259,50 @@ func (c *Copy) getAllSouceAtomic(j *domain.Job, rows [][]*string, txSource inter
 
 // getAllSource steps the source data for the insert
 func (c *Copy) getAllSourceAtom(j *domain.Job, rows [][]*string, txSource interface{}) ([]string, [][]*string, error) {
-	ids := ""
-	for _, row := range rows {
-		ids += *row[0] + ", "
+	fields, err := c.mountAllSourceFields(j)
+	if err != nil {
+		return nil, nil, err
 	}
-	ids = ids[:len(ids)-2]
-	sql := fmt.Sprintf(port.CopySelectAll, j.Base, j.Object, j.Keys[0].Name, ids, j.Keys[0].Name)
+	ids, err := c.mountAllSourceIds(j, rows)
+	if err != nil {
+		return nil, nil, err
+	}
+	sql := fmt.Sprintf(port.CopySelectAll, j.Base, j.Object, fields, ids, fields)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
 	}
 	return cols, rows, nil
 }
+
+// mountAllSourceFields mounts the source fields name for the select
+func (c *Copy) mountAllSourceFields(j *domain.Job) (string, error) {
+	ret := ""
+	for _, key := range j.Keys {
+		ret += key.Name + ", "
+	}
+	if ret == "" {
+		return "", errors.New(port.ErrFieldNotFound)
+	}
+	return ret[:len(ret)-2], nil
+}
+
+// mountAllSourceIds mounts the source ids for the select
+func (c *Copy) mountAllSourceIds(j *domain.Job, rows [][]*string) (string, error) {
+	ret := ""
+	for _, row := range rows {
+		r := ""
+		for i := 0; i < len(j.Keys); i++ {
+			r += *row[i] + ", "
+		}
+		ret += "(" + r[:len(r)-2] + "), "
+	}
+	if ret == "" {
+		return "", errors.New(port.ErrFieldNotFound)
+	}
+	return ret[:len(ret)-2], nil
+}
+
 
 // putSource puts the source data into the target
 func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {

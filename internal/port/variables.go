@@ -42,7 +42,7 @@ const (
 	CopyDisableFK        = "SET FOREIGN_KEY_CHECKS = 0;"
 	CopyEnableFK         = "SET FOREIGN_KEY_CHECKS = 1;"
 	CopyMaxClient        = "SELECT max(%s) FROM %s;"
-	CopySelectAll        = "SELECT * FROM %s.%s WHERE %s in (%s) order by %s;"
+	CopySelectAll        = "SELECT * FROM %s.%s WHERE (%s) in (%s) order by %s;"
 	CopySelectF          = "SELECT %s FROM %s.%s WHERE %s > %d and %s <= %d;"
 	CopyInsert           = "REPLACE INTO %s.%s %s VALUES %s;"
 	LoadClientAggregator = "SELECT id FROM aggregator_ref;"
@@ -53,8 +53,8 @@ const (
 	UpdateEnableFK       = "SET FOREIGN_KEY_CHECKS = 1;"
 	UpdateGetFields      = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s';"
 	UpdateSelectID1      = "SELECT %s, md5(concat(%s)) FROM %s.%s WHERE %s > %d and %s <= %d order by 1;"
-	UpdateSelectID2      = "SELECT %s, md5(concat(%s)) FROM %s.%s WHERE %s in (%s) order by 1;"
-	UpdateSelectAll      = "SELECT * FROM %s.%s WHERE %s in (%s);"
+	UpdateSelectID2      = "SELECT %s, md5(concat(%s)) FROM %s.%s WHERE (%s) in (%s) order by 1;"
+	UpdateSelectAll      = "SELECT * FROM %s.%s WHERE (%s) in (%s);"
 	UpdateInsert         = "REPLACE INTO %s.%s(%s) VALUES %s;"
 )
 

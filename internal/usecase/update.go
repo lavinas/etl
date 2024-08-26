@@ -189,13 +189,36 @@ func (c *Update) getTargetIdsByKey(j *domain.Job, i int, fields string, tx inter
 func (c *Update) getSourceIds(j *domain.Job, fields string, idsTarget [][]*string) ([][]*string, error) {
 	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
-	field := j.Keys[0].Name
-	q := fmt.Sprintf(port.UpdateSelectID2, field, fields, j.Base, j.Object, field, c.mountIds(idsTarget))
+	wf := c.mountWhereFields(j)
+	wi := c.mountIds(j, idsTarget)
+	q := fmt.Sprintf(port.UpdateSelectID2, wf, fields, j.Base, j.Object, wf, wi)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
 		return nil, err
 	}
 	return rows, nil
+}
+
+// mountWhereFields mounts the where fields to a string
+func (c *Update) mountWhereFields(j *domain.Job) string {
+	ret := ""
+	for _, key := range j.Keys {
+		ret += key.Name + ", "
+	}
+	return ret[:len(ret)-2]
+}
+
+// mountIds mounts the ids to a string
+func (c *Update) mountIds(j *domain.Job, ids [][]*string) string {
+	ret := ""
+	for _, id := range ids {
+		r := ""
+		for i := 0; i < len(j.Keys); i++ {
+			r += *id[i] + ", "
+		}
+		ret += "(" + r[:len(r)-2] + "), "
+	}
+	return ret[:len(ret)-2]
 }
 
 // matchIds matches the ids from source and target
@@ -214,8 +237,7 @@ func (c *Update) getDifferentIds(idsSource [][]*string, idsTarget [][]*string) (
 
 // getSource gets the source data
 func (c *Update) getSource(j *domain.Job, ids [][]*string) ([]string, [][]*string, error) {
-	field := j.Keys[0].Name
-	q := fmt.Sprintf(port.UpdateSelectAll, j.Base, j.Object, field, c.mountIds(ids))
+	q := fmt.Sprintf(port.UpdateSelectAll, j.Base, j.Object, c.mountWhereFields(j), c.mountIds(j, ids))
 	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
 	cols, rows, err := c.RepoSource.Query(tx, q)
@@ -225,14 +247,6 @@ func (c *Update) getSource(j *domain.Job, ids [][]*string) ([]string, [][]*strin
 	return cols, rows, nil
 }
 
-// mountIds mounts the ids to a string
-func (c *Update) mountIds(ids [][]*string) string {
-	ret := ""
-	for _, id := range ids {
-		ret += *id[0] + ","
-	}
-	return ret[:len(ret)-1]
-}
 
 // updateTarget updates the target table
 func (c *Update) updateTarget(j *domain.Job, cols []string, rows [][]*string, txTarget interface{}) error {
