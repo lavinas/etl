@@ -27,7 +27,6 @@ func NewRun(repoSource port.Repository, repoTarget port.Repository, signal chan 
 	}
 }
 
-
 // Run runs app with given parameters
 func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 	if in == nil || out == nil {

@@ -32,6 +32,9 @@ func NewLine(useCase port.UseCase) *CommandLine {
 // GetParams returns the command line arguments
 func (a *Args) GetParams() map[string]interface{} {
 	var ret = make(map[string]interface{})
+	ret["action"] = a.Action
+	ret["jobID"] = a.JobID
+	ret["schema"] = a.Schema
 	if ret["repeat"] = a.Repeat; a.Repeat <= 0 {
 		ret["repeat"] = 0
 	}
@@ -42,7 +45,6 @@ func (a *Args) GetParams() map[string]interface{} {
 	if ret["delay"] = a.Delay; a.Delay <= 0 {
 		ret["delay"] = 30
 	}
-	ret["jobID"] = a.JobID
 	return ret
 }
 
@@ -50,6 +52,18 @@ func (a *Args) GetParams() map[string]interface{} {
 func (c *CommandLine) Run() {
 	args := Args{}
 	arg.MustParse(&args)
+	switch args.Action {
+	case "run":
+		c.actionRun(args)
+	case "setup":
+		c.actionSetup(args)
+	default:
+		log.Println(port.ErrActionNotFound)
+	}
+}
+
+// run runs the use case
+func (c *CommandLine) actionRun(args Args) {
 	outs := make(chan *port.RunOut)
 	defer close(outs)
 	jobId, err := strconv.ParseInt(args.JobID, 10, 64)
@@ -65,4 +79,14 @@ func (c *CommandLine) Run() {
 		}
 		log.Println(out.String())
 	}
+}
+
+// actionSetup runs the setup use case
+func (c *CommandLine) actionSetup(args Args) {
+	outs := make(chan *port.SetUpOut)
+	defer close(outs)
+	in := port.SetUpIn{Schema: args.Schema}
+	go c.usecase.SetUp(&in, outs)
+	out := <-outs
+	log.Println(out.String())
 }

@@ -247,7 +247,6 @@ func (c *Update) getSource(j *domain.Job, ids [][]*string) ([]string, [][]*strin
 	return cols, rows, nil
 }
 
-
 // updateTarget updates the target table
 func (c *Update) updateTarget(j *domain.Job, cols []string, rows [][]*string, txTarget interface{}) error {
 	q := fmt.Sprintf(port.UpdateInsert, j.Base, j.Object, c.mountCols(cols), c.mountRows(rows))
@@ -287,7 +286,6 @@ func (c *Update) mountRows(rows [][]*string) string {
 	}
 	return ret[:len(ret)-1]
 }
-
 
 // formatValue formats the value to insert
 func (c *Update) formatValue(col *string) string {

@@ -303,7 +303,6 @@ func (c *Copy) mountAllSourceIds(j *domain.Job, rows [][]*string) (string, error
 	return ret[:len(ret)-2], nil
 }
 
-
 // putSource puts the source data into the target
 func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
 	if cmd == "" {

@@ -8,7 +8,6 @@ const (
 	stringOutput     = "Run: %d - %d: %s - %s in %.4f seconds"
 )
 
-
 // UseCase is a interface that represents the use case to run
 type UseCase interface {
 	SetUp(*SetUpIn, chan *SetUpOut)

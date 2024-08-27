@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-
 // RunIn is a struct that represents the input of the Run
 type RunIn struct {
 	Repeat    int64
@@ -37,7 +36,6 @@ type SetUpOut struct {
 	Detail string
 }
 
-
 // String returns a string representation of the RunOut
 func (r *RunOut) String() string {
 	ret := fmt.Sprintf(stringOutput, r.JobID, r.Shift, r.Status, r.Detail, r.Duration)
@@ -45,4 +43,9 @@ func (r *RunOut) String() string {
 		ret += fmt.Sprintf(". More: %d", r.More)
 	}
 	return ret
+}
+
+// string returns a string representation of the SetUpOut
+func (s *SetUpOut) String() string {
+	return fmt.Sprintf("%s: %s", s.Status, s.Detail)
 }
