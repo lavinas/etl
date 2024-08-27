@@ -36,6 +36,7 @@ const (
 	ErrJobKeyNotFound           = "job key not found"
 	ErrKeysLength               = "keys length is different"
 	ErrSetupSchemaEmpty         = "schema is empty"
+	ErrNoTablesFound            = "no tables found"
 )
 
 // queries

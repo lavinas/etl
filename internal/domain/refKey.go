@@ -12,6 +12,17 @@ type RefKey struct {
 	Referred string `gorm:"type:varchar(100); not null"`
 }
 
+// NewRefKey creates a new ref key entity
+func NewRefKey(id, refId int64, referrer, referred string) *RefKey {
+	return &RefKey{
+		Id:       id,
+		RefId:    refId,
+		Referrer: referrer,
+		Referred: referred,
+	}
+}
+
+
 // Find finds all ref keys based on the ref key entity
 func (r *RefKey) FindByRefId(refId int64, repo port.Repository, tx interface{}) ([]RefKey, error) {
 	if tx == nil {
@@ -30,6 +41,14 @@ func (r *RefKey) FindByRefId(refId int64, repo port.Repository, tx interface{}) 
 	keys := refKeys.(*[]RefKey)
 	ret = append(ret, *keys...)
 	return ret, nil
+}
+
+// Save saves the ref key entity
+func (r *RefKey) Save(repo port.Repository, tx interface{}) error {
+	if err := repo.Save(tx, r); err != nil {
+		return err
+	}
+	return nil
 }
 
 // TableName returns the table name of the ref key entity

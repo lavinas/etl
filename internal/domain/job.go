@@ -19,6 +19,18 @@ type Job struct {
 	Refs   []Ref    `gorm:"-"`
 }
 
+// NewJob creates a new job entity
+func NewJob(id int64, name, typ, action, base, object string) *Job {
+	return &Job{
+		Id:     id,
+		Name:   name,
+		Type:   typ,
+		Action: action,
+		Base:   base,
+		Object: object,
+	}
+}
+
 // GetAllOrdered gets all jobs ordered
 func (j *Job) GetAll(repo port.Repository) (*[]Job, error) {
 	tx := repo.Begin("")
@@ -60,6 +72,14 @@ func (j *Job) SetKeysLast(lasts []int64, repo port.Repository, tx interface{}) e
 		if err := key.SetLast(lasts[i], repo, tx); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// Save saves the job entity
+func (j *Job) Save(repo port.Repository, tx interface{}) error {
+	if err := repo.Save(tx, j); err != nil {
+		return err
 	}
 	return nil
 }

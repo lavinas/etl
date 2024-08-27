@@ -13,6 +13,17 @@ type JobKey struct {
 	Step  int64  `gorm:"type:bigint; not null"`
 }
 
+// NewJobKey creates a new job key entity
+func NewJobKey(id, jobId, last, step int64, name string) *JobKey {
+	return &JobKey{
+		Id:    id,
+		JobId: jobId,
+		Name:  name,
+		Last:  last,
+		Step:  step,
+	}
+}
+
 // Find finds all job keys based on the job key entity
 func (j *JobKey) FindByJobId(jobId int64, repo port.Repository, tx interface{}) ([]JobKey, error) {
 	key := JobKey{JobId: jobId, Id: port.Int64Nil, Last: port.Int64Nil, Step: port.Int64Nil}

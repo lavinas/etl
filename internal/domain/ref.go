@@ -7,10 +7,19 @@ import (
 // Ref represents the reference entity of application
 type Ref struct {
 	Id       int64    `gorm:"type:bigint; not null; primaryKey"`
-	Referrer int64    `gorm:"type:bigint; not null; primaryKey"`
-	Referred int64    `gorm:"type:bigint; not null; primaryKey"`
+	Referrer int64    `gorm:"type:bigint; not null"`
+	Referred int64    `gorm:"type:bigint; not null"`
 	Keys     []RefKey `gorm:"-"`
 	Job      Job      `gorm:"-"`
+}
+
+// NewRef creates a new ref entity
+func NewRef(id, referrer, referred int64) *Ref {
+	return &Ref{
+		Id:       id,
+		Referrer: referrer,
+		Referred: referred,
+	}
 }
 
 // Find finds all refs based on the ref entity
@@ -36,6 +45,14 @@ func (r *Ref) FindByReferrer(referrer int64, repo port.Repository, tx interface{
 		ret = append(ret, r)
 	}
 	return ret, nil
+}
+
+// Save saves the ref entity
+func (r *Ref) Save(repo port.Repository, tx interface{}) error {
+	if err := repo.Save(tx, r); err != nil {
+		return err
+	}
+	return nil
 }
 
 // mountRerturn mounts the return value of the ref entity
