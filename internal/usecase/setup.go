@@ -5,11 +5,13 @@ import (
 	"os"
 	"sort"
 
-	// "github.com/lavinas/vooo-etl/internal/domain"
+	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
 const (
+	SetupDisableFK     = "SET FOREIGN_KEY_CHECKS = 0;"
+	SetupEnableFK      = "SET FOREIGN_KEY_CHECKS = 1;"
 	SetUpSelectTables  = "SELECT table_schema, table_name from information_schema.tables where table_schema = '%s' and not (%s) order by 1,2;"
 	SetUpSelectPrime   = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '%s' AND table_name in (%s) AND column_key = 'PRI';"
 	SetUpSelecrForeign = "SELECT table_name, column_name, referenced_table_schema, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage WHERE table_schema = '%s' AND table_name in (%s) AND referenced_table_name is not null;"
@@ -45,11 +47,11 @@ type SetUpForeign struct {
 
 // SetUpNode is the input for the SetUp usecase
 type SetUpNode struct {
-	Id           int64
-	TableSchema  string
-	TableName    string
-	Primaries    []string
-	Foreigns     []*SetUpForeign
+	Id          int64
+	TableSchema string
+	TableName   string
+	Primaries   []string
+	Foreigns    map[string]*SetUpForeign
 }
 
 // GraphNode represents a node in the graph used to order the tables
@@ -79,8 +81,8 @@ func (m *SetUp) Run(in *port.SetUpIn, out chan *port.SetUpOut) {
 	if in == nil || out == nil {
 		panic("Setup: Invalid input parameters")
 	}
-	tx := m.RepoSource.Begin("")
-	defer m.RepoSource.Rollback(tx)
+	tx := m.RepoTarget.Begin("")
+	defer m.RepoTarget.Rollback(tx)
 	nodes, err := m.mountStructs(in, tx)
 	if err != nil {
 		out <- &port.SetUpOut{Status: "error", Detail: err.Error()}
@@ -127,6 +129,8 @@ func (m *SetUp) getNodes(schema string, tx interface{}) (map[string]*SetUpNode, 
 		nodes[*row[1]] = &SetUpNode{
 			TableSchema: *row[0],
 			TableName:   *row[1],
+			Primaries:   make([]string, 0),
+			Foreigns:    make(map[string]*SetUpForeign),
 		}
 	}
 	return nodes, nil
@@ -161,12 +165,12 @@ func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx inter
 		return err
 	}
 	for _, row := range rows {
-		nodes[*row[0]].Foreigns = append(nodes[*row[0]].Foreigns, &SetUpForeign{
+		nodes[*row[0]].Foreigns[*row[3]] = &SetUpForeign{
 			ColumnName:       *row[1],
 			ReferencedSchema: *row[2],
 			ReferencedTable:  *row[3],
 			ReferencedColumn: *row[4],
-		})
+		}
 	}
 	return nil
 }
@@ -183,6 +187,24 @@ func (m *SetUp) setId(nodes map[string]*SetUpNode) {
 	sort.Slice(order, func(i, j int) bool { return ordered[order[i]] > ordered[order[j]] })
 	for i, o := range order {
 		nodes[o].Id = int64(i)
+	}
+	m.setForwardId(graph, make(map[string]bool, 0))
+}
+
+// setForwardId sets the forward id of the nodes
+func (m *SetUp) setForwardId(graphNode *GraphNode, nodes map[string]bool) {
+	if graphNode.node != nil {
+		if _, ok := nodes[graphNode.node.TableName]; ok {
+			return
+		} else {
+			nodes[graphNode.node.TableName] = true
+		}
+	}
+	for _, node := range graphNode.next {
+		if graphNode.node != nil {
+			graphNode.node.Foreigns[node.node.TableName].ReferencedID = node.node.Id
+		}
+		m.setForwardId(node, nodes)
 	}
 }
 
@@ -244,9 +266,9 @@ func (m *SetUp) mountExceptions() string {
 
 // saveStructs saves the structs in the target database
 func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
+	m.RepoTarget.Exec(tx, SetupDisableFK)
 	for _, node := range nodes {
-		/*
-		job := domain.NewJob(node.Id, node.TableSchema + "." + node.TableName, "table", "copy", node.TableSchema, node.TableName)
+		job := domain.NewJob(node.Id, node.TableSchema+"."+node.TableName, "table", "copy", node.TableSchema, node.TableName)
 		if err := job.Save(m.RepoTarget, tx); err != nil {
 			return err
 		}
@@ -266,10 +288,8 @@ func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
 			}
 			count++
 		}
-		*/
-		fmt.Println(node.Id, node.TableName)
 	}
-	fmt.Println(10000, len(nodes))
 	m.RepoTarget.Commit(tx)
+	m.RepoTarget.Exec(tx, SetupDisableFK)
 	return nil
 }

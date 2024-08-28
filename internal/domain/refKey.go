@@ -22,7 +22,6 @@ func NewRefKey(id, refId int64, referrer, referred string) *RefKey {
 	}
 }
 
-
 // Find finds all ref keys based on the ref key entity
 func (r *RefKey) FindByRefId(refId int64, repo port.Repository, tx interface{}) ([]RefKey, error) {
 	if tx == nil {
