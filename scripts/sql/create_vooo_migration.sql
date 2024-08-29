@@ -43,6 +43,21 @@ CREATE TABLE `job` (
   `object` varchar(100) NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+--
+-- Table structure for table `expts`
+--
+DROP TABLE IF EXISTS `expts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE  `expts` (
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `stat` varchar(500) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `job_key`
+--
 DROP TABLE IF EXISTS `job_key`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

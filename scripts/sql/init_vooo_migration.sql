@@ -14,7 +14,24 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- INSERTING MIGRATION OBJECTS
 use vooo_migration;
--- jobs
+-- excpts
+
+insert into expts (stat) value ("table_name like 'shellbox%'");
+insert into expts (stat) value ("table_name like 'tmp_%'");
+insert into expts (stat) value ("table_name like 'temp_%'");
+insert into expts (stat) value ("table_name like 'analise%'");
+insert into expts (stat) value ("table_name = 'mercadopago_transacao31.03'");
+insert into expts (stat) value ("table_name = 'mercadopago_transacao31.03'");
+insert into expts (stat) value ("table_name = 'connect_item_btg'");
+insert into expts (stat) value ("table_name = 'group_bkp'");
+insert into expts (stat) value ("table_name = 'rel_ant'");
+insert into expts (stat) value ("table_name = 'sales_statement'");
+insert into expts (stat) value ("table_name = 'stix_1405'");
+insert into expts (stat) value ("table_name = 'transacao_btg'");
+insert into expts (stat) value ("table_name = 'transacoes_erradas'");
+insert into expts (stat) value ("table_name = 'transacoes_sap_08_07'");
+
+-- refs
 insert into ref_init (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client', 'id_aggregator', 'vooo_prod_backend', 'aggregator', 'id');
 insert into ref_init (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'address', 'id', 'vooo_prod_backend', 'client', 'id_address');
 insert into ref_init (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'billing', 'client_id', 'vooo_prod_backend', 'client', 'id');
@@ -124,7 +141,6 @@ insert into ref_init (referrer_schema, referrer_table, referrer_field, reference
 insert into ref_init (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_notification_processing', 'user_id', 'vooo_prod_backend', 'user', 'id');
 insert into ref_init (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_old_passwords', 'user_id', 'vooo_prod_backend', 'user', 'id');
 insert into ref_init (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_status_log', 'user_id', 'vooo_prod_backend', 'user', 'id');
-
 
 
 commit;

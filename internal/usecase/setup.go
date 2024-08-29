@@ -9,15 +9,6 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-const (
-	SetupDisableFK     = "SET FOREIGN_KEY_CHECKS = 0;"
-	SetupEnableFK      = "SET FOREIGN_KEY_CHECKS = 1;"
-	SetUpSelectTables  = "SELECT table_schema, table_name from information_schema.tables where table_schema = '%s' and not (%s) and table_name in ('client', 'user', 'aggregator') order by 1,2;"
-	SetUpSelectPrime   = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '%s' AND table_name in (%s) AND column_key = 'PRI';"
-	// SetUpSelecrForeign = "SELECT table_name, column_name, referenced_table_schema, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage WHERE table_schema = '%s' AND table_name in (%s) AND referenced_table_name is not null;"
-	SetUpSelecrForeign = "SELECT referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field FROM ref_init WHERE referrer_schema = '%s' AND referrer_table in (%s);"
-)
-
 var (
 	SetUpSelectExcept = []string{
 		"table_name like 'shellbox%'",
@@ -173,7 +164,11 @@ func (m *SetUp) getNodes(schema string, tx interface{}) (map[string]*SetUpNode, 
 	if schema == "" {
 		return nil, fmt.Errorf(port.ErrSetupSchemaEmpty)
 	}
-	query := fmt.Sprintf(SetUpSelectTables, schema, m.mountExceptions())
+	expts, err := m.mountExceptions()
+	if err != nil {
+		return nil, err
+	}
+	query := fmt.Sprintf(port.SetUpSelectTables, schema, expts)
 	_, rows, err := m.RepoSource.Query(tx, query)
 	if err != nil {
 		return nil, err
@@ -196,7 +191,7 @@ func (m *SetUp) getPrimaries(schema string, nodes map[string]*SetUpNode, tx inte
 	for _, table := range nodes {
 		tableNames += "'" + table.TableName + "',"
 	}
-	query := fmt.Sprintf(SetUpSelectPrime, schema, tableNames[:len(tableNames)-1])
+	query := fmt.Sprintf(port.SetUpSelectPrime, schema, tableNames[:len(tableNames)-1])
 	_, rows, err := m.RepoSource.Query(tx, query)
 	if err != nil {
 		return err
@@ -213,7 +208,7 @@ func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx inter
 	for _, table := range nodes {
 		tableNames += "'" + table.TableName + "',"
 	}
-	query := fmt.Sprintf(SetUpSelecrForeign, schema, tableNames[:len(tableNames)-1])
+	query := fmt.Sprintf(port.SetUpSelecrForeign, schema, tableNames[:len(tableNames)-1])
 	_, rows, err := m.RepoTarget.Query(tx, query)
 	if err != nil {
 		return err
@@ -347,20 +342,26 @@ func (m *SetUp) orderGraph(graph *GraphNode, orderMap map[string]int64, i int64)
 }
 
 // mount exceptions to the query
-func (m *SetUp) mountExceptions() string {
-	if len(SetUpSelectExcept) == 0 {
-		return "0"
+func (m *SetUp) mountExceptions() (string, error) {
+	tx := m.RepoTarget.Begin("")
+	defer m.RepoTarget.Rollback(tx)
+	_, rows, err := m.RepoTarget.Query(tx, port.SetUpExcepts)
+	if err != nil {
+		return "", err
 	}
-	query := ""
-	for _, exception := range SetUpSelectExcept {
-		query += exception + " or "
+	if len(rows) == 0 {
+		return "0", nil
 	}
-	return query[:len(query)-4]
+	expt := ""
+	for _, row := range rows {
+		expt += *row[0] + " or "
+	}
+	return expt[:len(expt)-4], nil
 }
 
 // saveStructs saves the structs in the target database
 func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
-	m.RepoTarget.Exec(tx, SetupDisableFK)
+	m.RepoTarget.Exec(tx, port.SetupDisableFK)
 	for _, node := range nodes {
 		job := domain.NewJob(node.Id, node.TableSchema+"."+node.TableName, "table", "copy", node.TableSchema, node.TableName)
 		if err := job.Save(m.RepoTarget, tx); err != nil {
@@ -374,7 +375,7 @@ func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
 		}
 	}
 	m.RepoTarget.Commit(tx)
-	m.RepoTarget.Exec(tx, SetupDisableFK)
+	m.RepoTarget.Exec(tx, port.SetupDisableFK)
 	return nil
 }
 
