@@ -27,7 +27,9 @@ type RunOut struct {
 
 // SetUpIn is a struct that represents the input of the SetUp
 type SetUpIn struct {
+	Action string
 	Schema string
+
 }
 
 // SetUpOut is a struct that represents the output of the SetUp

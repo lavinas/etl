@@ -37,6 +37,8 @@ const (
 	ErrKeysLength               = "keys length is different"
 	ErrSetupSchemaEmpty         = "schema is empty"
 	ErrNoTablesFound            = "no tables found"
+	ErrTableReferceNotFound     = "table reference %s not found"
+	ErrCircularReference        = "circular reference in table %s"
 )
 
 // queries

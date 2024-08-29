@@ -12,7 +12,7 @@ import (
 const (
 	SetupDisableFK     = "SET FOREIGN_KEY_CHECKS = 0;"
 	SetupEnableFK      = "SET FOREIGN_KEY_CHECKS = 1;"
-	SetUpSelectTables  = "SELECT table_schema, table_name from information_schema.tables where table_schema = '%s' and not (%s) order by 1,2;"
+	SetUpSelectTables  = "SELECT table_schema, table_name from information_schema.tables where table_schema = '%s' and not (%s) and table_name in ('client', 'user', 'aggregator') order by 1,2;"
 	SetUpSelectPrime   = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '%s' AND table_name in (%s) AND column_key = 'PRI';"
 	// SetUpSelecrForeign = "SELECT table_name, column_name, referenced_table_schema, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage WHERE table_schema = '%s' AND table_name in (%s) AND referenced_table_name is not null;"
 	SetUpSelecrForeign = "SELECT referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field FROM ref_init WHERE referrer_schema = '%s' AND referrer_table in (%s);"
@@ -79,24 +79,75 @@ func NewSetUp(repoSource port.Repository, repoTarget port.Repository, signal cha
 
 // Run runs the mount operation
 func (m *SetUp) Run(in *port.SetUpIn, out chan *port.SetUpOut) {
+	defer func() {
+		out <- &port.SetUpOut{Status: port.FinishedStatus}
+	}()
 	if in == nil || out == nil {
-		panic("Setup: Invalid input parameters")
+		out <- &port.SetUpOut{Status: port.ErrorStatus, Detail: port.ErrRepoNilObject}
 	}
+	nodes, stack, err := m.prepareRun(in)
+	if err != nil {
+		out <- &port.SetUpOut{Status: port.ErrorStatus, Detail: err.Error()}
+		return
+	}
+	err = m.runAction(in.Action, nodes, stack, out)
+	if err != nil {
+		out <- &port.SetUpOut{Status: port.ErrorStatus, Detail: err.Error()}
+		return
+	}
+	out <- &port.SetUpOut{Status: port.SuccessStatus, Detail: "Success"}
+}
+
+// factoryAction runs the action
+func (m *SetUp) runAction(action string, nodes map[string]*SetUpNode, stack *GraphNode, out chan *port.SetUpOut) error {
+	var err error
+	switch action {
+	case "check":
+		m.runCheck(stack, out)
+	case "setup":
+		err = m.runSetup(nodes, stack)
+	default:
+		err = fmt.Errorf(port.ErrActionNotFound)
+	}
+	return err
+}
+
+// prepareRun prepares the run action
+func (m *SetUp) prepareRun(in *port.SetUpIn) (map[string]*SetUpNode, *GraphNode, error) {
 	txSource := m.RepoSource.Begin("")
 	defer m.RepoSource.Rollback(txSource)
 	txTarget := m.RepoTarget.Begin("")
 	defer m.RepoTarget.Rollback(txTarget)
 	nodes, err := m.mountStructs(in, txSource, txTarget)
 	if err != nil {
-		out <- &port.SetUpOut{Status: "error", Detail: err.Error()}
-		return
+		return nil, nil, err
 	}
-	m.setId(nodes)
+	stack, err := m.makeGraph(nodes)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nodes, stack, nil
+}
+
+// runSetup runs the setup action
+func (m *SetUp) runSetup(nodes map[string]*SetUpNode, stack *GraphNode) error {
+	txTarget := m.RepoTarget.Begin("")
+	defer m.RepoTarget.Rollback(txTarget)
+	if err := m.setId(nodes, stack); err != nil {
+		return err
+	}
 	if err := m.saveStructs(nodes, txTarget); err != nil {
-		out <- &port.SetUpOut{Status: "error", Detail: err.Error()}
-		return
+		return err
 	}
-	out <- &port.SetUpOut{Status: "Ok", Detail: "Success"}
+	return nil
+}
+
+// runCheck runs the check action
+func (m *SetUp) runCheck(stack *GraphNode, out chan *port.SetUpOut) {
+	mp := m.getMap(stack)
+	for _, m := range mp {
+		out <- &port.SetUpOut{Status: "", Detail: m}
+	}
 }
 
 // mountStructs returns the structs of the given schema
@@ -179,19 +230,63 @@ func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx inter
 }
 
 // getOrdered returns the tables ordered by the foreign keys
-func (m *SetUp) setId(nodes map[string]*SetUpNode) {
-	graph := m.makeGraph(nodes)
+func (m *SetUp) setId(nodes map[string]*SetUpNode, stack *GraphNode) error {
 	ordered := make(map[string]int64, 0)
-	m.orderGraph(graph, ordered, 0)
+	m.orderGraph(stack, ordered, 0)
 	order := make([]string, 0)
 	for k := range ordered {
 		order = append(order, k)
 	}
 	sort.Slice(order, func(i, j int) bool { return ordered[order[i]] > ordered[order[j]] })
 	for i, o := range order {
-		nodes[o].Id = int64(i)
+		nodes[o].Id = int64(i + 1)
 	}
-	m.setForwardId(graph)
+	m.setForwardId(stack)
+	return nil
+}
+
+// checkGraph checks the graph for circular references
+func (m *SetUp) checkGraph(stack *GraphNode) error {
+	for name, node := range stack.next {
+		circ := make(map[string]bool)
+		if err := m.checkNode(name, node, circ); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// checkNode checks the node for circular references
+func (m *SetUp) checkNode(name string, node *GraphNode, circ map[string]bool) error {
+	if node.node == nil {
+		return fmt.Errorf(port.ErrTableReferceNotFound, name)
+	}
+	if _, ok := circ[name]; ok {
+		return fmt.Errorf(port.ErrCircularReference, name)
+	}
+	circ[name] = true
+	for name, node := range node.next {
+		if err := m.checkNode(name, node, circ); err != nil {
+			return err
+		}
+	}
+	delete(circ, name)
+	return nil
+}
+
+// printNode prints the node structure
+func (m *SetUp) getMap(graph *GraphNode) []string {
+	ret := make([]string, 0)
+	for name, node := range graph.next {
+		n := m.getMap(node)
+		if len(n) == 0 {
+			ret = append(ret, name)
+		}
+		for _, nn := range n {
+			ret = append(ret, name+"->"+nn)
+		}
+	}
+	return ret
 }
 
 // setForwardId sets the forward id of the nodes
@@ -205,7 +300,7 @@ func (m *SetUp) setForwardId(graphNode *GraphNode) {
 }
 
 // makeGraph creates a graph from the nodes
-func (m *SetUp) makeGraph(nodes map[string]*SetUpNode) *GraphNode {
+func (m *SetUp) makeGraph(nodes map[string]*SetUpNode) (*GraphNode, error) {
 	nodemap := make(map[string]*GraphNode, len(nodes))
 	stack := &GraphNode{node: nil, next: make(map[string]*GraphNode)}
 	var nd *GraphNode
@@ -213,13 +308,17 @@ func (m *SetUp) makeGraph(nodes map[string]*SetUpNode) *GraphNode {
 		if _, ok := nodemap[name]; !ok {
 			nd = &GraphNode{node: node, next: make(map[string]*GraphNode)}
 			nodemap[name] = nd
+			stack.next[name] = nd
 		} else {
 			nd = nodemap[name]
 			nd.node = node
 		}
 		m.makeVectors(nodemap, node, nd, stack)
 	}
-	return stack
+	if err := m.checkGraph(stack); err != nil {
+		return nil, err
+	}
+	return stack, nil
 }
 
 // kakegraphForeign creates a graph from the foreign keys
@@ -227,8 +326,7 @@ func (m *SetUp) makeVectors(nodemap map[string]*GraphNode, node *SetUpNode, nd *
 	var fw *GraphNode
 	for _, foreign := range node.Foreigns {
 		if _, ok := nodemap[foreign.ReferencedTable]; !ok {
-			node := &SetUpNode{TableSchema: foreign.ReferencedSchema, TableName: foreign.ReferencedTable, Primaries: make([]string, 0), Foreigns: make(map[string]*SetUpForeign)}
-			fw = &GraphNode{node: node, next: make(map[string]*GraphNode)}
+			fw = &GraphNode{node: nil, next: make(map[string]*GraphNode)}
 			nodemap[foreign.ReferencedTable] = fw
 		} else {
 			fw = nodemap[foreign.ReferencedTable]
@@ -268,24 +366,44 @@ func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
 		if err := job.Save(m.RepoTarget, tx); err != nil {
 			return err
 		}
-		count := node.Id * 100
-		for _, primary := range node.Primaries {
-			key := domain.NewJobKey(count, node.Id, -1, 5000, primary)
-			if err := key.Save(m.RepoTarget, tx); err != nil {
-				return err
-			}
-			count++
+		if err := m.savePrimaries(node, tx); err != nil {
+			return err
 		}
-		count = node.Id * 100
-		for _, foreign := range node.Foreigns {
-			fk := domain.NewRef(count, node.Id, foreign.ReferencedID)
-			if err := fk.Save(m.RepoTarget, tx); err != nil {
-				return err
-			}
-			count++
+		if err := m.saveForeigns(node, tx); err != nil {
+			return err
 		}
 	}
 	m.RepoTarget.Commit(tx)
 	m.RepoTarget.Exec(tx, SetupDisableFK)
+	return nil
+}
+
+// savePrimaries saves the primary keys in the target database
+func (m *SetUp) savePrimaries(node *SetUpNode, tx interface{}) error {
+	count := node.Id * 100
+	for _, primary := range node.Primaries {
+		key := domain.NewJobKey(count, node.Id, -1, 5000, primary)
+		if err := key.Save(m.RepoTarget, tx); err != nil {
+			return err
+		}
+		count++
+	}
+	return nil
+}
+
+// saveForeigns saves the foreign keys in the target database
+func (m *SetUp) saveForeigns(node *SetUpNode, tx interface{}) error {
+	count := node.Id * 100
+	for _, foreign := range node.Foreigns {
+		fk := domain.NewRef(count, node.Id, foreign.ReferencedID)
+		if err := fk.Save(m.RepoTarget, tx); err != nil {
+			return err
+		}
+		kfk := domain.NewRefKey(count, count, foreign.ColumnName, foreign.ReferencedColumn)
+		if err := kfk.Save(m.RepoTarget, tx); err != nil {
+			return err
+		}
+		count++
+	}
 	return nil
 }

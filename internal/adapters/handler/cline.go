@@ -57,6 +57,8 @@ func (c *CommandLine) Run() {
 		c.actionRun(args)
 	case "setup":
 		c.actionSetup(args)
+	case "check":
+		c.actionSetup(args)
 	default:
 		log.Println(port.ErrActionNotFound)
 	}
@@ -85,8 +87,12 @@ func (c *CommandLine) actionRun(args Args) {
 func (c *CommandLine) actionSetup(args Args) {
 	outs := make(chan *port.SetUpOut)
 	defer close(outs)
-	in := port.SetUpIn{Schema: args.Schema}
+	in := port.SetUpIn{Action: args.Action, Schema: args.Schema}
 	go c.usecase.SetUp(&in, outs)
-	out := <-outs
-	log.Println(out.String())
+	for out := range outs {
+		if out.Status == port.FinishedStatus {
+			break
+		}
+		log.Println(out.String())
+	}
 }
