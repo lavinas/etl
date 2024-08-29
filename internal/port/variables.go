@@ -60,12 +60,12 @@ const (
 	UpdateSelectID2      = "SELECT %s, md5(concat(%s)) FROM %s.%s WHERE (%s) in (%s) order by 1;"
 	UpdateSelectAll      = "SELECT * FROM %s.%s WHERE (%s) in (%s);"
 	UpdateInsert         = "REPLACE INTO %s.%s(%s) VALUES %s;"
-	SetupDisableFK     = "SET FOREIGN_KEY_CHECKS = 0;"
-	SetupEnableFK      = "SET FOREIGN_KEY_CHECKS = 1;"
-	SetUpSelectTables  = "SELECT table_schema, table_name from information_schema.tables where table_schema = '%s' and not (%s) order by 1,2;"
-	SetUpSelectPrime   = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '%s' AND table_name in (%s) AND column_key = 'PRI';"
-	SetUpSelecrForeign = "SELECT referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field FROM ref_init WHERE referrer_schema = '%s' AND referrer_table in (%s);"
-	SetUpExcepts	   = "SELECT stat FROM expts;"
+	SetupDisableFK       = "SET FOREIGN_KEY_CHECKS = 0;"
+	SetupEnableFK        = "SET FOREIGN_KEY_CHECKS = 1;"
+	SetUpSelectTables    = "SELECT table_schema, table_name from information_schema.tables where table_schema = '%s' and not (%s) order by 1,2;"
+	SetUpSelectPrime     = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '%s' AND table_name in (%s) AND column_key = 'PRI';"
+	SetUpSelecrForeign   = "SELECT referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field FROM ref_init WHERE referrer_schema = '%s' AND referrer_table in (%s);"
+	SetUpExcepts         = "SELECT stat FROM expts;"
 )
 
 // domain variables

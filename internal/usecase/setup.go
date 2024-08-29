@@ -9,7 +9,6 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-
 // Mount is the usecase for the mount base operation
 type SetUp struct {
 	Base
@@ -217,7 +216,7 @@ func (m *SetUp) setId(nodes map[string]*SetUpNode, stack *GraphNode) error {
 	sort.Slice(order, func(i, j int) bool { return ordered[order[i]] > ordered[order[j]] })
 	for i, o := range order {
 		if nodes[o].Id < int64(i+1) {
-			nodes[o].Id = int64(i+1)
+			nodes[o].Id = int64(i + 1)
 		}
 	}
 	m.setForwardId(stack)
