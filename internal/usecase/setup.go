@@ -14,7 +14,8 @@ const (
 	SetupEnableFK      = "SET FOREIGN_KEY_CHECKS = 1;"
 	SetUpSelectTables  = "SELECT table_schema, table_name from information_schema.tables where table_schema = '%s' and not (%s) order by 1,2;"
 	SetUpSelectPrime   = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '%s' AND table_name in (%s) AND column_key = 'PRI';"
-	SetUpSelecrForeign = "SELECT table_name, column_name, referenced_table_schema, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage WHERE table_schema = '%s' AND table_name in (%s) AND referenced_table_name is not null;"
+	// SetUpSelecrForeign = "SELECT table_name, column_name, referenced_table_schema, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage WHERE table_schema = '%s' AND table_name in (%s) AND referenced_table_name is not null;"
+	SetUpSelecrForeign = "SELECT referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field FROM ref_init WHERE referrer_schema = '%s' AND referrer_table in (%s);"
 )
 
 var (
@@ -81,15 +82,17 @@ func (m *SetUp) Run(in *port.SetUpIn, out chan *port.SetUpOut) {
 	if in == nil || out == nil {
 		panic("Setup: Invalid input parameters")
 	}
-	tx := m.RepoTarget.Begin("")
-	defer m.RepoTarget.Rollback(tx)
-	nodes, err := m.mountStructs(in, tx)
+	txSource := m.RepoSource.Begin("")
+	defer m.RepoSource.Rollback(txSource)
+	txTarget := m.RepoTarget.Begin("")
+	defer m.RepoTarget.Rollback(txTarget)
+	nodes, err := m.mountStructs(in, txSource, txTarget)
 	if err != nil {
 		out <- &port.SetUpOut{Status: "error", Detail: err.Error()}
 		return
 	}
 	m.setId(nodes)
-	if err := m.saveStructs(nodes, tx); err != nil {
+	if err := m.saveStructs(nodes, txTarget); err != nil {
 		out <- &port.SetUpOut{Status: "error", Detail: err.Error()}
 		return
 	}
@@ -97,18 +100,18 @@ func (m *SetUp) Run(in *port.SetUpIn, out chan *port.SetUpOut) {
 }
 
 // mountStructs returns the structs of the given schema
-func (m *SetUp) mountStructs(in *port.SetUpIn, tx interface{}) (map[string]*SetUpNode, error) {
-	nodes, err := m.getNodes(in.Schema, tx)
+func (m *SetUp) mountStructs(in *port.SetUpIn, txSource interface{}, txTarget interface{}) (map[string]*SetUpNode, error) {
+	nodes, err := m.getNodes(in.Schema, txSource)
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nil, fmt.Errorf(port.ErrNoTablesFound)
 	}
-	if err := m.getPrimaries(in.Schema, nodes, tx); err != nil {
+	if err := m.getPrimaries(in.Schema, nodes, txSource); err != nil {
 		return nil, err
 	}
-	if err := m.getForeigns(in.Schema, nodes, tx); err != nil {
+	if err := m.getForeigns(in.Schema, nodes, txTarget); err != nil {
 		return nil, err
 	}
 	return nodes, nil
@@ -160,7 +163,7 @@ func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx inter
 		tableNames += "'" + table.TableName + "',"
 	}
 	query := fmt.Sprintf(SetUpSelecrForeign, schema, tableNames[:len(tableNames)-1])
-	_, rows, err := m.RepoSource.Query(tx, query)
+	_, rows, err := m.RepoTarget.Query(tx, query)
 	if err != nil {
 		return err
 	}
@@ -216,7 +219,6 @@ func (m *SetUp) makeGraph(nodes map[string]*SetUpNode) *GraphNode {
 	for name, node := range nodes {
 		if _, ok := nodemap[name]; !ok {
 			nd = &GraphNode{node: node, next: make(map[string]*GraphNode)}
-			stack.next[name] = nd
 			nodemap[name] = nd
 		} else {
 			nd = nodemap[name]
@@ -232,7 +234,8 @@ func (m *SetUp) makeVectors(nodemap map[string]*GraphNode, node *SetUpNode, nd *
 	var fw *GraphNode
 	for _, foreign := range node.Foreigns {
 		if _, ok := nodemap[foreign.ReferencedTable]; !ok {
-			fw = &GraphNode{node: nil, next: make(map[string]*GraphNode)}
+			node := &SetUpNode{TableSchema: foreign.ReferencedSchema, TableName: foreign.ReferencedTable, Primaries: make([]string, 0), Foreigns: make(map[string]*SetUpForeign)}
+			fw = &GraphNode{node: node, next: make(map[string]*GraphNode)}
 			nodemap[foreign.ReferencedTable] = fw
 		} else {
 			fw = nodemap[foreign.ReferencedTable]
