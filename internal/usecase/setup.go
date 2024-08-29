@@ -9,24 +9,22 @@ import (
 	"github.com/lavinas/vooo-etl/internal/port"
 )
 
-var (
-	SetUpSelectExcept = []string{
-		"table_name like 'shellbox%'",
-		"table_name like 'tmp_%'",
-		"table_name like 'temp_%'",
-		"table_name like 'analise%'",
-		"table_name = 'mercadopago_transacao31.03'",
-		"table_name = 'mercadopago_transacao31.03'",
-		"table_name = 'connect_item_btg'",
-		"table_name = 'group_bkp'",
-		"table_name = 'rel_ant'",
-		"table_name = 'sales_statement'",
-		"table_name = 'stix_1405'",
-		"table_name = 'transacao_btg'",
-		"table_name = 'transacoes_erradas'",
-		"table_name = 'transacoes_sap_08_07'",
+
+// Mount is the usecase for the mount base operation
+type SetUp struct {
+	Base
+}
+
+// NewMount creates a new mount usecase
+func NewSetUp(repoSource port.Repository, repoTarget port.Repository, signal chan os.Signal) *SetUp {
+	return &SetUp{
+		Base: Base{
+			RepoSource: repoSource,
+			RepoTarget: repoTarget,
+			Signal:     signal,
+		},
 	}
-)
+}
 
 // ForeignColumn represents a foreign key column
 type SetUpForeign struct {
@@ -50,22 +48,6 @@ type SetUpNode struct {
 type GraphNode struct {
 	node *SetUpNode
 	next map[string]*GraphNode
-}
-
-// Mount is the usecase for the mount base operation
-type SetUp struct {
-	Base
-}
-
-// NewMount creates a new mount usecase
-func NewSetUp(repoSource port.Repository, repoTarget port.Repository, signal chan os.Signal) *SetUp {
-	return &SetUp{
-		Base: Base{
-			RepoSource: repoSource,
-			RepoTarget: repoTarget,
-			Signal:     signal,
-		},
-	}
 }
 
 // Run runs the mount operation
@@ -234,7 +216,9 @@ func (m *SetUp) setId(nodes map[string]*SetUpNode, stack *GraphNode) error {
 	}
 	sort.Slice(order, func(i, j int) bool { return ordered[order[i]] > ordered[order[j]] })
 	for i, o := range order {
-		nodes[o].Id = int64(i + 1)
+		if nodes[o].Id < int64(i+1) {
+			nodes[o].Id = int64(i+1)
+		}
 	}
 	m.setForwardId(stack)
 	return nil
@@ -334,7 +318,7 @@ func (m *SetUp) makeVectors(nodemap map[string]*GraphNode, node *SetUpNode, nd *
 // orderGraph orders the graph
 func (m *SetUp) orderGraph(graph *GraphNode, orderMap map[string]int64, i int64) {
 	for name, node := range graph.next {
-		if _, ok := orderMap[name]; !ok {
+		if _, ok := orderMap[name]; !ok || orderMap[name] < i+1 {
 			orderMap[name] = i + 1
 			m.orderGraph(node, orderMap, i+1)
 		}
