@@ -191,23 +191,16 @@ func (m *SetUp) setId(nodes map[string]*SetUpNode) {
 	for i, o := range order {
 		nodes[o].Id = int64(i)
 	}
-	m.setForwardId(graph, make(map[string]bool, 0))
+	m.setForwardId(graph)
 }
 
 // setForwardId sets the forward id of the nodes
-func (m *SetUp) setForwardId(graphNode *GraphNode, nodes map[string]bool) {
-	if graphNode.node != nil {
-		if _, ok := nodes[graphNode.node.TableName]; ok {
-			return
-		} else {
-			nodes[graphNode.node.TableName] = true
-		}
-	}
+func (m *SetUp) setForwardId(graphNode *GraphNode) {
 	for _, node := range graphNode.next {
 		if graphNode.node != nil {
 			graphNode.node.Foreigns[node.node.TableName].ReferencedID = node.node.Id
 		}
-		m.setForwardId(node, nodes)
+		m.setForwardId(node)
 	}
 }
 

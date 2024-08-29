@@ -23,6 +23,7 @@ SET @@SESSION.SQL_LOG_BIN=0;
 
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
+
 DROP DATABASE IF EXISTS `vooo_migration`;
 CREATE DATABASE `vooo_migration`;
 USE `vooo_migration`;
@@ -55,6 +56,24 @@ CREATE TABLE `job_key` (
   CONSTRAINT `job_key_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+--
+-- Table structure for table `ref_init`
+--
+DROP TABLE IF EXISTS `ref_init`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ref_init` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `referrer_schema` varchar(100) not null,
+  `referrer_table` varchar(100) not null,
+  `referrer_field` varchar(100) not null,
+  `referenced_schema` varchar(100) not null,
+  `referenced_table` varchar(100) not null,
+  `referenced_field` varchar(100) not null,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB AUTO_INCREMENT=21027 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 --
 -- Table structure for table `ref`
 --
