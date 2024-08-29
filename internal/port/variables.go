@@ -66,6 +66,7 @@ const (
 	SetUpSelectPrime     = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '%s' AND table_name in (%s) AND column_key = 'PRI';"
 	SetUpSelecrForeign   = "SELECT referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field FROM ref_init WHERE referrer_schema = '%s' AND referrer_table in (%s);"
 	SetUpExcepts         = "SELECT stat FROM expts;"
+	SetUpTruncate        = "TRUNCATE TABLE %s;"
 )
 
 // domain variables

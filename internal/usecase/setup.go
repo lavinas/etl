@@ -344,6 +344,9 @@ func (m *SetUp) mountExceptions() (string, error) {
 
 // saveStructs saves the structs in the target database
 func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
+	if err := m.truncateStructs(tx); err != nil {
+		return err
+	}
 	m.RepoTarget.Exec(tx, port.SetupDisableFK)
 	for _, node := range nodes {
 		job := domain.NewJob(node.Id, node.TableSchema+"."+node.TableName, "table", "copy", node.TableSchema, node.TableName)
@@ -361,6 +364,24 @@ func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
 	m.RepoTarget.Exec(tx, port.SetupDisableFK)
 	return nil
 }
+
+// truncateStructs truncates the structs in the target database
+func (m *SetUp) truncateStructs(tx interface{}) error {
+	tables := []string{"ref_key", "ref", "job_key", "job"}
+	if _, err := m.RepoTarget.Exec(tx, port.SetupDisableFK); err != nil {
+		return err
+	}
+	for _, table := range tables {
+		if _, err := m.RepoTarget.Exec(tx, fmt.Sprintf(port.SetUpTruncate, table)); err != nil {
+			return err
+		}
+	}
+	if _, err := m.RepoTarget.Exec(tx, port.SetupEnableFK); err != nil {
+		return err
+	}
+	return nil
+}
+
 
 // savePrimaries saves the primary keys in the target database
 func (m *SetUp) savePrimaries(node *SetUpNode, tx interface{}) error {
