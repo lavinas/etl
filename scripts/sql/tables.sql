@@ -18,7 +18,5 @@ where not (a.table_name like 'tmp_%' or a.table_name like 'temp_%' or a.table_na
 ) group by 1;
 
 
-select * from information_schema.table_constraints b
-
 
  
