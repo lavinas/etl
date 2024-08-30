@@ -223,14 +223,23 @@ func (m *SetUp) getPrimaries(schema string, nodes map[string]*SetUpNode, tx inte
 
 // getForeigns returns the foreign keys of the given nodes
 func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx interface{}) error {
-	tableNames := ""
-	for _, table := range nodes {
-		tableNames += "'" + table.TableName + "',"
+	external, internal := m.getTableNames(nodes)
+	rows := make([][]*string, 0)
+	if external != "" {
+		query := fmt.Sprintf(port.SetUpSelectForeignExternal, schema, external)
+		_, r, err := m.RepoTarget.Query(tx, query)
+		if err != nil {
+			return err
+		}
+		rows = append(rows, r...)
 	}
-	query := fmt.Sprintf(port.SetUpSelectForeignExternal, schema, tableNames[:len(tableNames)-1])
-	_, rows, err := m.RepoTarget.Query(tx, query)
-	if err != nil {
-		return err
+	if internal != "" {
+		query := fmt.Sprintf(port.SetUpSelectForeignInternal, schema, internal)
+		_, r, err := m.RepoTarget.Query(tx, query)
+		if err != nil {
+			return err
+		}
+		rows = append(rows, r...)
 	}
 	for _, row := range rows {
 		nodes[*row[0]].Foreigns[*row[3]] = &SetUpForeign{
@@ -241,6 +250,26 @@ func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx inter
 		}
 	}
 	return nil
+}
+
+// separateTables separates the tables by the foreign keys
+func (m *SetUp) getTableNames(nodes map[string]*SetUpNode) (string, string) {
+	external := ""
+	internal := ""
+	for _, node := range nodes {
+		if node.RefType == "external" {
+			external += "'" + node.TableName + "',"
+		} else {
+			internal += "'" + node.TableName + "',"
+		}
+	}
+	if external != "" {
+		external = external[:len(external)-1]
+	}
+	if internal != "" {
+		internal = internal[:len(internal)-1]
+	}
+	return external, internal
 }
 
 // getOrdered returns the tables ordered by the foreign keys
