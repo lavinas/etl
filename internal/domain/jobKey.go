@@ -57,6 +57,12 @@ func (j *JobKey) SetLast(last int64, repo port.Repository, tx interface{}) error
 	return nil
 }
 
+// ResetLast resets the last key of the job key entity
+func (j *JobKey) ResetLast(repo port.Repository, tx interface{}) error {
+	j.Last = -1
+	return j.SetLast(j.Last, repo, tx)
+}
+
 // TableName returns the table name of the job key entity
 func (j *JobKey) TableName() string {
 	return "job_key"

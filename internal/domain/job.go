@@ -76,6 +76,16 @@ func (j *Job) SetKeysLast(lasts []int64, repo port.Repository, tx interface{}) e
 	return nil
 }
 
+// ResetKeysLast resets the last key of the job entity
+func (j *Job) ResetKeysLast(repo port.Repository, tx interface{}) error {
+	for _, key := range j.Keys {
+		if err := key.ResetLast(repo, tx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Save saves the job entity
 func (j *Job) Save(repo port.Repository, tx interface{}) error {
 	if err := repo.Save(tx, j); err != nil {

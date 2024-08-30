@@ -57,6 +57,7 @@ func (t *Truncate) truncateAtomic(jobs *[]domain.Job, out chan *port.TruncateOut
 		t.executeJob(&j, out, count, total, tx)
 		count++
 	}
+	fmt.Println("Commiting transaction")
 	if err := t.RepoTarget.Commit(tx); err != nil {
 		out <- &port.TruncateOut{Status: port.ErrorStatus, Detail: err.Error()}
 		return
@@ -103,6 +104,12 @@ func (c *Truncate) truncateJob(j *domain.Job, txTarget interface{}) (string, int
 	q := fmt.Sprintf(port.TruncateTruncate, j.Base, j.Object)
 	_, err = c.RepoTarget.Exec(txTarget, q)
 	if err != nil {
+		return "", -1, err
+	}
+	if err := j.Load(c.RepoTarget, txTarget, false); err != nil {
+		return "", -1, err
+	}
+	if err := j.ResetKeysLast(c.RepoTarget, txTarget); err != nil {
 		return "", -1, err
 	}
 	return fmt.Sprintf(port.TruncateReturnMessage, j.Base, j.Object), -1, nil
