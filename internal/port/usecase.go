@@ -12,6 +12,7 @@ const (
 type UseCase interface {
 	SetUp(*SetUpIn, chan *SetUpOut)
 	Run(*RunIn, chan *RunOut)
+	Truncate(*TruncateIn, chan *TruncateOut)
 }
 
 // RunAction is a interface that represents the action to run a specific job use case

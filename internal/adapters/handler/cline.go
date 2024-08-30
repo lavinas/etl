@@ -59,6 +59,8 @@ func (c *CommandLine) Run() {
 		c.actionSetup(args)
 	case "check":
 		c.actionSetup(args)
+	case "truncate":
+		c.actionTruncate(args)
 	default:
 		log.Println(port.ErrActionNotFound)
 	}
@@ -89,6 +91,24 @@ func (c *CommandLine) actionSetup(args Args) {
 	defer close(outs)
 	in := port.SetUpIn{Action: args.Action, Schema: args.Schema}
 	go c.usecase.SetUp(&in, outs)
+	for out := range outs {
+		if out.Status == port.FinishedStatus {
+			break
+		}
+		log.Println(out.String())
+	}
+}
+
+// actionTruncate runs the truncate use case
+func (c *CommandLine) actionTruncate(args Args) {
+	outs := make(chan *port.TruncateOut)
+	defer close(outs)
+	jobId, err := strconv.ParseInt(args.JobID, 10, 64)
+	if err != nil || jobId < -1 {
+		jobId = -1
+	}
+	in := port.TruncateIn{JobID: jobId}
+	go c.usecase.Truncate(&in, outs)
 	for out := range outs {
 		if out.Status == port.FinishedStatus {
 			break

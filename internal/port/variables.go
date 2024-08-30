@@ -70,6 +70,9 @@ const (
 	SetUpExcepts               = "SELECT stat FROM expts;"
 	SetUpTruncate              = "TRUNCATE TABLE %s;"
 	SetUpSchemas               = "SELECT name, ref_type from schma where name = '%s' or %s;"
+	TruncateDisableFK          = "SET FOREIGN_KEY_CHECKS = 0;"
+	TruncateEnableFK           = "SET FOREIGN_KEY_CHECKS = 1;"
+	TruncateTruncate           = "TRUNCATE TABLE %s.%s;"
 )
 
 // domain variables
@@ -79,13 +82,14 @@ var (
 
 // usecases variables
 var (
-	RunTimeout           = 30 * time.Second
-	DbRelief             = 0 * time.Millisecond
-	LoadClientSourceBase = "vooo_prod_backend"
-	CopySourceBase       = "vooo_prod_backend"
-	UpdateReturnMessage  = "%d processed, %d updated"
-	CopyReturnMessage    = "%d rows processed, %d copied, %d missing"
-	InLimit              = int64(5000)
+	RunTimeout            = 30 * time.Second
+	DbRelief              = 0 * time.Millisecond
+	LoadClientSourceBase  = "vooo_prod_backend"
+	CopySourceBase        = "vooo_prod_backend"
+	UpdateReturnMessage   = "%d processed, %d updated"
+	CopyReturnMessage     = "%d rows processed, %d copied, %d missing"
+	TruncateReturnMessage = "%s.%s truncated"
+	InLimit               = int64(5000)
 )
 
 // MySQL variables

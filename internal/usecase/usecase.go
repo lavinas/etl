@@ -39,3 +39,12 @@ func (r *UseCase) Run(in *port.RunIn, out chan *port.RunOut) {
 	run := NewRun(r.RepoSource, r.RepoTarget, r.Signal)
 	run.Run(in, out)
 }
+
+// Truncate runs app with given parameters
+func (t *UseCase) Truncate(in *port.TruncateIn, out chan *port.TruncateOut) {
+	if in == nil || out == nil {
+		panic("Truncate: Invalid input parameters")
+	}
+	truncate := NewTruncate(t.RepoSource, t.RepoTarget, t.Signal)
+	truncate.Run(in, out)
+}

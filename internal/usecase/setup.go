@@ -71,20 +71,6 @@ func (m *SetUp) Run(in *port.SetUpIn, out chan *port.SetUpOut) {
 	out <- &port.SetUpOut{Status: port.SuccessStatus, Detail: "Success"}
 }
 
-// factoryAction runs the action
-func (m *SetUp) runAction(action string, nodes map[string]*SetUpNode, stack *GraphNode, out chan *port.SetUpOut) error {
-	var err error
-	switch action {
-	case "check":
-		m.runCheck(stack, out)
-	case "setup":
-		err = m.runSetup(nodes, stack)
-	default:
-		err = fmt.Errorf(port.ErrActionNotFound)
-	}
-	return err
-}
-
 // prepareRun prepares the run action
 func (m *SetUp) prepareRun(in *port.SetUpIn) (map[string]*SetUpNode, *GraphNode, error) {
 	txSource := m.RepoSource.Begin("")
@@ -102,6 +88,20 @@ func (m *SetUp) prepareRun(in *port.SetUpIn) (map[string]*SetUpNode, *GraphNode,
 	return nodes, stack, nil
 }
 
+// factoryAction runs the action
+func (m *SetUp) runAction(action string, nodes map[string]*SetUpNode, stack *GraphNode, out chan *port.SetUpOut) error {
+	var err error
+	switch action {
+	case "check":
+		m.runCheck(stack, out)
+	case "setup":
+		err = m.runSetup(nodes, stack)
+	default:
+		err = fmt.Errorf(port.ErrActionNotFound)
+	}
+	return err
+}
+
 // runSetup runs the setup action
 func (m *SetUp) runSetup(nodes map[string]*SetUpNode, stack *GraphNode) error {
 	txTarget := m.RepoTarget.Begin("")
@@ -114,6 +114,8 @@ func (m *SetUp) runSetup(nodes map[string]*SetUpNode, stack *GraphNode) error {
 	}
 	return nil
 }
+
+// run
 
 // runCheck runs the check action
 func (m *SetUp) runCheck(stack *GraphNode, out chan *port.SetUpOut) {
