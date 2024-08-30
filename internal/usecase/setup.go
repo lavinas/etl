@@ -39,6 +39,7 @@ type SetUpNode struct {
 	Id          int64
 	TableSchema string
 	TableName   string
+	RefType     string
 	Primaries   []string
 	Foreigns    map[string]*SetUpForeign
 }
@@ -124,7 +125,11 @@ func (m *SetUp) runCheck(stack *GraphNode, out chan *port.SetUpOut) {
 
 // mountStructs returns the structs of the given schema
 func (m *SetUp) mountStructs(in *port.SetUpIn, txSource interface{}, txTarget interface{}) (map[string]*SetUpNode, error) {
-	nodes, err := m.getNodes(in.Schema, txSource)
+	schemas, err := m.getSchemas(in.Schema, txTarget)
+	if err != nil {
+		return nil, err
+	}
+	nodes, err := m.getNodes(schemas, txSource)
 	if err != nil {
 		return nil, err
 	}
@@ -141,15 +146,15 @@ func (m *SetUp) mountStructs(in *port.SetUpIn, txSource interface{}, txTarget in
 }
 
 // getTables returns the tables of the given schema
-func (m *SetUp) getNodes(schema string, tx interface{}) (map[string]*SetUpNode, error) {
-	if schema == "" {
+func (m *SetUp) getNodes(schemas map[string]string, tx interface{}) (map[string]*SetUpNode, error) {
+	if len(schemas) == 0 {
 		return nil, fmt.Errorf(port.ErrSetupSchemaEmpty)
 	}
 	expts, err := m.mountExceptions()
 	if err != nil {
 		return nil, err
 	}
-	query := fmt.Sprintf(port.SetUpSelectTables, schema, expts)
+	query := fmt.Sprintf(port.SetUpSelectTables, m.mountSchemas(schemas), expts)
 	_, rows, err := m.RepoSource.Query(tx, query)
 	if err != nil {
 		return nil, err
@@ -159,11 +164,44 @@ func (m *SetUp) getNodes(schema string, tx interface{}) (map[string]*SetUpNode, 
 		nodes[*row[1]] = &SetUpNode{
 			TableSchema: *row[0],
 			TableName:   *row[1],
+			RefType:     schemas[*row[0]],
 			Primaries:   make([]string, 0),
 			Foreigns:    make(map[string]*SetUpForeign),
 		}
 	}
 	return nodes, nil
+}
+
+// getSchemas returns the schemas of the given database
+func (m *SetUp) getSchemas(schema string, tx interface{}) (map[string]string, error) {
+	name := ""
+	aux := "true"
+	if schema != "" {
+		name = schema
+		aux = "false"
+	}
+	q := fmt.Sprintf(port.SetUpSchemas, name, aux)
+	_, rows, err := m.RepoTarget.Query(tx, q)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, fmt.Errorf(port.ErrNoSchemasFound)
+	}
+	schemas := make(map[string]string, len(rows))
+	for _, row := range rows {
+		schemas[*row[0]] = *row[1]
+	}
+	return schemas, nil
+}
+
+// mountSchemas returns the string representation of the schemas
+func (m *SetUp) mountSchemas(schemas map[string]string) string {
+	ret := ""
+	for k := range schemas {
+		ret += "'" + k + "',"
+	}
+	return ret[:len(ret)-1]
 }
 
 // getPrimaries returns the primary keys of the given nodes
@@ -189,7 +227,7 @@ func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx inter
 	for _, table := range nodes {
 		tableNames += "'" + table.TableName + "',"
 	}
-	query := fmt.Sprintf(port.SetUpSelecrForeign, schema, tableNames[:len(tableNames)-1])
+	query := fmt.Sprintf(port.SetUpSelectForeignExternal, schema, tableNames[:len(tableNames)-1])
 	_, rows, err := m.RepoTarget.Query(tx, query)
 	if err != nil {
 		return err
@@ -360,8 +398,8 @@ func (m *SetUp) saveStructs(nodes map[string]*SetUpNode, tx interface{}) error {
 			return err
 		}
 	}
+	m.RepoTarget.Exec(tx, port.SetupEnableFK)
 	m.RepoTarget.Commit(tx)
-	m.RepoTarget.Exec(tx, port.SetupDisableFK)
 	return nil
 }
 
@@ -381,7 +419,6 @@ func (m *SetUp) truncateStructs(tx interface{}) error {
 	}
 	return nil
 }
-
 
 // savePrimaries saves the primary keys in the target database
 func (m *SetUp) savePrimaries(node *SetUpNode, tx interface{}) error {

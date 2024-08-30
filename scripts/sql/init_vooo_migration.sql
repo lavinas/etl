@@ -14,8 +14,11 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- INSERTING MIGRATION OBJECTS
 use vooo_migration;
--- excpts
+-- schmas
+insert into schma (name, ref_type) value ('vooo_prod_backend', 'external');
+insert into schma (name, ref_type) value ('vooo_prod_rawdata', 'internal');
 
+-- expts
 insert into expts (stat) value ("table_name like 'shellbox%'");
 insert into expts (stat) value ("table_name like 'tmp_%'");
 insert into expts (stat) value ("table_name like 'temp_%'");

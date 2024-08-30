@@ -16,7 +16,7 @@ type Args struct {
 	ErrorSkip bool   `arg:"-e,--error" default:"false" help:"Skip errors beetwen jobs. Default is false"`
 	Delay     int64  `arg:"-d,--delay" default:"30" help:"Delay between runs in seconds. Default is 30 seconds"`
 	JobID     string `arg:"-i,--id" default:"-1" help:"id of the job to run. Default is all jobs"`
-	Schema    string `arg:"-c,--schema" default:"" help:"Schema to run. Default is all schemas"`
+	Schema    string `arg:"-c,--schema" default:"" help:"Schema to run. Default is all schemas configured"`
 }
 
 // CommandLine is a struct that represents the command line handler
