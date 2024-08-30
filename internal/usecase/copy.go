@@ -361,7 +361,7 @@ func (c *Copy) formatValue(col *string) string {
 
 // getMaxClient gets the max id from the client table
 func (c *Copy) getLimits(j *domain.Job) ([]int64, int64, int64, error) {
-	tx := c.RepoSource.Begin(port.CopySourceBase)
+	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
 	limits := make([]int64, len(j.Keys))
 	var missing, processed int64
