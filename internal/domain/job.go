@@ -35,7 +35,7 @@ func NewJob(id int64, name, typ, action, base, object string) *Job {
 func (j *Job) GetAll(repo port.Repository) (*[]Job, error) {
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
-	jobs, _, err := repo.Find(tx, j, -1, false)
+	jobs, _, err := repo.Find(tx, j, -1, false, "all")
 	if err != nil {
 		return nil, err
 	}
