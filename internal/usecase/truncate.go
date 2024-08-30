@@ -93,7 +93,6 @@ func (t *Truncate) executeJob(j *domain.Job, out chan *port.TruncateOut, count i
 	out <- &port.TruncateOut{JobID: j.Id, Status: port.SuccessStatus, Detail: msg}
 }
 
-
 // truncateJob truncates a table represented by a job
 func (c *Truncate) truncateJob(j *domain.Job, txTarget interface{}) (string, int64, error) {
 	_, err := c.RepoTarget.Exec(txTarget, port.TruncateDisableFK)
