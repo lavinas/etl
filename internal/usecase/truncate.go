@@ -54,7 +54,7 @@ func (t *Truncate) truncateAtomic(jobs *[]domain.Job, out chan *port.TruncateOut
 	tx := t.RepoTarget.Begin("")
 	defer t.RepoTarget.Rollback(tx)
 	for _, j := range *jobs {
-		t.executeJob(&j, out, int64(count), int64(total), tx)
+		t.executeJob(&j, out, count, total, tx)
 		count++
 	}
 	if err := t.RepoTarget.Commit(tx); err != nil {
@@ -83,7 +83,7 @@ func (t *Truncate) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, 
 }
 
 // executeJob executes a job
-func (t *Truncate) executeJob(j *domain.Job, out chan *port.TruncateOut, count int64, total int64, tx interface{}) {
+func (t *Truncate) executeJob(j *domain.Job, out chan *port.TruncateOut, count int, total int, tx interface{}) {
 	msg, _, err := t.truncateJob(j, tx)
 	if err != nil {
 		out <- &port.TruncateOut{Status: port.ErrorStatus, Detail: err.Error()}
