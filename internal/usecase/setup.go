@@ -136,10 +136,10 @@ func (m *SetUp) mountStructs(in *port.SetUpIn, txSource interface{}, txTarget in
 	if len(nodes) == 0 {
 		return nil, fmt.Errorf(port.ErrNoTablesFound)
 	}
-	if err := m.getPrimaries(in.Schema, nodes, txSource); err != nil {
+	if err := m.getPrimaries(schemas, nodes, txSource); err != nil {
 		return nil, err
 	}
-	if err := m.getForeigns(in.Schema, nodes, txTarget); err != nil {
+	if err := m.getForeigns(schemas, nodes, txTarget); err != nil {
 		return nil, err
 	}
 	return nodes, nil
@@ -205,12 +205,12 @@ func (m *SetUp) mountSchemas(schemas map[string]string) string {
 }
 
 // getPrimaries returns the primary keys of the given nodes
-func (m *SetUp) getPrimaries(schema string, nodes map[string]*SetUpNode, tx interface{}) error {
+func (m *SetUp) getPrimaries(schemas map[string]string, nodes map[string]*SetUpNode, tx interface{}) error {
 	tableNames := ""
 	for _, table := range nodes {
 		tableNames += "'" + table.TableName + "',"
 	}
-	query := fmt.Sprintf(port.SetUpSelectPrime, schema, tableNames[:len(tableNames)-1])
+	query := fmt.Sprintf(port.SetUpSelectPrime, m.mountSchemas(schemas), tableNames[:len(tableNames)-1])
 	_, rows, err := m.RepoSource.Query(tx, query)
 	if err != nil {
 		return err
@@ -222,7 +222,8 @@ func (m *SetUp) getPrimaries(schema string, nodes map[string]*SetUpNode, tx inte
 }
 
 // getForeigns returns the foreign keys of the given nodes
-func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx interface{}) error {
+func (m *SetUp) getForeigns(schemas map[string]string, nodes map[string]*SetUpNode, tx interface{}) error {
+	schema := m.mountSchemas(schemas)
 	external, internal := m.getTableNames(nodes)
 	rows := make([][]*string, 0)
 	if external != "" {
@@ -242,6 +243,9 @@ func (m *SetUp) getForeigns(schema string, nodes map[string]*SetUpNode, tx inter
 		rows = append(rows, r...)
 	}
 	for _, row := range rows {
+		if *row[3] == *row[0] {
+			continue
+		}
 		nodes[*row[0]].Foreigns[*row[3]] = &SetUpForeign{
 			ColumnName:       *row[1],
 			ReferencedSchema: *row[2],
