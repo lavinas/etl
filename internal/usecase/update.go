@@ -269,7 +269,7 @@ func (c *Update) updateTarget(j *domain.Job, cols []string, rows [][]*string, tx
 func (c *Update) mountCols(cols []string) string {
 	ret := ""
 	for _, col := range cols {
-		ret += col + ","
+		ret += "`" + col + "`,"
 	}
 	return ret[:len(ret)-1]
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"strconv"
+	"os"
 
 	"github.com/alexflint/go-arg"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -17,6 +18,7 @@ type Args struct {
 	Delay     int64  `arg:"-d,--delay" default:"30" help:"Delay between runs in seconds. Default is 30 seconds"`
 	JobID     string `arg:"-i,--id" default:"-1" help:"id of the job to run. Default is all jobs"`
 	Schema    string `arg:"-c,--schema" default:"" help:"Schema to run. Default is all schemas configured"`
+	Log       string `arg:"-l,--log" default:"" help:"Log file to write. Default is stdout"`
 }
 
 // CommandLine is a struct that represents the command line handler
@@ -48,10 +50,13 @@ func (a *Args) GetParams() map[string]interface{} {
 	return ret
 }
 
+
 // Run runs the command line handler
 func (c *CommandLine) Run() {
 	args := Args{}
 	arg.MustParse(&args)
+	f := c.fileLog(args)
+	defer f.Close()
 	switch args.Action {
 	case "run":
 		c.actionRun(args)
@@ -64,6 +69,20 @@ func (c *CommandLine) Run() {
 	default:
 		log.Println(port.ErrActionNotFound)
 	}
+}
+
+
+// fileLog writes the log to a file if the log file is set
+func (c *CommandLine) fileLog(args Args) *os.File {
+	if args.Log != "" {
+		f, err := os.OpenFile(args.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Println(err)
+		}
+		log.SetOutput(f)
+		return f
+	}
+	return nil
 }
 
 // run runs the use case

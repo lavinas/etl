@@ -33,6 +33,7 @@ insert into expts (stat) value ("table_name = 'stix_1405'");
 insert into expts (stat) value ("table_name = 'transacao_btg'");
 insert into expts (stat) value ("table_name = 'transacoes_erradas'");
 insert into expts (stat) value ("table_name = 'transacoes_sap_08_07'");
+insert into expts (stat) value("table_name = 'brazil_bank_holidays'");
 
 -- refs
 insert into ref_init (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client', 'id_aggregator', 'vooo_prod_backend', 'aggregator', 'id');

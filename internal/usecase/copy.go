@@ -330,7 +330,7 @@ func (c *Copy) mountInsert(base string, tablename string, cols []string, rows []
 	}
 	strCols := "("
 	for _, col := range cols {
-		strCols += fmt.Sprintf("%s, ", col)
+		strCols += fmt.Sprintf("`%s`, ", col)
 	}
 	strCols = strCols[:len(strCols)-2] + ")"
 	values := ""
