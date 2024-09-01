@@ -53,7 +53,8 @@ type TruncateOut struct {
 func (r *RunOut) String() string {
 	ret := fmt.Sprintf(stringOutput, r.JobID, r.Shift, r.Status, r.Detail, r.Duration)
 	if r.More != -1 {
-		ret += fmt.Sprintf(". More: %d", r.More)
+		hrs := float64(r.More) * r.Duration / 3600
+		ret += fmt.Sprintf(". More: %d re - %.2f hr", r.More, hrs)
 	}
 	return ret
 }
