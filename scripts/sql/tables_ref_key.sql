@@ -2,6 +2,7 @@
 -- Query: select * from ref_key
 -- Date: 2024-09-01 12:14
 */
+use vooo_migration;
 INSERT INTO `ref_key` (`id`,`ref_id`,`referrer`,`referred`) VALUES (200,200,'id_aggregator','id');
 INSERT INTO `ref_key` (`id`,`ref_id`,`referrer`,`referred`) VALUES (300,300,'client_id','id');
 INSERT INTO `ref_key` (`id`,`ref_id`,`referrer`,`referred`) VALUES (400,400,'connection_id','connection_id');
