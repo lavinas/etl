@@ -3,3 +3,5 @@ scp -i .ssh/backend.pem ./go/src/github.com/lavinas/vooo-etl/docker-compose.yaml
 scp -i .ssh/backend.pem ./go/src/github.com/lavinas/vooo-etl/etl  ubuntu@18.224.8.201:~/etl/ 
 
 13.59.129.51
+
+3.144.215.128

@@ -36,6 +36,7 @@ func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 	defer r.finish(r.RepoTarget, out, start)
 	count := int64(0)
 	for {
+		start = time.Now()
 		if r.runCycle(in, out, start) {
 			break
 		}
