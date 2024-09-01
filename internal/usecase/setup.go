@@ -224,9 +224,15 @@ func (m *SetUp) getPrimaries(schemas map[string]string, nodes map[string]*SetUpN
 	if err != nil {
 		return err
 	}
+	schemaParam, err := m.getPrimariesSchema()
+	if err != nil {
+		return err
+	}
 	for _, row := range rows {
 		if k, ok := kmap[*row[0]+"-"+*row[1]]; ok {
 			nodes[*row[0]].Primaries[*row[1]] = k
+		} else if i, ok := schemaParam[*row[2]]; ok {
+			nodes[*row[0]].Primaries[*row[1]] = &SetUpKey{Object: *row[0], Field: *row[1], InitValue: i}
 		} else {
 			nodes[*row[0]].Primaries[*row[1]] = &SetUpKey{Object: *row[0], Field: *row[1], InitValue: -1}
 		}
@@ -258,10 +264,33 @@ func (m *SetUp) getPrimariesPre() (map[string]*SetUpKey, error) {
 	}
 	kmap := make(map[string]*SetUpKey)
 	for _, k := range keys {
-		i, _ := strconv.ParseInt(*k[2], 10, 64)
+		i, err := strconv.ParseInt(*k[2], 10, 64)
+		if err != nil {
+			return nil, err
+		}
 		kmap[*k[0]+"-"+*k[1]] = &SetUpKey{Object: *k[0], Field: *k[1], InitValue: i}
 	}
 	return kmap, nil
+}
+
+
+// getPrimariesSchema returns initial values based on _schema table
+func (m *SetUp) getPrimariesSchema() (map[string]int64, error) {
+	tx := m.RepoTarget.Begin("")
+	defer m.RepoTarget.Rollback(tx)
+	_, keys, err := m.RepoTarget.Query(tx, port.SetUpAllSchemas)
+	if err != nil {
+		return nil, err
+	}
+	rets := make(map[string]int64)
+	for _, k := range keys {
+		i, err := strconv.ParseInt(*k[1], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		rets[*k[0]] = i
+	}
+	return rets, nil
 }
 
 // getForeigns returns the foreign keys of the given nodes
