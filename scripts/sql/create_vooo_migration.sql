@@ -26,8 +26,11 @@ SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
 DROP DATABASE IF EXISTS `vooo_migration`;
 CREATE DATABASE `vooo_migration`;
+
+
 USE `vooo_migration`;
-# starting tables
+--- starting tables
+
 --- 
 --- Table structure for table `schma`
 ---
