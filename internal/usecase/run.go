@@ -36,7 +36,6 @@ func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 	defer r.finish(r.RepoTarget, out, start)
 	count := int64(0)
 	for {
-		start = time.Now()
 		if r.runCycle(in, out, start) {
 			break
 		}
@@ -59,7 +58,7 @@ func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut, start time.Time) b
 		return true
 	}
 	for _, j := range *jobs {
-		ret := r.runJob(&j, in, out, start)
+		ret := r.runJob(&j, in, out)
 		if r.getOut(ret, in.ErrorSkip) {
 			return true
 		}
@@ -68,9 +67,10 @@ func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut, start time.Time) b
 }
 
 // runUntil runs all jobs until finish all registers
-func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut, start time.Time) *port.RunOut {
+func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut) *port.RunOut {
 	shift := int64(1)
 	for {
+		start := time.Now()
 		ret := r.runJobCycle(job.Id, out, start, shift)
 		if r.getOut(ret, in.ErrorSkip) {
 			return ret
