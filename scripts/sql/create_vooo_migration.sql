@@ -30,13 +30,61 @@ CREATE DATABASE `vooo_migration`;
 
 USE `vooo_migration`;
 
-DROP TABLE IF EXISTS `schma`;
+--
+-- Table structure for table `_ref`
+--
+DROP TABLE IF EXISTS `_ref`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `schma` (
+CREATE TABLE `_ref` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `referrer_schema` varchar(100) not null,
+  `referrer_table` varchar(100) not null,
+  `referrer_field` varchar(100) not null,
+  `referenced_schema` varchar(100) not null,
+  `referenced_table` varchar(100) not null,
+  `referenced_field` varchar(100) not null,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB AUTO_INCREMENT=21027 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `_expt`
+--
+DROP TABLE IF EXISTS `_expt`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE  `_expt` (
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `stat` varchar(500) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `_schma`
+--
+DROP TABLE IF EXISTS `_schma`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `_schma` (
   `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
-  `ref_type` varchar(30) NOT NULL
+  `ref_type` varchar(30) NOT NULL,
+  `init_key` BIGINT NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `_key`
+--
+DROP TABLE IF EXISTS `_key`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `_key` (
+  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `object` varchar(100) NOT NULL,
+  `field` varchar(100) NOT NULL,
+  `init_key` bigint NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -53,17 +101,6 @@ CREATE TABLE `job` (
   `action` varchar(30) NOT NULL,
   `base` varchar(100) NOT NULL,
   `object` varchar(100) NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
---
--- Table structure for table `expts`
---
-DROP TABLE IF EXISTS `expts`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE  `expts` (
-  `id` bigint PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  `stat` varchar(500) NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -83,23 +120,7 @@ CREATE TABLE `job_key` (
   CONSTRAINT `job_key_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
---
--- Table structure for table `ref_init`
---
-DROP TABLE IF EXISTS `ref_init`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ref_init` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `referrer_schema` varchar(100) not null,
-  `referrer_table` varchar(100) not null,
-  `referrer_field` varchar(100) not null,
-  `referenced_schema` varchar(100) not null,
-  `referenced_table` varchar(100) not null,
-  `referenced_field` varchar(100) not null,
-  PRIMARY KEY (`id`)
-  ) ENGINE=InnoDB AUTO_INCREMENT=21027 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
 
 --
 -- Table structure for table `ref`
@@ -118,6 +139,7 @@ CREATE TABLE `ref` (
   CONSTRAINT `reference_ibfk_2` FOREIGN KEY (`referred`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
 --
 -- Table structure for table `ref_key`
 --
@@ -133,6 +155,7 @@ CREATE TABLE `ref_key` (
   CONSTRAINT `ref_key_ibfk_1` FOREIGN KEY (`ref_id`) REFERENCES `ref` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
 --
 -- Table structure for table `log`
 --
