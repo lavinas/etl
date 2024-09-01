@@ -57,7 +57,6 @@ insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_sc
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_edi', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_error', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_item', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connect_item_btg', 'item_id', 'vooo_prod_backend', 'connection_item', 'item_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_rest', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_sales_lot', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_sales_system', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
@@ -141,7 +140,6 @@ insert into _key (object, field, init_key) values ('connection_crawler', 'connec
 insert into _key (object, field, init_key) values ('connection_edi', 'connection_id', 112705476);
 insert into _key (object, field, init_key) values ('connection_error', 'connection_error_id', 10001155);
 insert into _key (object, field, init_key) values ('connection_item', 'item_id', 824131765);
-insert into _key (object, field, init_key) values ('connect_item_btg', 'item_id', 824131765);
 insert into _key (object, field, init_key) values ('connection_rest', 'connection_id', 112705476);
 insert into _key (object, field, init_key) values ('connection_sales_lot', 'connection_id', 112705476);
 insert into _key (object, field, init_key) values ('connection_sales_system', 'connection_id', 112705476);
