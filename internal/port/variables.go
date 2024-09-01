@@ -89,7 +89,7 @@ var (
 	LoadClientSourceBase  = "vooo_prod_backend"
 	CopySourceBase        = "vooo_prod_backend"
 	UpdateReturnMessage   = "%d processed, %d updated"
-	CopyReturnMessage     = "%d rows processed, %d copied, %d missing"
+	CopyReturnMessage     = "%d rows proc, %d cop, %.2f hrs miss"
 	TruncateReturnMessage = "%s.%s truncated"
 	InLimit               = int64(5000)
 )

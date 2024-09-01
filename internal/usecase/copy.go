@@ -19,6 +19,7 @@ type Copy struct {
 
 // Run runs the use case
 func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error) {
+	now := time.Now()
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
@@ -45,7 +46,11 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if err := j.SetKeysLast(limit, c.RepoTarget, txTarget); err != nil {
 		return "", missing, err
 	}
-	return fmt.Sprintf(port.CopyReturnMessage, processed, len(rows), missing), missing, nil
+	tmiss := float64(0)
+	if processed != 0 {
+		tmiss = (time.Since(now).Seconds() * float64(missing)) / float64(3600 * processed)
+	}
+	return fmt.Sprintf(port.CopyReturnMessage, processed, len(rows),tmiss), missing, nil
 }
 
 // filterRefs filters the references
