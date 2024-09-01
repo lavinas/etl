@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 
 	"github.com/lavinas/vooo-etl/internal/domain"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -34,13 +35,20 @@ type SetUpForeign struct {
 	ReferencedID     int64
 }
 
+// SetUpKey represents a key of node
+type SetUpKey struct {
+	Object    string
+	Field     string
+	InitValue int64
+}
+
 // SetUpNode is the input for the SetUp usecase
 type SetUpNode struct {
 	Id          int64
 	TableSchema string
 	TableName   string
 	RefType     string
-	Primaries   []string
+	Primaries   map[string]*SetUpKey
 	Foreigns    map[string]*SetUpForeign
 }
 
@@ -167,7 +175,7 @@ func (m *SetUp) getNodes(schemas map[string]string, tx interface{}) (map[string]
 			TableSchema: *row[0],
 			TableName:   *row[1],
 			RefType:     schemas[*row[0]],
-			Primaries:   make([]string, 0),
+			Primaries:   make(map[string]*SetUpKey),
 			Foreigns:    make(map[string]*SetUpForeign),
 		}
 	}
@@ -208,19 +216,52 @@ func (m *SetUp) mountSchemas(schemas map[string]string) string {
 
 // getPrimaries returns the primary keys of the given nodes
 func (m *SetUp) getPrimaries(schemas map[string]string, nodes map[string]*SetUpNode, tx interface{}) error {
-	tableNames := ""
-	for _, table := range nodes {
-		tableNames += "'" + table.TableName + "',"
+	rows, err := m.getPrimariesTable(schemas, nodes, tx)
+	if err != nil {
+		return err
 	}
-	query := fmt.Sprintf(port.SetUpSelectPrime, m.mountSchemas(schemas), tableNames[:len(tableNames)-1])
-	_, rows, err := m.RepoSource.Query(tx, query)
+	kmap, err := m.getPrimariesPre()
 	if err != nil {
 		return err
 	}
 	for _, row := range rows {
-		nodes[*row[0]].Primaries = append(nodes[*row[0]].Primaries, *row[1])
+		if k, ok := kmap[*row[0]+"-"+*row[1]]; ok {
+			nodes[*row[0]].Primaries[*row[1]] = k
+		} else {
+			nodes[*row[0]].Primaries[*row[1]] = &SetUpKey{Object: *row[0], Field: *row[1], InitValue: -1}
+		}
 	}
 	return nil
+}
+
+// getPrimariesTable returns a map of primaries of db table
+func (m *SetUp) getPrimariesTable(schemas map[string]string, nodes map[string]*SetUpNode, tx interface{}) ([][]*string, error) {
+	tableNames := ""
+	for _, table := range nodes {
+		tableNames += "'" + table.TableName + "',"
+	}
+	q := fmt.Sprintf(port.SetUpSelectPrime, m.mountSchemas(schemas), tableNames[:len(tableNames)-1])
+	_, rows, err := m.RepoSource.Query(tx, q)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// getPrimariesPre returns a pre configured map of Primeries struct
+func (m *SetUp) getPrimariesPre() (map[string]*SetUpKey, error) {
+	tx := m.RepoTarget.Begin("")
+	defer m.RepoTarget.Rollback(tx)
+	_, keys, err := m.RepoTarget.Query(tx, port.SetUpKey)
+	if err != nil {
+		return nil, err
+	}
+	kmap := make(map[string]*SetUpKey)
+	for _, k := range keys {
+		i, _ := strconv.ParseInt(*k[2], 10, 64)
+		kmap[*k[0]+"-"+*k[1]] = &SetUpKey{Object: *k[0], Field: *k[1], InitValue: i}
+	}
+	return kmap, nil
 }
 
 // getForeigns returns the foreign keys of the given nodes
@@ -458,8 +499,8 @@ func (m *SetUp) truncateStructs(tx interface{}) error {
 // savePrimaries saves the primary keys in the target database
 func (m *SetUp) savePrimaries(node *SetUpNode, tx interface{}) error {
 	count := node.Id * 100
-	for _, primary := range node.Primaries {
-		key := domain.NewJobKey(count, node.Id, -1, 5000, primary)
+	for _, p := range node.Primaries {
+		key := domain.NewJobKey(count, node.Id, p.InitValue, 5000, p.Field)
 		if err := key.Save(m.RepoTarget, tx); err != nil {
 			return err
 		}

@@ -2,8 +2,8 @@ package handler
 
 import (
 	"log"
-	"strconv"
 	"os"
+	"strconv"
 
 	"github.com/alexflint/go-arg"
 	"github.com/lavinas/vooo-etl/internal/port"
@@ -50,7 +50,6 @@ func (a *Args) GetParams() map[string]interface{} {
 	return ret
 }
 
-
 // Run runs the command line handler
 func (c *CommandLine) Run() {
 	args := Args{}
@@ -70,7 +69,6 @@ func (c *CommandLine) Run() {
 		log.Println(port.ErrActionNotFound)
 	}
 }
-
 
 // fileLog writes the log to a file if the log file is set
 func (c *CommandLine) fileLog(args Args) *os.File {
