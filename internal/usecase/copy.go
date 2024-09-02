@@ -24,32 +24,41 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
 	}
+	fmt.Println(1)
 	limit, missing, processed, err := c.getLimits(j)
 	if err != nil {
 		return "", missing, err
 	}
+	
+	fmt.Println(2)
 	cols, rows, err := c.getSource(j, limit)
 	if err != nil {
 		return "", missing, err
 	}
+	fmt.Println(3)
 	if rows, err = c.filterRefs(j, cols, rows, txTarget); err != nil {
 		return "", missing, err
 	}
+	fmt.Println(4)
 	cols, rows, err = c.getAllSource(j, rows)
 	if err != nil {
 		return "", missing, err
 	}
+	fmt.Println(5)
 	_, err = c.putSource(txTarget, c.mountInsert(j.Base, j.Object, cols, rows))
 	if err != nil {
 		return "", missing, err
 	}
+	fmt.Println(6)
 	if err := j.SetKeysLast(limit, c.RepoTarget, txTarget); err != nil {
 		return "", missing, err
 	}
+	fmt.Println(7)
 	tmiss := float64(0)
 	if processed != 0 {
 		tmiss = (time.Since(now).Seconds() * float64(missing)) / float64(3600 * processed)
 	}
+	fmt.Println(8)
 	return fmt.Sprintf(port.CopyReturnMessage, processed, len(rows),tmiss), missing, nil
 }
 
