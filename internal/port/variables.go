@@ -92,7 +92,7 @@ var (
 	CopyReturnMessage     = "%d rows proc, %d cop, %.2f hrs miss"
 	TruncateReturnMessage = "%s.%s truncated"
 	InLimit               = int64(1000)
-	OutLimit              = int64(1000)
+	OutLimit              = int64(100)
 )
 
 // MySQL variables

@@ -328,6 +328,7 @@ func (c *Copy) putSource(j *domain.Job, cols []string, rows [][]*string, txTarge
 	scols := c.mountInsertCols(cols)
 	last := int64(len(rows))
 	for i := int64(0); i < last; i += port.OutLimit {
+		fmt.Println(1000)
 		if err := c.putSourceAtomic(j, scols, rows[i:min(i+port.OutLimit, last)], txTarget); err != nil {
 			return err
 		}
