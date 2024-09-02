@@ -40,7 +40,7 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if err != nil {
 		return "", missing, err
 	}
-	_, err = c.putSource(txTarget, c.mountInsert(j.Base, j.Object, cols, rows))
+	err = c.putSource(j, cols, rows, txTarget)
 	if err != nil {
 		return "", missing, err
 	}
@@ -225,7 +225,6 @@ func (c *Copy) getAllSource(j *domain.Job, rows [][]*string) ([]string, [][]*str
 	defer c.RepoSource.Rollback(txSource)
 	last := int64(len(rows))
 	for i := int64(0); i < last; i += port.InLimit {
-		fmt.Println(1, len(rows[i:min(i+port.InLimit, last)]))
 		col, row, err := c.getAllSouceAtomic(j, rows[i:min(i+port.InLimit, last)], txSource)
 		if err != nil {
 			return nil, nil, err
@@ -311,35 +310,53 @@ func (c *Copy) mountAllSourceIds(j *domain.Job, rows [][]*string) (string, error
 }
 
 // putSource puts the source data into the target
-func (c *Copy) putSource(txTarget interface{}, cmd string) (int64, error) {
-	if cmd == "" {
-		return 0, nil
+func (c *Copy) putSource(j *domain.Job, cols []string, rows [][]*string, txTarget interface{}) error {
+	if len(rows) == 0 {
+		return nil
 	}
-	_, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK)
-	if err != nil {
-		return 0, err
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
+		return err
 	}
-	_, err = c.RepoTarget.Exec(txTarget, cmd)
-	if err != nil {
-		return 0, err
+	scols := c.mountInsertCols(cols)
+	last := int64(len(rows))
+	for i := int64(0); i < last; i += port.OutLimit {
+		if err := c.putSourceAtomic(j, scols, rows[i:min(i+port.OutLimit, last)], txTarget); err != nil {
+			return err
+		}
 	}
-	done, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK)
-	if err != nil {
-		return 0, err
+	if err := c.putSourceAtomic(j, scols, rows, txTarget); err != nil {
+		return err
 	}
-	return done, nil
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK); err != nil {
+		return err
+	}
+	return nil
 }
 
-// mountInsert mounts the insert sql
-func (c *Copy) mountInsert(base string, tablename string, cols []string, rows [][]*string) string {
-	if len(rows) == 0 {
-		return ""
+// putSourceAtomic puts the source data in installments way
+func (c *Copy) putSourceAtomic(j *domain.Job, cols string, rows[][]*string, txTarget interface{}) error {
+	cmd := c.mountInsert(j.Base, j.Object, cols, rows)
+	if cmd == "" {
+		return nil
 	}
+	if _, err := c.RepoTarget.Exec(txTarget, cmd); err != nil {
+		return err
+	}
+	return nil
+}
+
+// mountInsertCols mounts coluns for insert
+func (c *Copy) mountInsertCols (cols []string) string {
 	strCols := "("
 	for _, col := range cols {
 		strCols += fmt.Sprintf("`%s`, ", col)
 	}
-	strCols = strCols[:len(strCols)-2] + ")"
+	return strCols[:len(strCols)-2] + ")"
+}
+
+
+// mountInsert mounts the insert sql
+func (c *Copy) mountInsert(base string, tablename string, cols string, rows [][]*string) string {
 	values := ""
 	for _, row := range rows {
 		value := ""
@@ -348,7 +365,7 @@ func (c *Copy) mountInsert(base string, tablename string, cols []string, rows []
 		}
 		values += fmt.Sprintf("(%s), ", value[:len(value)-2])
 	}
-	return fmt.Sprintf(port.CopyInsert, base, tablename, strCols, values[:len(values)-2])
+	return fmt.Sprintf(port.CopyInsert, base, tablename, cols, values[:len(values)-2])
 }
 
 // formatValue formats the value to insert
