@@ -12,6 +12,7 @@ type RunIn struct {
 	ErrorSkip bool
 	Delay     int64
 	JobID     int64
+	Until     int64
 }
 
 // RunOut is a struct that represents the output of the Run

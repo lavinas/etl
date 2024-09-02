@@ -52,13 +52,13 @@ func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 
 // runCycle runs a cycle of jobs
 func (r *Run) runCycle(in *port.RunIn, out chan *port.RunOut, start time.Time) bool {
-	jobs, err := r.getJobsId(in.JobID, r.RepoTarget)
+	jobs, err := r.getJobsId(in, r.RepoTarget)
 	if err != nil {
 		r.sendOut(out, -1, -1, -1, port.ErrorStatus, err.Error(), start)
 		return true
 	}
-	for _, j := range *jobs {
-		ret := r.runJob(&j, in, out)
+	for _, j := range jobs {
+		ret := r.runJob(j, in, out)
 		if r.getOut(ret, in.ErrorSkip) {
 			return true
 		}
@@ -200,20 +200,22 @@ func (r *Run) getOut(ret *port.RunOut, skipError bool) bool {
 }
 
 // getJobsId
-func (r *Run) getJobsId(jobId int64, repo port.Repository) (*[]domain.Job, error) {
+func (r *Run) getJobsId(in *port.RunIn, repo port.Repository) ([]*domain.Job, error) {
 	job := domain.Job{}
-	if jobId != -1 {
-		job.Id = jobId
-		if err := job.Load(repo, nil, false); err != nil {
-			return nil, err
-		}
-		return &[]domain.Job{job}, nil
-	}
 	jobs, err := job.GetAll(repo)
 	if err != nil {
 		return nil, err
 	}
-	return jobs, err
+	if jobs == nil || len(*jobs) == 0 {
+		return nil, errors.New(port.ErrJobsNotFound)
+	}
+	ret := make([]*domain.Job, 0)
+	for _, j := range *jobs {
+		if j.Id >= in.JobID && j.Id <= in.Until {
+			ret = append(ret, &j)
+		}
+	} 
+	return ret, err
 }
 
 // factoryAction creates a new action use case
