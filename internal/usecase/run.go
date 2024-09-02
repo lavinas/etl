@@ -72,7 +72,7 @@ func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut) *po
 	for {
 		start := time.Now()
 		ret := r.runJobCycle(job.Id, out, start, shift)
-		if r.getOut(ret, in.ErrorSkip) {
+		if ret.Status == port.ErrorStatus || ret.Status == port.InterrupedStatus {
 			return ret
 		}
 		if ret.More == 0 {
