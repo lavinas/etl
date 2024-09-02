@@ -96,6 +96,6 @@ var (
 
 // MySQL variables
 var (
-	LoggerType        = logger.Default.LogMode(logger.Silent)
+	LoggerType        = logger.Default.LogMode(logger.Info)
 	ConnectionTimeout = time.Second * 5
 )
