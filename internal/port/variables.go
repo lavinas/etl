@@ -91,8 +91,8 @@ var (
 	UpdateReturnMessage   = "%d processed, %d updated"
 	CopyReturnMessage     = "%d rows proc, %d cop, %.2f hrs miss"
 	TruncateReturnMessage = "%s.%s truncated"
-	InLimit               = int64(2000)
-	OutLimit              = int64(2000)
+	InLimit               = int64(1000)
+	OutLimit              = int64(1000)
 )
 
 // MySQL variables
