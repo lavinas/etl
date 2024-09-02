@@ -51,7 +51,6 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if processed != 0 {
 		tmiss = (time.Since(now).Seconds() * float64(missing)) / float64(3600 * processed)
 	}
-	fmt.Println(8)
 	return fmt.Sprintf(port.CopyReturnMessage, processed, len(rows),tmiss), missing, nil
 }
 
