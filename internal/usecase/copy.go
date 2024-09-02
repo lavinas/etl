@@ -39,7 +39,7 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	if rows, err = c.filterRefs(j, cols, rows, txTarget); err != nil {
 		return "", missing, err
 	}
-	fmt.Println(4)
+	fmt.Println(4, len(rows))
 	cols, rows, err = c.getAllSource(j, rows)
 	if err != nil {
 		return "", missing, err
