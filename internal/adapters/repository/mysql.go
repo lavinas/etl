@@ -28,6 +28,8 @@ type MySql struct {
 	Db   *gorm.DB
 	Conn *sql.DB
 	Ssh  *gssh.Client
+	Sdns  string
+	Sssh  string
 }
 
 // NewRepository creates a new repository handler
@@ -36,7 +38,7 @@ func NewRepository(dns string, ssh string) (*MySql, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &MySql{Db: db, Conn: conn, Ssh: cssh}, nil
+	return &MySql{Db: db, Conn: conn, Ssh: cssh, Sdns: dns, Sssh: ssh}, nil
 }
 
 // Close closes the database connection
@@ -47,6 +49,19 @@ func (r *MySql) Close() {
 	if r.Ssh != nil {
 		r.Ssh.Close()
 	}
+}
+
+// Reconnect try to reconect to db
+func (r *MySql) Reconnect() error {
+	r.Close()
+	db, conn, cssh, err := connect(r.Sdns, r.Sssh)
+	if err != nil {
+		return err
+	}
+	r.Db = db
+	r.Conn = conn
+	r.Ssh = cssh
+	return nil
 }
 
 // Migrate migrates the database
