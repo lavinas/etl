@@ -225,6 +225,7 @@ func (c *Copy) getAllSource(j *domain.Job, rows [][]*string) ([]string, [][]*str
 	defer c.RepoSource.Rollback(txSource)
 	last := int64(len(rows))
 	for i := int64(0); i < last; i += port.InLimit {
+		fmt.Println(1, len(rows[i:min(i+port.InLimit, last)]))
 		col, row, err := c.getAllSouceAtomic(j, rows[i:min(i+port.InLimit, last)], txSource)
 		if err != nil {
 			return nil, nil, err
