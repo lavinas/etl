@@ -196,7 +196,7 @@ func (r *Run) finish(repo port.Repository, out chan *port.RunOut, start time.Tim
 
 // getOut returns true if the RunOut has an error or is interrupted
 func (r *Run) getOut(ret *port.RunOut, skipError bool) bool {
-	return (ret.Status == port.ErrorStatus && !skipError) || ret.Status == port.InterrupedStatus
+	return (ret.Status == port.ErrorStatus && skipError) || ret.Status == port.InterrupedStatus
 }
 
 // getJobsId
