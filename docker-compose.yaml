@@ -2,20 +2,20 @@
 services:    
   vooo-etl-dev:
     build: .
-    container_name: vooo-etl
+    container_name: vooo-etl-dev
     restart: always
     volumes:
       - .:/go/src/
     environment:
       SOURCE_DNS: root:te4356sfh@mysql+tcp(mysql.vooo.ws:3306)/?timeout=5s
       SOURCE_SSH: ubuntu:file(.ssh/vooo_backoffice.pem)@tcp(18.229.76.67:22)
-      TARGET_DNS: root:root@tcp(vooo-mysql:3306)/vooo_migration?timeout=5s
+      TARGET_DNS: root:root@tcp(vooo-mysql-dev:3306)/vooo_migration?timeout=5s
     ports:
       - "8081:8080"
 
   vooo-etl-prod:
     build: .
-    container_name: vooo-etl-dev
+    container_name: vooo-etl-prod
     restart: always
     volumes:
       - .:/go/src/
@@ -26,9 +26,9 @@ services:
     ports:
       - "8082:8080"
 
-  vooo-mysql:
+  vooo-mysql-dev:
     image: mysql
-    container_name: vooo-mysql
+    container_name: vooo-mysql-dev
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
