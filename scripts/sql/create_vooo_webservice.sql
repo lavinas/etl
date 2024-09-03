@@ -21,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
+-- SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
 DROP DATABASE IF EXISTS `vooo_webservice`;
 CREATE DATABASE `vooo_webservice`;
