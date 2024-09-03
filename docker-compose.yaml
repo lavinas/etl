@@ -1,6 +1,6 @@
 
 services:    
-  vooo-etl:
+  vooo-etl-dev:
     build: .
     container_name: vooo-etl
     restart: always
