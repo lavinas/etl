@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"fmt"
 
 	"github.com/lavinas/vooo-etl/internal/adapters/handler"
 	"github.com/lavinas/vooo-etl/internal/adapters/repository"
@@ -16,15 +15,13 @@ func main() {
 	// get the target repository
 	repoSource, err := repository.NewRepository(os.Getenv("SOURCE_DNS"), os.Getenv("SOURCE_SSH"))
 	if err != nil {
-		fmt.Println(1)
-		log.Fatal(err)
+		log.Fatal("source db error", err)
 	}
 	defer repoSource.Close()
 	// get the target repository
 	repoTarget, err := repository.NewRepository(os.Getenv("TARGET_DNS"), os.Getenv("TARGET_SSH"))
 	if err != nil {
-		fmt.Println(2)
-		log.Fatal(err)
+		log.Fatal("target db error", err)
 	}
 	defer repoTarget.Close()
 	// interrupt signal
