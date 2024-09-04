@@ -131,6 +131,8 @@ insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_sc
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_notification_processing', 'user_id', 'vooo_prod_backend', 'user', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_old_passwords', 'user_id', 'vooo_prod_backend', 'user', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_status_log', 'user_id', 'vooo_prod_backend', 'user', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'reconciliation_connection_item', 'item_id', 'vooo_prod_backend', 'connection_item', 'item_id');
+
 
 # _key
 insert into _key (object, field, init_key) values ('aggregator', 'id', 999999999);
