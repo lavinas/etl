@@ -22,7 +22,7 @@ const (
 	ErrJobTypeNotImplemented    = "job type not implemented"
 	ErrFieldNotFound            = "field not found"
 	ErrReferenceNotFound        = "reference not found"
-	ErrReferenceNotDone         = "reference '%s' not done"
+	ErrReferenceNotDone         = "reference '%s' not done: %d > %d"
 	ErrAggregatorNotFound       = "aggregator not found"
 	ErrJobsNotFound             = "no jobs is found"
 	ErrRepoSshTimeout           = "ssh timeout connecting to database"

@@ -20,7 +20,8 @@ insert into _expt (stat) value ("table_name = 'stix_1405'");
 insert into _expt (stat) value ("table_name = 'transacao_btg'");
 insert into _expt (stat) value ("table_name = 'transacoes_erradas'");
 insert into _expt (stat) value ("table_name = 'transacoes_sap_08_07'");
-insert into _expt (stat) value("table_name = 'brazil_bank_holidays'");
+insert into _expt (stat) value ("table_name = 'brazil_bank_holidays'");
+insert into _expt (stat) value ("table_name = 'output_connection_item_back'");
 
 -- _ref
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client', 'id_aggregator', 'vooo_prod_backend', 'aggregator', 'id');
@@ -51,7 +52,7 @@ insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_sc
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client_processing_notification', 'client_id', 'vooo_prod_backend', 'client', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client_provider_composition', 'client_id', 'vooo_prod_backend', 'client', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client_service', 'client_id', 'vooo_prod_backend', 'client', 'id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client_user', 'client_id', 'vooo_prod_backend', 'client', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client_user', 'id_client', 'vooo_prod_backend', 'client', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection', 'client_id', 'vooo_prod_backend', 'client', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_crawler', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'connection_edi', 'connection_id', 'vooo_prod_backend', 'connection', 'connection_id');
@@ -84,20 +85,20 @@ insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_sc
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_anticipation', 'id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_composition', 'id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_composition_item', 'output_id', 'vooo_prod_backend', 'output_item', 'id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_connection_item', 'output_id', 'vooo_prod_backend', 'output_item', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_connection_item', 'output_item_id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_connection_item_back', 'output_id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_item', 'client_id', 'vooo_prod_backend', 'client', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_item_composition_reference', 'id', 'vooo_prod_backend', 'output_item', 'id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_manual_conciliation', 'id', 'vooo_prod_backend', 'output_sales', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_manual_conciliation', 'output_sales_id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_outstanding', 'id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reconciliation', 'id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reconciliation_alert', 'output_reconciliation_id', 'vooo_prod_backend', 'output_item', 'id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reference', 'output_reconciliation_id', 'vooo_prod_backend', 'output_item', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reference', 'referrer_id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_report_files', 'client_id', 'vooo_prod_backend', 'client', 'id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reversal', 'output_reconciliation_id', 'vooo_prod_backend', 'output_item', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reversal', 'id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reversal_adjusts', 'id', 'vooo_prod_backend', 'output_reversal', 'output_reversal_adjusts_id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reversal_bin', 'output_reconciliation_id', 'vooo_prod_backend', 'output_item', 'id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_sales', 'output_reconciliation_id', 'vooo_prod_backend', 'output_item', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_reversal_bin', 'output_reversal_id', 'vooo_prod_backend', 'output_item', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_sales', 'id', 'vooo_prod_backend', 'output_item', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_sales_adjusts', 'id', 'vooo_prod_backend', 'output_sales', 'output_sales_adjusts_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_sales_bin', 'output_sales_id', 'vooo_prod_backend', 'output_sales', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'output_sales_fee', 'output_sales_id', 'vooo_prod_backend', 'output_sales', 'id');
@@ -204,3 +205,13 @@ insert into _key (object, field, init_key) values ('user_old_passwords', 'id', 2
 insert into _key (object, field, init_key) values ('user_status_log', 'id', 57);
 
 commit;
+
+### delete keys + update
+# output_reconciliation_alert.output_alert.id
+# output_connection_item.connection_item_id
+# output_reference.referrer_id
+# daily_reports_rates.day
+# daily_reports_rates.month
+# daily_reports_rates.payment_method_id
+# daily_reports_rates.provider_id
+# daily_reports_rates.year

@@ -82,7 +82,7 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 	}
 	last := j.Refs[r].Job.Keys[i].Last
 	if max > last {
-		return nil, fmt.Errorf(port.ErrReferenceNotDone, j.Refs[r].Job.Name)
+		return nil, fmt.Errorf(port.ErrReferenceNotDone, j.Refs[r].Job.Name, max, last)
 	}
 	possibles, err := c.getRefPossibles(&j.Refs[r], i, min, max, tx)
 	if err != nil {

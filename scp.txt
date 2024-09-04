@@ -1,7 +1,11 @@
-scp -i .ssh/backend.pem ./go/src/github.com/lavinas/vooo-etl/Dockerfile  ubuntu@18.224.8.201:~/etl/
-scp -i .ssh/backend.pem ./go/src/github.com/lavinas/vooo-etl/docker-compose.yaml  ubuntu@18.224.8.201:~/etl/
-scp -i .ssh/backend.pem ./go/src/github.com/lavinas/vooo-etl/etl  ubuntu@18.224.8.201:~/etl/ 
-
-13.59.129.51
-
-3.144.215.128
+2024/09/04 21:01:57 Run: 98 - 1: error - strconv.ParseInt: parsing "GREENPASS_0000000000001_20240805_000004_0000000343_normal.txt": invalid syntax in 0.1597 seconds. More: 0
+2024/09/04 21:02:13 Run: 160 - 1: error - strconv.ParseInt: parsing "2018-04-13": invalid syntax in 0.1389 seconds
+2024/09/04 21:03:23 Run: 298 - 1: error - timeout in 30.0065 seconds
+2024/09/04 21:03:28 Run: 338 - 1: error - strconv.ParseInt: parsing "output_unschedule": invalid syntax in 0.0143 seconds
+2024/09/04 21:08:27 Run: 366 - 1: error - timeout in 286.3810 seconds
+2024/09/04 21:37:27 Run: 388 - 1: error - strconv.ParseInt: parsing "generic_layout": invalid syntax in 0.0177 seconds
+2024/09/04 21:38:22 Run: 532 - 1: error - strconv.ParseInt: parsing "2024-09-04": invalid syntax in 12.6571 seconds
+2024/09/04 21:41:58 Run: 630 - 1: error - strconv.ParseInt: parsing "FFD742FA-AC7D-45E5-B752-E87D1B8B96AB": invalid syntax in 0.0261 seconds
+2024/09/04 21:41:59 Run: 632 - 1: error - strconv.ParseInt: parsing "2018-06-14 00:00:00": invalid syntax in 0.0319 seconds
+2024/09/04 21:42:06 Run: 720 - 1: error - strconv.ParseInt: parsing "VISA ELECTRON": invalid syntax in 0.0285 seconds
+2024/09/04 21:42:09 Run: 745 - 1: error - strconv.ParseInt: parsing "IC - T2": invalid syntax in 0.0196 seconds
