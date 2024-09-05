@@ -22,6 +22,10 @@ insert into _expt (stat) value ("table_name = 'transacoes_erradas'");
 insert into _expt (stat) value ("table_name = 'transacoes_sap_08_07'");
 insert into _expt (stat) value ("table_name = 'brazil_bank_holidays'");
 insert into _expt (stat) value ("table_name = 'output_connection_item_back'");
+insert into _expt(stat) values ("table_name = 'projections_R_history'");
+insert into _expt(stat) value ("table_name = 'pagseguro_control'");
+insert into _expt(stat) value ("table_name = 'projections_R'");
+insert into _expt(stat) value ("table_name = 'nespresso_converter'");
 
 -- _ref
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'client', 'id_aggregator', 'vooo_prod_backend', 'aggregator', 'id');
@@ -67,7 +71,6 @@ insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_sc
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'document', 'id', 'vooo_prod_backend', 'client', 'id_document');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'files_aws_s3_client', 'client_id', 'vooo_prod_backend', 'client', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'files_aws_s3_control', 'client_folder_id', 'vooo_prod_backend', 'files_aws_s3_client', 'id');
-insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'files_control_action', 'file_name', 'vooo_prod_backend', 'connection_edi', 'file');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'files_control_vector', 'id', 'vooo_prod_backend', 'files_control_action', 'files_control_vector_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'files_control_vector_ftp', 'id', 'vooo_prod_backend', 'files_control_action', 'files_control_vector_id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'generic_layout', 'client_id', 'vooo_prod_backend', 'client', 'id');
@@ -215,3 +218,18 @@ commit;
 # daily_reports_rates.payment_method_id
 # daily_reports_rates.provider_id
 # daily_reports_rates.year
+# billing.aggregator
+# billint.client_id
+# billing.processing_date
+# billing.provider_id
+# billing.type_transactions
+
+
+# all
+# purge_backend_table_list
+# purge_rawdata_table_list
+# generic_layout_map_values
+
+
+# ver 
+# vooo_prod_backend.billing
