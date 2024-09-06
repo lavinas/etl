@@ -123,8 +123,6 @@ func (m *SetUp) runSetup(nodes map[string]*SetUpNode, stack *GraphNode) error {
 	return nil
 }
 
-// run
-
 // runCheck runs the check action
 func (m *SetUp) runCheck(stack *GraphNode, out chan *port.SetUpOut) {
 	mp := m.getMap(stack)
