@@ -49,7 +49,7 @@ func (c *CommandLine) Run() {
 	case "truncate":
 		c.actionTruncate(args)
 	default:
-		log.Println(port.ErrActionNotFound)
+		log.Printf(port.ErrActionNotFound+"/n", args.Action)
 	}
 }
 

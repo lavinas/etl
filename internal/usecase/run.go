@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -214,7 +215,7 @@ func (r *Run) getJobsId(in *port.RunIn, repo port.Repository) ([]*domain.Job, er
 		if j.Id >= in.JobID && j.Id <= in.Until {
 			ret = append(ret, &j)
 		}
-	} 
+	}
 	return ret, err
 }
 
@@ -224,10 +225,12 @@ func (r *Run) factory(action string) (port.RunAction, error) {
 	switch action {
 	case "copy":
 		return &Copy{Base: base}, nil
+	case "all":
+		return &Copy{Base: base}, nil
 	case "update":
 		return &Update{Base: base}, nil
 	case "none":
 		return nil, nil
 	}
-	return nil, errors.New(port.ErrActionNotFound)
+	return nil, fmt.Errorf(port.ErrActionNotFound, action)
 }

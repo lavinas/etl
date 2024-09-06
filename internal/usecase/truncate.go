@@ -57,7 +57,6 @@ func (t *Truncate) truncateAtomic(jobs *[]domain.Job, out chan *port.TruncateOut
 		t.executeJob(&j, out, count, total, tx)
 		count++
 	}
-	fmt.Println("Commiting transaction")
 	if err := t.RepoTarget.Commit(tx); err != nil {
 		out <- &port.TruncateOut{Status: port.ErrorStatus, Detail: err.Error()}
 		return

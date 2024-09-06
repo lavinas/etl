@@ -28,8 +28,8 @@ type MySql struct {
 	Db   *gorm.DB
 	Conn *sql.DB
 	Ssh  *gssh.Client
-	Sdns  string
-	Sssh  string
+	Sdns string
+	Sssh string
 }
 
 // NewRepository creates a new repository handler

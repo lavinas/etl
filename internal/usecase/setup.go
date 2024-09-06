@@ -105,7 +105,7 @@ func (m *SetUp) runAction(action string, nodes map[string]*SetUpNode, stack *Gra
 	case "setup":
 		err = m.runSetup(nodes, stack)
 	default:
-		err = fmt.Errorf(port.ErrActionNotFound)
+		err = fmt.Errorf(port.ErrActionNotFound, action)
 	}
 	return err
 }
@@ -272,7 +272,6 @@ func (m *SetUp) getPrimariesPre() (map[string]*SetUpKey, error) {
 	}
 	return kmap, nil
 }
-
 
 // getPrimariesSchema returns initial values based on _schema table
 func (m *SetUp) getPrimariesSchema() (map[string]int64, error) {

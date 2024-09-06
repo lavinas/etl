@@ -18,7 +18,7 @@ const (
 	ErrJobNotRunning            = "job is not running"
 	ErrRepoPassNotImplemented   = "just file implemented"
 	ErrRepoProtoNotImplemented  = "just tcp implemented"
-	ErrActionNotFound           = "action not found"
+	ErrActionNotFound           = "action not found: %s"
 	ErrJobTypeNotImplemented    = "job type not implemented"
 	ErrFieldNotFound            = "field not found"
 	ErrReferenceNotFound        = "reference not found"
@@ -40,6 +40,7 @@ const (
 	ErrTableReferceNotFound     = "table reference %s not found"
 	ErrCircularReference        = "circular reference in table %s"
 	ErrNoSchemasFound           = "no schemas found"
+	ErrTooManyRows              = "too many rows for all action: done %d, max %d"
 )
 
 // queries
@@ -47,7 +48,9 @@ const (
 	CopyDisableFK              = "SET FOREIGN_KEY_CHECKS = 0;"
 	CopyEnableFK               = "SET FOREIGN_KEY_CHECKS = 1;"
 	CopyMaxClient              = "SELECT max(%s) FROM `%s`;"
-	CopySelectAll              = "SELECT * FROM %s.`%s` WHERE (%s) in (%s) order by %s;"
+	CopySelectIn               = "SELECT * FROM %s.`%s` WHERE (%s) in (%s) order by %s;"
+	CopySelectAllCount         = "SELECT count(1) FROM %s.`%s`;"
+	CopySelectAll              = "SELECT * FROM %s.`%s`;"
 	CopySelectF                = "SELECT %s FROM %s.`%s` WHERE %s > %d and %s <= %d;"
 	CopyInsert                 = "REPLACE INTO %s.`%s` %s VALUES %s;"
 	LoadClientAggregator       = "SELECT id FROM aggregator_ref;"
