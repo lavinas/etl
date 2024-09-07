@@ -114,13 +114,13 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 	if err != nil {
 		return nil, err
 	}
-	possibles, refMax, err := c.getRefPossibles(&j.Refs[r], i, min, max, tx)
+	if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max); err != nil {
+		return nil, err
+	}
+	possibles, err := c.getRefPossibles(&j.Refs[r], i, min, max, tx)
 	if err != nil {
 		return nil, err
 	}
-	if max > refMax {
-		return nil, fmt.Errorf(port.ErrReferenceNotDone, j.Refs[r].Job.Name, max, refMax)
-	}	
 	rows, err = c.filterRef(j.Refs[r].Keys[i].Referrer, possibles, cols, rows)
 	if err != nil {
 		return nil, err
@@ -128,27 +128,41 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 	return rows, nil
 }
 
+// filterRefLimits filters the references by limits
+func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64) error {
+	found := false
+	keys := job.Keys
+	for _, k := range keys {
+		if k.Name == name {
+			if max > k.Last {
+				return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, k.Last)
+			}
+			found = true
+		}
+	}
+	if !found {
+		return fmt.Errorf(port.ErrJobKeyMismatch, name, job.Name)
+	}
+	return nil
+}
+
 // getRefPossibles gets the possible references
-func (c *Copy) getRefPossibles(ref *domain.Ref, i int, min int64, max int64, txTarget interface{}) (map[int64]bool, int64, error) {
+func (c *Copy) getRefPossibles(ref *domain.Ref, i int, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
 	field := ref.Keys[i].Referred
 	sql := fmt.Sprintf(port.CopySelectF, field, ref.Job.Base, ref.Job.Object, field, min-1, field, max)
 	_, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	possibles := make(map[int64]bool)
-	refMax := int64(0)
 	for _, row := range rows {
 		val, err := strconv.ParseInt(*row[0], 10, 64)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		possibles[val] = true
-		if val > refMax {
-			refMax = val
-		}
 	}
-	return possibles, refMax, nil
+	return possibles, nil
 }
 
 // filterRef filters the references

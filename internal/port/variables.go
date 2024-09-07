@@ -41,6 +41,7 @@ const (
 	ErrCircularReference        = "circular reference in table %s"
 	ErrNoSchemasFound           = "no schemas found"
 	ErrTooManyRows              = "too many rows for all action: done %d, max %d"
+	ErrJobKeyMismatch           = "reference key %s not found in job %s"
 )
 
 // queries
