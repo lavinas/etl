@@ -224,12 +224,10 @@ commit;
 # billing.provider_id
 # billing.type_transactions
 
-
 # all
 # purge_backend_table_list
 # purge_rawdata_table_list
 # generic_layout_map_values
 
 
-# ver 
-# vooo_prod_backend.billing
+

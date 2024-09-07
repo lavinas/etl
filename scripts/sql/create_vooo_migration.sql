@@ -100,7 +100,8 @@ CREATE TABLE `job` (
   `type` varchar(30) NOT NULL,
   `action` varchar(30) NOT NULL,
   `base` varchar(100) NOT NULL,
-  `object` varchar(100) NOT NULL
+  `object` varchar(100) NOT NULL,
+  `group_id` bigint NOT NULL DEFAULT 0,
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
