@@ -51,8 +51,11 @@ func (r *MySql) Close() {
 	}
 }
 
-// Reconnect try to reconect to db
-func (r *MySql) Reconnect() error {
+// Reload reconnect to the database if the connection is lost
+func (r *MySql) Reload() error {
+	if r.Conn != nil && r.Conn.Ping() == nil {
+		return nil
+	}
 	r.Close()
 	db, conn, cssh, err := connect(r.Sdns, r.Sssh)
 	if err != nil {

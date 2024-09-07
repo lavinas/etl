@@ -7,8 +7,8 @@ type Repository interface {
 	Migrate(domain []interface{}) error
 	// Close is a method that closes the repository
 	Close()
-	// Reconnect is a method that reconnects the repository
-	Reconnect() error
+	// Reload is a method that reconnects the repository if it is necessary
+	Reload() error
 	// Begin is a method that starts a transaction
 	// it receives a string that represents the transaction name
 	// if the transaction name is empty, it will be a default transaction
