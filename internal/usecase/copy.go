@@ -114,7 +114,7 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 	if err != nil {
 		return nil, err
 	}
-	if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max, tx); err != nil {
+	if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max); err != nil {
 		return nil, err
 	}
 	possibles, err := c.getRefPossibles(&j.Refs[r], i, min, max, tx)
@@ -129,7 +129,7 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 }
 
 // filterRefLimits filters the references by limits
-func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64, tx interface{}) error {
+func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64) error {
 	keys := job.Keys
 	for _, key := range keys {
 		if key.Name == name {
@@ -139,27 +139,45 @@ func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64, tx inter
 			return nil
 		}
 	}
-	return c.filterRefLimitsbyDB(job, name, max, tx)
+	return c.filterRefLimitsbyDB(job, name, max)
 }
 
 // filterRefLimitsbyDB filters the references by limits consulting the database
-func (c *Copy) filterRefLimitsbyDB(job *domain.Job, name string, max int64, tx interface{}) error {
-	q := fmt.Sprintf(port.CopyMaxExists, job.Base, job.Object, name, max)
-	_, rows, err := c.RepoTarget.Query(tx, q)
+func (c *Copy) filterRefLimitsbyDB(job *domain.Job, name string, max int64) error {
+	rows, err := c.getFilterRefLimits(job, name, max)
 	if err != nil {
 		return err
 	}
-	if rows[0][0] == nil {
-		return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, 0)
-	}
-	val, err := strconv.ParseInt(*rows[0][0], 10, 64)
-	if err != nil {
-		return err
-	}
-	if val < 1 {
-		return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, val)
+	for i, key := range job.Keys {
+		val, err := strconv.ParseInt(*rows[0][i], 10, 64)
+		if err != nil {
+			return err
+		}
+		if val > key.Last {
+			return fmt.Errorf(port.ErrReferenceNotDone, job.Name, val, key.Last)
+		}
 	}
 	return nil
+}
+
+// getFilterRefLimits gets the filter reference limits
+func (c *Copy) getFilterRefLimits(job *domain.Job, name string, max int64) ([][]*string, error) {
+	kCols := ""
+	for _, key := range job.Keys {
+		kCols += key.Name + ", "
+	}
+	kCols = kCols[:len(kCols)-2]
+	q := fmt.Sprintf(port.CopyMaxExists, kCols, job.Base, job.Object, name, max)
+	tx := c.RepoSource.Begin(job.Base)
+	defer c.RepoSource.Rollback(tx)
+	_, rows, err := c.RepoSource.Query(tx, q)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 || len(rows[0]) == 0 || rows[0][0] == nil {
+		return nil, fmt.Errorf(port.ErrReferenceNotFound, job.Base, job.Object, name, max)
+	}
+	return rows, nil
 }
 
 // getRefPossibles gets the possible references
