@@ -114,7 +114,7 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 	if err != nil {
 		return nil, err
 	}
-	if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max); err != nil {
+	if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max, tx); err != nil {
 		return nil, err
 	}
 	possibles, err := c.getRefPossibles(&j.Refs[r], i, min, max, tx)
@@ -129,19 +129,21 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 }
 
 // filterRefLimits filters the references by limits
-func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64) error {
-	found := false
-	keys := job.Keys
-	for _, k := range keys {
-		if k.Name == name {
-			if max > k.Last {
-				return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, k.Last)
-			}
-			found = true
-		}
+func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64, tx interface{}) error {
+	q := fmt.Sprintf(port.CopyMaxClient, name, job.Base + "." + job.Object)
+	_, rows, err := c.RepoTarget.Query(tx, q)
+	if err != nil {
+		return err
 	}
-	if !found {
-		return fmt.Errorf(port.ErrJobKeyMismatch, name, job.Name)
+	if rows[0][0] == nil {
+		return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, 0)
+	}
+	val, err := strconv.ParseInt(*rows[0][0], 10, 64)
+	if err != nil {
+		return err
+	}
+	if max > val {
+		return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, val)
 	}
 	return nil
 }
