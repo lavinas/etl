@@ -97,9 +97,39 @@ func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx int
 		colsMap[col] = i
 	}
 	var err error
+	rows, err = c.limitRefs(j, colsMap, rows)
+	if err != nil {
+		return nil, err
+	}
+	rows, err = c.selectRefs(j, colsMap, rows, tx)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// limitRefs limits rows to the limits of the references
+func (c *Copy) limitRefs(j *domain.Job, cols map[string]int, rows [][]*string) ([][]*string, error) {
 	for r := range j.Refs {
 		for i := range j.Refs[r].Keys {
-			rows, err = c.filterRefbyKey(j, r, i, colsMap, rows, tx)
+			_, max, err := c.getRefRange(j.Refs[r].Keys[i].Referrer, cols, rows)
+			if err != nil {
+				return nil, err
+			}
+			if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return rows, nil
+}
+
+// filterRefs filters the references
+func (c *Copy) selectRefs(j *domain.Job, cols map[string]int, rows [][]*string, tx interface{}) ([][]*string, error) {
+	var err error
+	for r := range j.Refs {
+		for i := range j.Refs[r].Keys {
+			rows, err = c.filterRefbyKey(j, r, i, cols, rows, tx)
 			if err != nil {
 				return nil, err
 			}
@@ -112,9 +142,6 @@ func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx int
 func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, rows [][]*string, tx interface{}) ([][]*string, error) {
 	min, max, err := c.getRefRange(j.Refs[r].Keys[i].Referrer, cols, rows)
 	if err != nil {
-		return nil, err
-	}
-	if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max); err != nil {
 		return nil, err
 	}
 	possibles, err := c.getRefPossibles(&j.Refs[r], i, min, max, tx)
