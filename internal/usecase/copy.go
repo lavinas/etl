@@ -166,11 +166,11 @@ func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64) error {
 			return nil
 		}
 	}
-	return c.filterRefLimitsbyDB(job, name, max)
+	return c.filterRefLimitsNotKey(job, name, max)
 }
 
-// filterRefLimitsbyDB filters the references by limits consulting the database
-func (c *Copy) filterRefLimitsbyDB(job *domain.Job, name string, max int64) error {
+// filterRefLimitsNotKey filters the references by limits if reference key is not a job key
+func (c *Copy) filterRefLimitsNotKey(job *domain.Job, name string, max int64) error {
 	rows, err := c.getFilterRefLimits(job, name, max)
 	if err != nil {
 		return err
