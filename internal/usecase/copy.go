@@ -130,6 +130,20 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 
 // filterRefLimits filters the references by limits
 func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64, tx interface{}) error {
+	keys := job.Keys
+	for _, key := range keys {
+		if key.Name == name {
+			if max > key.Last {
+				return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, key.Last)
+			}
+			return nil
+		}
+	}
+	return c.filterRefLimitsbyDB(job, name, max, tx)
+}
+
+// filterRefLimitsbyDB filters the references by limits consulting the database
+func (c *Copy) filterRefLimitsbyDB(job *domain.Job, name string, max int64, tx interface{}) error {
 	q := fmt.Sprintf(port.CopyMaxClient, name, job.Base + "." + job.Object)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
