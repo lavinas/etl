@@ -153,7 +153,6 @@ func (c *Copy) filterRefLimitsbyDB(job *domain.Job, name string, max int64) erro
 		if err != nil {
 			return err
 		}
-		fmt.Println(1, key.Name, val, key.Last)
 		if val > key.Last {
 			return fmt.Errorf(port.ErrReferenceNotDone, job.Name, val, key.Last)
 		}
@@ -169,7 +168,6 @@ func (c *Copy) getFilterRefLimits(job *domain.Job, name string, max int64) ([][]
 	}
 	kCols = kCols[:len(kCols)-2]
 	q := fmt.Sprintf(port.CopyMaxExists, kCols, job.Base, job.Object, name, max)
-	fmt.Println(2, q)
 	tx := c.RepoSource.Begin(job.Base)
 	defer c.RepoSource.Rollback(tx)
 	_, rows, err := c.RepoSource.Query(tx, q)
