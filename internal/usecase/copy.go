@@ -144,7 +144,7 @@ func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64, tx inter
 
 // filterRefLimitsbyDB filters the references by limits consulting the database
 func (c *Copy) filterRefLimitsbyDB(job *domain.Job, name string, max int64, tx interface{}) error {
-	q := fmt.Sprintf(port.CopyMaxClientSchema, name, job.Base, job.Object)
+	q := fmt.Sprintf(port.CopyMaxExists, job.Base, job.Object, name, max)
 	_, rows, err := c.RepoTarget.Query(tx, q)
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func (c *Copy) filterRefLimitsbyDB(job *domain.Job, name string, max int64, tx i
 	if err != nil {
 		return err
 	}
-	if max > val {
+	if val < 1 {
 		return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, val)
 	}
 	return nil

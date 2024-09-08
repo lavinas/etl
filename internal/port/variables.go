@@ -49,7 +49,7 @@ const (
 	CopyDisableFK              = "SET FOREIGN_KEY_CHECKS = 0;"
 	CopyEnableFK               = "SET FOREIGN_KEY_CHECKS = 1;"
 	CopyMaxClient              = "SELECT max(%s) FROM `%s`;"
-	CopyMaxClientSchema        = "SELECT max(%s) FROM %s.`%s`;"
+	CopyMaxExists              = "SELECT count(1) FROM %s.`%s` where `%s` = %d;"
 	CopySelectIn               = "SELECT * FROM %s.`%s` WHERE (%s) in (%s) order by %s;"
 	CopySelectAllCount         = "SELECT count(1) FROM %s.`%s`;"
 	CopySelectAll              = "SELECT * FROM %s.`%s`;"
