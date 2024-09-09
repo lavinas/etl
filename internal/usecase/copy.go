@@ -113,15 +113,12 @@ func (c *Copy) move(j *domain.Job, rows [][]*string, tx interface{}) error {
 	if err != nil {
 		return err
 	}
+	/* temporary disabled 
 	if len(r) < len(rows) {
-		for _, row := range r {
-			fmt.Println(1, *row[0])
-		}
-		for _, row := range rows {
-			fmt.Println(2, *row[0])
-		}
 		return fmt.Errorf(port.ErrInvelidCopySource, len(r), len(rows))
 	}
+	*/
+
 	if err = c.putSource(j, cols, r, tx); err != nil {
 		return err
 	}
