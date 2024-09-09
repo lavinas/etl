@@ -22,7 +22,7 @@ const (
 	ErrJobTypeNotImplemented    = "job type not implemented"
 	ErrFieldNotFound            = "field not found"
 	ErrReferenceNotFound        = "reference %s.%s.%s = %d not found"
-	ErrReferenceNotDone         = "reference '%s' not done: %d > %d"
+	ErrReferenceNotDone         = "reference %s not done. Field %s %d > %d"
 	ErrAggregatorNotFound       = "aggregator not found"
 	ErrJobsNotFound             = "no jobs is found"
 	ErrRepoSshTimeout           = "ssh timeout connecting to database"
@@ -93,8 +93,10 @@ var (
 	DbRelief              = 0 * time.Millisecond
 	LoadClientSourceBase  = "vooo_prod_backend"
 	CopySourceBase        = "vooo_prod_backend"
+	CopyReduce			  = int64(1)
+	CopyReduceLimit       = int64(2000)
 	UpdateReturnMessage   = "%d processed, %d updated"
-	CopyReturnMessage     = "%d rows proc, %d cop, %.2f hrs miss"
+	CopyReturnMessage     = "%d rows proc, %d cop, %d sub, %.2f hrs miss"
 	TruncateReturnMessage = "%s.%s truncated"
 	InLimit               = int64(1000)
 	OutLimit              = int64(1000)

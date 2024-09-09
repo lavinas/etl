@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,104 +23,242 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 	now := time.Now()
 	j := job.(*domain.Job)
 	if j.Type != "table" {
-		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
+		return "", 0, errors.New(port.ErrJobTypeNotImplemented)
 	}
 	tmiss := float64(0)
-	processed, missing, copied, err := c.runFactory(j, txTarget)
+	processed, missing, copied, sub, err := c.runFactory(j, txTarget)
 	if err != nil {
-		return "", -1, err
+		return "", 0, err
 	}
 	if processed != 0 {
 		tmiss = (time.Since(now).Seconds() * float64(missing)) / float64(3600*processed)
 	}
-	return fmt.Sprintf(port.CopyReturnMessage, processed, copied, tmiss), missing, nil
+	return fmt.Sprintf(port.CopyReturnMessage, processed, copied, sub, tmiss), missing, nil
 }
 
 // runFactory runs the factory use case
-func (c *Copy) runFactory(j *domain.Job, txTarget interface{}) (int64, int64, int64, error) {
+func (c *Copy) runFactory(j *domain.Job, txTarget interface{}) (int64, int64, int64, int64, error) {
 	switch j.Action {
 	case "all":
 		return c.runCopyAll(j, txTarget)
 	case "copy":
 		return c.runCopy(j, txTarget)
 	default:
-		return -1, -1, -1, fmt.Errorf(port.ErrActionNotFound, j.Action)
+		return 0, 0, 0, 0, fmt.Errorf(port.ErrActionNotFound, j.Action)
 	}
 }
 
 // runCopyAll runs the copy all use case
-func (c *Copy) runCopyAll(j *domain.Job, txTarget interface{}) (int64, int64, int64, error) {
+func (c *Copy) runCopyAll(j *domain.Job, txTarget interface{}) (int64, int64, int64, int64, error) {
 	cols, rows, err := c.getSourceAll(j)
 	if err != nil {
-		return -1, -1, -1, err
+		return 0, 0, 0, 0, err
 	}
 	err = c.putSource(j, cols, rows, txTarget)
 	if err != nil {
-		return -1, -1, -1, err
+		return 0, 0, 0, 0, err
 	}
-	return int64(len(rows)), 0, int64(len(rows)), nil
+	return int64(len(rows)), 0, int64(len(rows)), 0, nil
 }
 
 // runCopy runs the copy use case
-func (c *Copy) runCopy(j *domain.Job, txTarget interface{}) (int64, int64, int64, error) {
-	newLast, missing, processed, err := c.getLimits(j)
+func (c *Copy) runCopy(j *domain.Job, txTarget interface{}) (int64, int64, int64, int64, error) {
+	keys, missing, processed, err := c.getLimits(j)
 	if err != nil {
-		return processed, missing, 0, err
+		return 0, 0, 0, 0, err
 	}
-	cols, rows, err := c.getSource(j, newLast)
+	cols, rows, err := c.getSource(j, keys)
 	if err != nil {
-		return processed, missing, 0, err
+		return 0, 0, 0, 0, err
 	}
-	if rows, err = c.filterRefs(j, cols, rows, txTarget); err != nil {
-		return processed, missing, 0, err
-	}
-	cols, rows, err = c.getAllSource(j, rows)
+	rows, newKeys, sub, err := c.filterRefs(j, cols, rows, txTarget)
 	if err != nil {
-		return processed, missing, 0, err
+		return 0, 0, 0, 0, err
 	}
-	err = c.putSource(j, cols, rows, txTarget)
-	if err != nil {
-		return processed, missing, 0, err
+	if newKeys != nil {
+		keys = newKeys
 	}
-	if err := j.SetKeysLast(newLast, c.RepoTarget, txTarget); err != nil {
-		return processed, missing, 0, err
+	if err = c.move(j, rows, txTarget); err != nil {
+		return 0, 0, 0, 0, err
 	}
-	return processed, missing, int64(len(rows)), nil
+	if err := j.SetKeysLast(keys, c.RepoTarget, txTarget); err != nil {
+		return 0, 0, 0, 0, err
+	}
+	return processed, missing, int64(len(rows)), sub, nil
 }
 
 // filterRefs filters the references
-func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx interface{}) ([][]*string, error) {
+func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx interface{}) ([][]*string, []int64, int64, error) {
 	if len(rows) == 0 || len(j.Refs) == 0 {
-		return rows, nil
+		return rows, nil, 0, nil
 	}
 	colsMap := make(map[string]int)
 	for i, col := range cols {
 		colsMap[col] = i
 	}
-	var err error
-	rows, err = c.limitRefs(j, colsMap, rows)
+	rows, newKeys, sub, err := c.limitRefs(j, colsMap, rows)
 	if err != nil {
-		return nil, err
+		return nil, nil, 0, err
 	}
 	rows, err = c.selectRefs(j, colsMap, rows, tx)
 	if err != nil {
-		return nil, err
+		return nil, nil, 0, err
 	}
-	return rows, nil
+	return rows, newKeys, sub, nil
+}
+
+// move moves the rows to the target
+func (c *Copy) move(j *domain.Job, rows [][]*string, tx interface{}) error {
+	cols, r, err := c.getAllSource(j, rows)
+	if err != nil {
+		return err
+	}
+	if len(r) != len(rows) {
+		return errors.New(port.ErrInvalidUpdateSource)
+	}
+	if err = c.putSource(j, cols, rows, tx); err != nil {
+		return err
+	}
+	return nil
 }
 
 // limitRefs limits rows to the limits of the references
-func (c *Copy) limitRefs(j *domain.Job, cols map[string]int, rows [][]*string) ([][]*string, error) {
+func (c *Copy) limitRefs(j *domain.Job, cols map[string]int, rows [][]*string) ([][]*string, []int64, int64, error) {
+	message, err := c.checkRefs(j, cols, rows)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	if message == "" {
+		return rows, nil, 0, nil
+	}
+	rows, reduced, err := c.limitRefsReduces(j, cols, rows, message)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	newKeys, err := c.limitNewKeys(j, cols, rows)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	return rows, newKeys, reduced, nil
+}
+
+// limitRefsReduces limits rows to the limits of the references
+func (c *Copy) limitRefsReduces(j *domain.Job, cols map[string]int, rows [][]*string, message string)  ([][]*string, int64, error) {
+	rows = c.sortRows(j, cols, rows)
+	red := port.CopyReduce
+	for ;; red += port.CopyReduce {
+		if red >= port.CopyReduceLimit || red >= int64(len(rows)) {
+			return nil, 0, errors.New(message)
+		}
+		rows = rows[:len(rows)-int(red)]
+		message, err := c.checkRefs(j, cols, rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		if message == "" {
+			break
+		}
+	}
+	return rows, red, nil
+}
+
+// limitNewKeys limits the new keys
+func (c *Copy) limitNewKeys(j *domain.Job, cols map[string]int, rows [][]*string) ([]int64, error){
+	limits := make([]int64, len(j.Keys))
+	var err error
+	for i, key := range j.Keys {
+		limits[i], err = strconv.ParseInt(*rows[len(rows)-1][cols[key.Name]], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return limits, nil
+}
+
+
+// sortRows sorts the rows by the keys
+func (c *Copy) sortRows(j *domain.Job, cols map[string]int, rows [][]*string) ([][]*string) {
+	iKeys := make([]int, len(j.Keys))
+	for i, key := range j.Keys {
+		iKeys[i] = cols[key.Name]
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		for _, key := range iKeys {
+			if *rows[i][key] > *rows[j][key] {
+				return false
+			}
+		}
+		return true
+	})
+	return rows
+}
+
+// limitRefs limits rows to the limits of the references
+func (c *Copy) checkRefs(j *domain.Job, cols map[string]int, rows [][]*string) (string, error) {
 	for r := range j.Refs {
 		for i := range j.Refs[r].Keys {
 			_, max, err := c.getRefRange(j.Refs[r].Keys[i].Referrer, cols, rows)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
-			if err := c.filterRefLimits(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max); err != nil {
-				return nil, err
+			if message, err := c.limitRefKey(&j.Refs[r].Job, j.Refs[r].Keys[i].Referred, max); err != nil || message != "" {
+				return message, err
 			}
 		}
+	}
+	return "", nil
+}
+
+// filterRefLimits filters the references by limits
+func (c *Copy) limitRefKey(job *domain.Job, name string, max int64) (string, error) {
+	keys := job.Keys
+	for _, key := range keys {
+		if key.Name == name {
+			if max > key.Last {
+				message := fmt.Sprintf(port.ErrReferenceNotDone, job.Name, name, max, key.Last)
+				return message, nil
+			}
+			return "", nil
+		}
+	}
+	return c.limitRefNotKey(job, name, max)
+}
+
+// filterRefLimitsNotKey filters the references by limits if reference key is not a job key
+func (c *Copy) limitRefNotKey(job *domain.Job, name string, max int64) (string, error) {
+	rows, err := c.getlimitRefNotKey(job, name, max)
+	if err != nil {
+		return "", err
+	}
+	for i, key := range job.Keys {
+		val, err := strconv.ParseInt(*rows[0][i], 10, 64)
+		if err != nil {
+			return "", err
+		}
+		if val > key.Last {
+			message := fmt.Sprintf(port.ErrReferenceNotDone, job.Name, name, max, key.Last)
+			return message, nil
+		}
+	}
+	return "", nil
+}
+
+// getFilterRefLimits gets the filter reference limits
+func (c *Copy) getlimitRefNotKey(job *domain.Job, name string, max int64) ([][]*string, error) {
+	kCols := ""
+	for _, key := range job.Keys {
+		kCols += key.Name + ", "
+	}
+	kCols = kCols[:len(kCols)-2]
+	q := fmt.Sprintf(port.CopyMaxExists, kCols, job.Base, job.Object, name, max)
+	tx := c.RepoSource.Begin(job.Base)
+	defer c.RepoSource.Rollback(tx)
+	_, rows, err := c.RepoSource.Query(tx, q)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 || len(rows[0]) == 0 || rows[0][0] == nil {
+		return nil, fmt.Errorf(port.ErrReferenceNotFound, job.Base, job.Object, name, max)
 	}
 	return rows, nil
 }
@@ -151,58 +290,6 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 	rows, err = c.filterRef(j.Refs[r].Keys[i].Referrer, possibles, cols, rows)
 	if err != nil {
 		return nil, err
-	}
-	return rows, nil
-}
-
-// filterRefLimits filters the references by limits
-func (c *Copy) filterRefLimits(job *domain.Job, name string, max int64) error {
-	keys := job.Keys
-	for _, key := range keys {
-		if key.Name == name {
-			if max > key.Last {
-				return fmt.Errorf(port.ErrReferenceNotDone, job.Name, max, key.Last)
-			}
-			return nil
-		}
-	}
-	return c.filterRefLimitsNotKey(job, name, max)
-}
-
-// filterRefLimitsNotKey filters the references by limits if reference key is not a job key
-func (c *Copy) filterRefLimitsNotKey(job *domain.Job, name string, max int64) error {
-	rows, err := c.getFilterRefLimits(job, name, max)
-	if err != nil {
-		return err
-	}
-	for i, key := range job.Keys {
-		val, err := strconv.ParseInt(*rows[0][i], 10, 64)
-		if err != nil {
-			return err
-		}
-		if val > key.Last {
-			return fmt.Errorf(port.ErrReferenceNotDone, job.Name, val, key.Last)
-		}
-	}
-	return nil
-}
-
-// getFilterRefLimits gets the filter reference limits
-func (c *Copy) getFilterRefLimits(job *domain.Job, name string, max int64) ([][]*string, error) {
-	kCols := ""
-	for _, key := range job.Keys {
-		kCols += key.Name + ", "
-	}
-	kCols = kCols[:len(kCols)-2]
-	q := fmt.Sprintf(port.CopyMaxExists, kCols, job.Base, job.Object, name, max)
-	tx := c.RepoSource.Begin(job.Base)
-	defer c.RepoSource.Rollback(tx)
-	_, rows, err := c.RepoSource.Query(tx, q)
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 || len(rows[0]) == 0 || rows[0][0] == nil {
-		return nil, fmt.Errorf(port.ErrReferenceNotFound, job.Base, job.Object, name, max)
 	}
 	return rows, nil
 }
@@ -518,7 +605,7 @@ func (c *Copy) getLimits(j *domain.Job) ([]int64, int64, int64, error) {
 	for i := range j.Keys {
 		l, m, p, err := c.getKeyLimit(j, i, tx)
 		if err != nil {
-			return nil, -1, -1, err
+			return nil, 0, 0, err
 		}
 		limits[i] = l
 		missing += m
@@ -532,14 +619,14 @@ func (c *Copy) getKeyLimit(j *domain.Job, i int, tx interface{}) (int64, int64, 
 	q := fmt.Sprintf(port.CopyMaxClient, j.Keys[i].Name, j.Object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
-		return -1, -1, -1, err
+		return 0, 0, 0, err
 	}
 	if len(rows[0]) == 0 || rows[0][0] == nil {
 		return 0, 0, 0, nil
 	}
 	max, err := strconv.ParseInt(*rows[0][0], 10, 64)
 	if err != nil {
-		return -1, -1, -1, err
+		return 0, 0, 0, err
 	}
 	l := j.Keys[i].Last + j.Keys[i].Step
 	if l > max {
