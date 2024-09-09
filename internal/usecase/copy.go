@@ -114,7 +114,7 @@ func (c *Copy) move(j *domain.Job, rows [][]*string, tx interface{}) error {
 		return err
 	}
 	if len(r) != len(rows) {
-		return errors.New(port.ErrInvalidUpdateSource)
+		return fmt.Errorf(port.ErrInvalidUpdateSource, len(rows), len(r))
 	}
 	if err = c.putSource(j, cols, r, tx); err != nil {
 		return err

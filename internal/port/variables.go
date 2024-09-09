@@ -29,7 +29,7 @@ const (
 	ErrFieldReferrerNotFound    = "referrer field not found in reference table"
 	ErrFieldReferredNotFound    = "referred field not found in reference table"
 	ErrInvalidUpadateReferences = "invalid update references. Just one reference is allowed"
-	ErrInvalidUpdateSource      = "source and ids have different length"
+	ErrInvalidUpdateSource      = "source and ids have different length: ids %d, source %d"
 	ErrInvalidUpdateFields      = "no fields field found on update"
 	ErrTimeout                  = "timeout"
 	ErrInterrupted              = "interrupted"
