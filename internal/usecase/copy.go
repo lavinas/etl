@@ -54,6 +54,9 @@ func (c *Copy) runCopyAll(j *domain.Job, txTarget interface{}) (int64, int64, in
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
+	if err := c.deleteTargetAll(j, txTarget); err != nil {
+		return 0, 0, 0, 0, err
+	}
 	err = c.putSource(j, cols, rows, txTarget)
 	if err != nil {
 		return 0, 0, 0, 0, err
@@ -65,6 +68,9 @@ func (c *Copy) runCopyAll(j *domain.Job, txTarget interface{}) (int64, int64, in
 func (c *Copy) runCopy(j *domain.Job, txTarget interface{}) (int64, int64, int64, int64, error) {
 	keys, missing, processed, err := c.getLimits(j)
 	if err != nil {
+		return 0, 0, 0, 0, err
+	}
+	if err := c.deleteTarget(j, keys, txTarget); err != nil {
 		return 0, 0, 0, 0, err
 	}
 	cols, rows, err := c.getSource(j, keys)
@@ -363,6 +369,40 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 		}
 	}
 	return min, max, nil
+}
+
+
+// deleteTarget deletes the target data
+func (c *Copy) deleteTarget(j *domain.Job, limit []int64, txTarget interface{}) error {
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
+		return err
+	}
+	for i := range j.Keys {
+		q := fmt.Sprintf(port.CopyDeleteF, j.Base, j.Object, j.Keys[i].Name, j.Keys[i].Last, j.Keys[i].Name, limit[i])
+		if _, err := c.RepoTarget.Exec(txTarget, q); err != nil {
+			return err
+		}
+	}
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK); err != nil {
+		return err
+	}
+	return nil
+}
+
+
+// deleteTargetAll deletes the target data
+func (c *Copy) deleteTargetAll(j *domain.Job, txTarget interface{}) error {
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
+		return err
+	}
+	q := fmt.Sprintf(port.CopyDeleteAll, j.Base, j.Object)
+	if _, err := c.RepoTarget.Exec(txTarget, q); err != nil {
+		return err
+	}
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK); err != nil {
+		return err
+	}
+	return nil
 }
 
 // getSource gets the source data for the insert
