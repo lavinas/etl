@@ -134,7 +134,12 @@ insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_sc
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_old_passwords', 'user_id', 'vooo_prod_backend', 'user', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'user_status_log', 'user_id', 'vooo_prod_backend', 'user', 'id');
 insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_prod_backend', 'reconciliation_connection_item', 'item_id', 'vooo_prod_backend', 'connection_item', 'item_id');
-
+# cache
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_cache', 'view_agenda', 'client_id', 'vooo_prod_backend', 'client', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_cache', 'cash_flow', 'client_id', 'vooo_prod_backend', 'client', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_cache', 'view_summary_taxas', 'client_id', 'vooo_prod_backend', 'client', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_cache', 'cache_statement', 'client_id', 'vooo_prod_backend', 'client', 'id');
+insert into _ref (referrer_schema, referrer_table, referrer_field, referenced_schema, referenced_table, referenced_field) value ('vooo_cache', 'view_summary_agenda', 'client_id', 'vooo_prod_backend', 'client', 'id');
 
 # _key
 insert into _key (object, field, init_key) values ('aggregator', 'id', 999999999);
@@ -226,6 +231,13 @@ commit;
 # purge_backend_table_list
 # purge_rawdata_table_list
 # generic_layout_map_values
+
+# none
+# vooo_prod_backend.aggregator
+# vooo_prod_backend.cross_sap
+# vooo_cache.vooo_homolog_backend.cnab_files
+# vooo_cache.cnab_files
+# vooo_cache.cross_sales
 
 
 # ver com madildo: cielo_auth
