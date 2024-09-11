@@ -466,7 +466,7 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 	}
 	count, _ := strconv.ParseInt(*rows[0][0], 10, 64)
 	if count > port.InLimit {
-		return nil, nil, errors.New(port.ErrTooManyRows)
+		return nil, nil, fmt.Errorf(port.ErrTooManyRows, count, port.InLimit)
 	}
 	sql = fmt.Sprintf(port.CopySelectAll, j.Base, j.Object)
 	cols, rows, err := c.RepoSource.Query(tx, sql)

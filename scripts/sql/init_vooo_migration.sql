@@ -222,24 +222,31 @@ commit;
 # daily_reports_rates.provider_id
 # daily_reports_rates.year
 # billing.aggregator
-# billint.client_id
+# billing.client_id
 # billing.processing_date
 # billing.provider_id
 # billing.type_transactions
 
 # all
-# purge_backend_table_list
-# purge_rawdata_table_list
-# generic_layout_map_values
+# vooo_prod_backend.purge_backend_table_list
+# vooo_prod_backend.purge_rawdata_table_list
+# vooo_prod_backend.generic_layout_map_values
+# billing.billing_control
 
 # none
 # vooo_prod_backend.aggregator
-# vooo_prod_backend.cross_sap
-# vooo_cache.vooo_homolog_backend.cnab_files
-# vooo_cache.cnab_files
-# vooo_cache.cross_sales
 
 
-# ver com madildo: cielo_auth
-
-
+## billing
+# history
+INSERT INTO job values (2002,'vooo_billing.billing_history','table','copy','vooo_billing','billing_history',0);
+INSERT INTO job_key VALUES (200200,2002,'id',154,5000);
+insert into ref values (200200, 2002, 1);
+insert into ref_key values (200200, 2002, 'id_aggregator', 'id');
+# amount
+INSERT INTO job VALUES (2003,'vooo_billing.billing_amount','table','copy','vooo_billing','billing_amount',0);
+INSERT INTO job_key VALUES (200300,2003,'id',35326,5000);
+insert into ref values (200300, 2003, 2);
+insert into ref_key values (200300, 2003, 'client_id', 'id');
+# control
+INSERT INTO job VALUES (2005,'vooo_billing.billing_control','table','all','vooo_billing','billing_control',0);
