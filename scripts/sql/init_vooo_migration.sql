@@ -248,5 +248,3 @@ INSERT INTO job VALUES (2003,'vooo_billing.billing_amount','table','copy','vooo_
 INSERT INTO job_key VALUES (200300,2003,'id',35326,5000);
 insert into ref values (200300, 2003, 2);
 insert into ref_key values (200300, 2003, 'client_id', 'id');
-# control
-INSERT INTO job VALUES (2005,'vooo_billing.billing_control','table','all','vooo_billing','billing_control',0);
