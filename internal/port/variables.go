@@ -54,9 +54,9 @@ const (
 	CopySelectIn               = "SELECT * FROM %s.`%s` WHERE (%s) in (%s) order by %s;"
 	CopySelectAllCount         = "SELECT count(1) FROM %s.`%s`;"
 	CopySelectAll              = "SELECT * FROM %s.`%s`;"
-	CopyDeleteAll			   = "DELETE FROM %s.`%s`;"
+	CopyDeleteAll              = "DELETE FROM %s.`%s`;"
 	CopySelectF                = "SELECT %s FROM %s.`%s` WHERE %s > %d and %s <= %d;"
-	CopyDeleteF				   = "DELETE FROM %s.`%s` WHERE %s > %d and %s <= %d;"
+	CopyDeleteF                = "DELETE FROM %s.`%s` WHERE %s > %d and %s <= %d;"
 	CopyInsert                 = "REPLACE INTO %s.`%s` %s VALUES %s;"
 	LoadClientAggregator       = "SELECT id FROM aggregator_ref;"
 	LoadClientSelect           = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"
@@ -96,7 +96,7 @@ var (
 	DbRelief              = 0 * time.Millisecond
 	LoadClientSourceBase  = "vooo_prod_backend"
 	CopySourceBase        = "vooo_prod_backend"
-	CopyReduce			  = int64(1)
+	CopyReduce            = int64(1)
 	CopyReduceLimit       = int64(2000)
 	UpdateReturnMessage   = "%d processed, %d updated"
 	CopyReturnMessage     = "%d rows proc, %d cop, %d sub, %.2f hrs miss"

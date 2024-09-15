@@ -143,11 +143,11 @@ func (c *Copy) limitRefs(j *domain.Job, cols map[string]int, rows [][]*string, k
 }
 
 // limitRefsReduces limits rows to the limits of the references
-func (c *Copy) limitRefsReduces(j *domain.Job, cols map[string]int, rows [][]*string, message string)  ([][]*string, int64, error) {
+func (c *Copy) limitRefsReduces(j *domain.Job, cols map[string]int, rows [][]*string, message string) ([][]*string, int64, error) {
 	rows = c.sortRows(j, cols, rows)
 	red := port.CopyReduce
 	total := int64(len(rows))
-	for ;; red += port.CopyReduce {
+	for ; ; red += port.CopyReduce {
 		if red >= port.CopyReduceLimit || red >= total {
 			return nil, 0, errors.New(message)
 		}
@@ -164,7 +164,7 @@ func (c *Copy) limitRefsReduces(j *domain.Job, cols map[string]int, rows [][]*st
 }
 
 // limitNewKeys limits the new keys
-func (c *Copy) limitNewKeys(j *domain.Job, cols map[string]int, rows [][]*string) ([]int64, error){
+func (c *Copy) limitNewKeys(j *domain.Job, cols map[string]int, rows [][]*string) ([]int64, error) {
 	limits := make([]int64, len(j.Keys))
 	var err error
 	for i, key := range j.Keys {
@@ -176,7 +176,6 @@ func (c *Copy) limitNewKeys(j *domain.Job, cols map[string]int, rows [][]*string
 	return limits, nil
 }
 
-
 // sortRows sorts the rows by the keys
 func (c *Copy) sortRows(j *domain.Job, cols map[string]int, rows [][]*string) [][]*string {
 	iKeys := make([]int, len(j.Keys))
@@ -185,7 +184,7 @@ func (c *Copy) sortRows(j *domain.Job, cols map[string]int, rows [][]*string) []
 	}
 	sort.Slice(rows, func(i, j int) bool {
 		for _, key := range iKeys {
-	        ik, _ := strconv.ParseInt(*rows[i][key], 10, 64)
+			ik, _ := strconv.ParseInt(*rows[i][key], 10, 64)
 			jk, _ := strconv.ParseInt(*rows[j][key], 10, 64)
 			if ik > jk {
 				return false
