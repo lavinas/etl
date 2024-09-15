@@ -40,7 +40,7 @@ func (r *Run) Run(in *port.RunIn, out chan *port.RunOut) {
 	for {
 		r.RepoSource.Reload()
 		r.RepoTarget.Reload()
-		if in.Back > 0 && (count + 1) % in.Back == 0 {
+		if in.Back > 0 && (count + 1) % in.Back == 0 && in.Shifts == 0 {
 			back = true
 		}
 		if r.runCycle(in, out, start, back) {
