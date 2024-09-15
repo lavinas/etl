@@ -248,3 +248,10 @@ INSERT INTO job VALUES (2003,'vooo_billing.billing_amount','table','copy','vooo_
 INSERT INTO job_key VALUES (200300,2003,'id',35326,5000);
 insert into ref values (200300, 2003, 2);
 insert into ref_key values (200300, 2003, 'client_id', 'id');
+
+
+# others
+insert into job values (837, 'vooo_prod_backend.output_settlement_item-2', 'table', 'copy', 'vooo_prod_backend', 'output_settlement_item', 0);
+insert into job_key values (83700, 837, 'id', 319343061, 10000);
+insert into ref values (83700, 837, 49);
+insert into ref_key values (83700, 83700, 'output_anticipation_id', 'id');
