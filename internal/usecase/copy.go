@@ -276,14 +276,16 @@ func (c *Copy) getlimitRefNotKey(job *domain.Job, name string, max int64) ([][]*
 
 // filterRefs filters the references
 func (c *Copy) selectRefs(j *domain.Job, cols map[string]int, rows [][]*string, tx interface{}) ([][]*string, error) {
-	var err error
 	for r := range j.Refs {
+		mRows := [][]*string{}
 		for i := range j.Refs[r].Keys {
-			rows, err = c.filterRefbyKey(j, r, i, cols, rows, tx)
+			r, err := c.filterRefbyKey(j, r, i, cols, rows, tx)
 			if err != nil {
 				return nil, err
 			}
+			mRows = append(mRows, r...)
 		}
+		rows = mRows
 	}
 	return rows, nil
 }
