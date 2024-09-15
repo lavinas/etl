@@ -18,5 +18,5 @@ type UseCase interface {
 // RunAction is a interface that represents the action to run a specific job use case
 // It returns a message, if there are more to run or an error
 type RunAction interface {
-	Run(job Domain, tx interface{}) (string, int64, error)
+	Run(job Domain, back bool, tx interface{}) (string, int64, error)
 }

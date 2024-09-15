@@ -21,6 +21,7 @@ type Args struct {
 	JobUntil  string `arg:"-u,--until" default:"-1" help:"until job id to run. Id it is not determined, just 1 job is accept"`
 	Schema    string `arg:"-c,--schema" default:"" help:"Schema to run. Default is all schemas configured"`
 	Log       string `arg:"-l,--log" default:"" help:"Log file to write. Default is stdout"`
+	Back	  int64  `arg:"-b,--back" default:"0" help:"How mamu cycles to run back. Default is 0. If 0, it is not run back"`
 }
 
 // CommandLine is a struct that represents the command line handler
@@ -86,7 +87,7 @@ func (c *CommandLine) actionRun(args Args) {
 		}
 	}
 	in := port.RunIn{Repeat: args.Repeat, Shifts: args.Shifts, ErrorSkip: args.ErrorSkip,
-		Delay: args.Delay, JobID: jobId, Until: until}
+		Delay: args.Delay, JobID: jobId, Until: until, Back: args.Back}
 	go c.usecase.Run(&in, outs)
 	for out := range outs {
 		if out.Status == port.FinishedStatus {

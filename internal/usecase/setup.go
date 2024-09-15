@@ -526,7 +526,7 @@ func (m *SetUp) truncateStructs(tx interface{}) error {
 func (m *SetUp) savePrimaries(node *SetUpNode, tx interface{}) error {
 	count := node.Id * 100
 	for _, p := range node.Primaries {
-		key := domain.NewJobKey(count, node.Id, p.InitValue, 5000, p.Field)
+		key := domain.NewJobKey(count, node.Id, p.InitValue, 5000, 0, p.Field)
 		if err := key.Save(m.RepoTarget, tx); err != nil {
 			return err
 		}

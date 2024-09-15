@@ -19,14 +19,14 @@ type Copy struct {
 }
 
 // Run runs the use case
-func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error) {
+func (c *Copy) Run(job port.Domain, back bool, txTarget interface{}) (string, int64, error) {
 	now := time.Now()
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", 0, errors.New(port.ErrJobTypeNotImplemented)
 	}
 	tmiss := float64(0)
-	processed, missing, copied, sub, err := c.runFactory(j, txTarget)
+	processed, missing, copied, sub, err := c.runFactory(j, back, txTarget)
 	if err != nil {
 		return "", 0, err
 	}
@@ -37,12 +37,12 @@ func (c *Copy) Run(job port.Domain, txTarget interface{}) (string, int64, error)
 }
 
 // runFactory runs the factory use case
-func (c *Copy) runFactory(j *domain.Job, txTarget interface{}) (int64, int64, int64, int64, error) {
+func (c *Copy) runFactory(j *domain.Job, back bool, txTarget interface{}) (int64, int64, int64, int64, error) {
 	switch j.Action {
 	case "all":
 		return c.runCopyAll(j, txTarget)
 	case "copy":
-		return c.runCopy(j, txTarget)
+		return c.runCopy(j, back, txTarget)
 	default:
 		return 0, 0, 0, 0, fmt.Errorf(port.ErrActionNotFound, j.Action)
 	}
@@ -65,15 +65,15 @@ func (c *Copy) runCopyAll(j *domain.Job, txTarget interface{}) (int64, int64, in
 }
 
 // runCopy runs the copy use case
-func (c *Copy) runCopy(j *domain.Job, txTarget interface{}) (int64, int64, int64, int64, error) {
-	keys, missing, processed, err := c.getLimits(j)
+func (c *Copy) runCopy(j *domain.Job, back bool, txTarget interface{}) (int64, int64, int64, int64, error) {
+	keys, missing, processed, err := c.getLimits(j, back)
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
 	if err := c.deleteTarget(j, keys, txTarget); err != nil {
 		return 0, 0, 0, 0, err
 	}
-	cols, rows, err := c.getSource(j, keys)
+	cols, rows, err := c.getSource(j, back, keys)
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
@@ -403,7 +403,7 @@ func (c *Copy) deleteTargetAll(j *domain.Job, txTarget interface{}) error {
 }
 
 // getSource gets the source data for the insert
-func (c *Copy) getSource(j *domain.Job, limit []int64) ([]string, [][]*string, error) {
+func (c *Copy) getSource(j *domain.Job, back bool, limit []int64) ([]string, [][]*string, error) {
 	fields, err := c.mountSourceFields(j)
 	if err != nil {
 		return nil, nil, err
@@ -413,7 +413,7 @@ func (c *Copy) getSource(j *domain.Job, limit []int64) ([]string, [][]*string, e
 	cols := []string{}
 	rows := [][]*string{}
 	for i := range j.Keys {
-		co, ro, err := c.getSourceByKey(j, i, fields, limit[i], txSource)
+		co, ro, err := c.getSourceByKey(j, i, fields, limit[i], back, txSource)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -443,8 +443,15 @@ func (c *Copy) mountSourceFields(j *domain.Job) (string, error) {
 }
 
 // getSourceByKey gets the source data for the insert
-func (c *Copy) getSourceByKey(j *domain.Job, i int, fields string, limit int64, txSource interface{}) ([]string, [][]*string, error) {
-	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Keys[i].Name, j.Keys[i].Last, j.Keys[i].Name, limit)
+func (c *Copy) getSourceByKey(j *domain.Job, i int, fields string, limit int64, back bool, txSource interface{}) ([]string, [][]*string, error) {
+	last := j.Keys[i].Last
+	if back {
+		last -= j.Keys[i].Back
+		if last < 0 {
+			last = -1
+		}
+	}
+	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Keys[i].Name, last, j.Keys[i].Name, limit)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -639,13 +646,13 @@ func (c *Copy) formatValue(col *string) string {
 }
 
 // getMaxClient gets the max id from the client table
-func (c *Copy) getLimits(j *domain.Job) ([]int64, int64, int64, error) {
+func (c *Copy) getLimits(j *domain.Job, back bool) ([]int64, int64, int64, error) {
 	tx := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(tx)
 	limits := make([]int64, len(j.Keys))
 	var missing, processed int64
 	for i := range j.Keys {
-		l, m, p, err := c.getKeyLimit(j, i, tx)
+		l, m, p, err := c.getKeyLimit(j, i, back, tx)
 		if err != nil {
 			return nil, 0, 0, err
 		}
@@ -657,7 +664,7 @@ func (c *Copy) getLimits(j *domain.Job) ([]int64, int64, int64, error) {
 }
 
 // getKeyLimit gets the limit of the job key
-func (c *Copy) getKeyLimit(j *domain.Job, i int, tx interface{}) (int64, int64, int64, error) {
+func (c *Copy) getKeyLimit(j *domain.Job, i int, back bool, tx interface{}) (int64, int64, int64, error) {
 	q := fmt.Sprintf(port.CopyMaxClient, j.Keys[i].Name, j.Object)
 	_, rows, err := c.RepoSource.Query(tx, q)
 	if err != nil {
@@ -670,9 +677,16 @@ func (c *Copy) getKeyLimit(j *domain.Job, i int, tx interface{}) (int64, int64, 
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	l := j.Keys[i].Last + j.Keys[i].Step
+	last := j.Keys[i].Last
+	if back {
+		last -= j.Keys[i].Back
+		if last < 0 {
+			last = -1
+		}
+	}
+	l := last + j.Keys[i].Step
 	if l > max {
 		l = max
 	}
-	return l, max - l, l - j.Keys[i].Last, nil
+	return l, max - l, l - last, nil
 }

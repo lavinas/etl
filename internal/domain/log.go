@@ -15,6 +15,7 @@ type Log struct {
 	Start    time.Time `gorm:"type:datetime; not null"`
 	Duration float64   `gorm:"type:decimal(10,4); not null"`
 	More     int64     `gorm:"type:bigint; not null"`
+	Back     bool      `gorm:"type:boolean; not null"`
 }
 
 // Init initializes the log entity
@@ -42,6 +43,7 @@ func (l *Log) SetStatus(repo port.Repository, out *port.RunOut) error {
 	l.Detail = out.Detail
 	l.Duration = out.Duration
 	l.More = out.More
+	l.Back = out.Backed
 	tx := repo.Begin("")
 	defer repo.Rollback(tx)
 	if err := repo.Save(tx, l); err != nil {

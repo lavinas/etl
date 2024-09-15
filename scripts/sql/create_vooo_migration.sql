@@ -172,7 +172,8 @@ CREATE TABLE `log` (
   `detail` varchar(255) NOT NULL,
   `start` datetime NOT NULL,
   `duration` decimal(10, 4) NOT NULL,
-  `more` bigint NOT NULL
+  `more` bigint NOT NULL,
+  `back` BOOLEAN NOT NULL,
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

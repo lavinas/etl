@@ -17,7 +17,7 @@ type Update struct {
 }
 
 // Run runs the use case
-func (c *Update) Run(job port.Domain, txTarget interface{}) (string, int64, error) {
+func (c *Update) Run(job port.Domain, back bool, txTarget interface{}) (string, int64, error) {
 	j := job.(*domain.Job)
 	if j.Type != "table" {
 		return "", -1, errors.New(port.ErrJobTypeNotImplemented)
