@@ -70,21 +70,15 @@ func (c *Copy) runCopy(j *domain.Job, back bool, txTarget interface{}) (int64, i
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
-	if err := c.deleteTarget(j, keys, txTarget); err != nil {
-		return 0, 0, 0, 0, err
-	}
 	cols, rows, err := c.getSource(j, back, keys)
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
-	rows, newKeys, sub, err := c.filterRefs(j, cols, rows, txTarget)
+	rows, keys, sub, err := c.filterRefs(j, cols, rows, keys, txTarget)
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
-	if newKeys != nil {
-		keys = newKeys
-	}
-	if err = c.move(j, rows, txTarget); err != nil {
+	if err = c.move(j, rows, keys, txTarget); err != nil {
 		return 0, 0, 0, 0, err
 	}
 	if err := j.SetKeysLast(keys, c.RepoTarget, txTarget); err != nil {
@@ -94,15 +88,15 @@ func (c *Copy) runCopy(j *domain.Job, back bool, txTarget interface{}) (int64, i
 }
 
 // filterRefs filters the references
-func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx interface{}) ([][]*string, []int64, int64, error) {
+func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, keys []int64, tx interface{}) ([][]*string, []int64, int64, error) {
 	if len(rows) == 0 || len(j.Refs) == 0 {
-		return rows, nil, 0, nil
+		return rows, keys, 0, nil
 	}
 	colsMap := make(map[string]int)
 	for i, col := range cols {
 		colsMap[col] = i
 	}
-	rows, newKeys, sub, err := c.limitRefs(j, colsMap, rows)
+	rows, keys, sub, err := c.limitRefs(j, colsMap, rows, keys)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -110,11 +104,14 @@ func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, tx int
 	if err != nil {
 		return nil, nil, 0, err
 	}
-	return rows, newKeys, sub, nil
+	return rows, keys, sub, nil
 }
 
 // move moves the rows to the target
-func (c *Copy) move(j *domain.Job, rows [][]*string, tx interface{}) error {
+func (c *Copy) move(j *domain.Job, rows [][]*string, keys []int64, tx interface{}) error {
+	if err := c.deleteTarget(j, keys, tx); err != nil {
+		return err
+	}
 	cols, r, err := c.getAllSource(j, rows)
 	if err != nil {
 		return err
@@ -126,13 +123,13 @@ func (c *Copy) move(j *domain.Job, rows [][]*string, tx interface{}) error {
 }
 
 // limitRefs limits rows to the limits of the references
-func (c *Copy) limitRefs(j *domain.Job, cols map[string]int, rows [][]*string) ([][]*string, []int64, int64, error) {
+func (c *Copy) limitRefs(j *domain.Job, cols map[string]int, rows [][]*string, keys []int64) ([][]*string, []int64, int64, error) {
 	message, err := c.checkRefs(j, cols, rows)
 	if err != nil {
 		return nil, nil, 0, err
 	}
 	if message == "" {
-		return rows, nil, 0, nil
+		return rows, keys, 0, nil
 	}
 	rows, reduced, err := c.limitRefsReduces(j, cols, rows, message)
 	if err != nil {
