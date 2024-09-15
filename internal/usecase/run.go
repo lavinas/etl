@@ -88,6 +88,7 @@ func (r *Run) runJob(job *domain.Job, in *port.RunIn, out chan *port.RunOut, bac
 		if in.Shifts != 0 && shift >= in.Shifts {
 			return ret
 		}
+		back = false
 		shift++
 	}
 }
