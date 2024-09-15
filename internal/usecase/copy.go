@@ -365,7 +365,6 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 	return min, max, nil
 }
 
-
 // deleteTarget deletes the target data
 func (c *Copy) deleteTarget(j *domain.Job, limit []int64, txTarget interface{}) error {
 	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
@@ -382,7 +381,6 @@ func (c *Copy) deleteTarget(j *domain.Job, limit []int64, txTarget interface{}) 
 	}
 	return nil
 }
-
 
 // deleteTargetAll deletes the target data
 func (c *Copy) deleteTargetAll(j *domain.Job, txTarget interface{}) error {
