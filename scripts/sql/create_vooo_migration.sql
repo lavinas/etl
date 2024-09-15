@@ -117,6 +117,7 @@ CREATE TABLE `job_key` (
   `name` varchar(100) NOT NULL,
   `last` bigint NOT NULL,
   `step` bigint NOT NULL,
+  `back` bigint NOT NULL default 0,
   key `job_id` (`job_id`),
   CONSTRAINT `job_key_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `job` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
