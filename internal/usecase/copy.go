@@ -57,6 +57,14 @@ func (c *Copy) runCopyAll(j *domain.Job, txTarget interface{}) (int64, int64, in
 	if err := c.deleteTargetAll(j, txTarget); err != nil {
 		return 0, 0, 0, 0, err
 	}
+	colsMap := make(map[string]int)
+	for i, col := range cols {
+		colsMap[col] = i
+	}
+	rows, err = c.selectRefs(j, colsMap, rows, txTarget)
+	if err != nil {
+		return 0, 0, 0, 0, err
+	}
 	err = c.putSource(j, cols, rows, txTarget)
 	if err != nil {
 		return 0, 0, 0, 0, err
