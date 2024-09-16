@@ -103,6 +103,7 @@ var (
 	TruncateReturnMessage = "%s.%s truncated"
 	InLimit               = int64(1000)
 	OutLimit              = int64(1000)
+	AllLimit  		      = int64(100000)
 )
 
 // MySQL variables

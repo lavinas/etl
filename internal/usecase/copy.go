@@ -471,7 +471,7 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 		return nil, nil, err
 	}
 	count, _ := strconv.ParseInt(*rows[0][0], 10, 64)
-	if count > port.InLimit {
+	if count > port.AllLimit {
 		return nil, nil, fmt.Errorf(port.ErrTooManyRows, count, port.InLimit)
 	}
 	sql = fmt.Sprintf(port.CopySelectAll, j.Base, j.Object)
