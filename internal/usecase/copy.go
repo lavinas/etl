@@ -86,7 +86,7 @@ func (c *Copy) runCopy(j *domain.Job, back bool, txTarget interface{}) (int64, i
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
-	if err = c.move(j, rows, keys, txTarget); err != nil {
+	if err = c.move(j, keys, rows, txTarget); err != nil {
 		return 0, 0, 0, 0, err
 	}
 	if err := j.SetKeysLast(keys, c.RepoTarget, txTarget); err != nil {
@@ -113,21 +113,6 @@ func (c *Copy) filterRefs(j *domain.Job, cols []string, rows [][]*string, keys [
 		return nil, nil, 0, err
 	}
 	return rows, keys, sub, nil
-}
-
-// move moves the rows to the target
-func (c *Copy) move(j *domain.Job, rows [][]*string, keys []int64, tx interface{}) error {
-	if err := c.deleteTarget(j, keys, tx); err != nil {
-		return err
-	}
-	cols, r, err := c.getAllSource(j, rows)
-	if err != nil {
-		return err
-	}
-	if err = c.putSource(j, cols, r, tx); err != nil {
-		return err
-	}
-	return nil
 }
 
 // limitRefs limits rows to the limits of the references
@@ -483,36 +468,32 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 }
 
 // getAllSource gets all the source data for the insert
-func (c *Copy) getAllSource(j *domain.Job, rows [][]*string) ([]string, [][]*string, error) {
-	if len(rows) == 0 {
-		return nil, nil, nil
+func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{}) error {
+	if err := c.deleteTarget(j, keys, tx); err != nil {
+		return err
 	}
-	var cols []string
-	var rrows [][]*string
+	if len(rows) == 0 {
+		return nil
+	}
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
 	last := int64(len(rows))
 	for i := int64(0); i < last; i += port.InLimit {
-		col, row, err := c.getAllSouceAtomic(j, rows[i:min(i+port.InLimit, last)], txSource)
-		if err != nil {
-			return nil, nil, err
+		if err := c.moveAtomic(j, rows[i:min(i+port.InLimit, last)], txSource); err != nil {
+			return err
 		}
-		rrows = append(rrows, row...)
-		cols = col
 	}
-	return cols, rrows, nil
+	return nil
 }
 
 // runWait waits for the run to finish or db relief time
-func (c *Copy) getAllSouceAtomic(j *domain.Job, rows [][]*string, txSource interface{}) ([]string, [][]*string, error) {
-	var cols []string
-	var row [][]*string
+func (c *Copy) moveAtomic(j *domain.Job, rows [][]*string, txSource interface{}) error {
 	var err error
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	chn := make(chan bool, 1)
 	go func(chn chan bool) {
-		cols, row, err = c.getAllSourceAtom(j, rows, txSource)
+		err = c.moveAtom(j, rows, txSource)
 		wg.Done()
 		chn <- true
 	}(chn)
@@ -524,29 +505,32 @@ func (c *Copy) getAllSouceAtomic(j *domain.Job, rows [][]*string, txSource inter
 	case <-chn:
 		wg.Wait()
 	case <-c.Ctx.Done():
-		return nil, nil, errors.New(port.ErrTimeout)
+		return errors.New(port.ErrTimeout)
 	case <-c.Signal:
-		return nil, nil, errors.New(port.ErrInterrupted)
+		return errors.New(port.ErrInterrupted)
 	}
-	return cols, row, err
+	return err
 }
 
 // getAllSource steps the source data for the insert
-func (c *Copy) getAllSourceAtom(j *domain.Job, rows [][]*string, txSource interface{}) ([]string, [][]*string, error) {
+func (c *Copy) moveAtom(j *domain.Job, rows [][]*string, txSource interface{}) error {
 	fields, err := c.mountAllSourceFields(j)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	ids, err := c.mountAllSourceIds(j, rows)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 	sql := fmt.Sprintf(port.CopySelectIn, j.Base, j.Object, fields, ids, fields)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-	return cols, rows, nil
+	if err = c.putSourceAtomic(j, c.mountInsertCols(cols), rows, txSource); err != nil {
+		return err
+	}
+	return nil
 }
 
 // mountAllSourceFields mounts the source fields name for the select
@@ -582,9 +566,6 @@ func (c *Copy) putSource(j *domain.Job, cols []string, rows [][]*string, txTarge
 	if len(rows) == 0 {
 		return nil
 	}
-	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
-		return err
-	}
 	scols := c.mountInsertCols(cols)
 	last := int64(len(rows))
 	for i := int64(0); i < last; i += port.OutLimit {
@@ -592,19 +573,22 @@ func (c *Copy) putSource(j *domain.Job, cols []string, rows [][]*string, txTarge
 			return err
 		}
 	}
-	if _, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK); err != nil {
-		return err
-	}
 	return nil
 }
 
 // putSourceAtomic puts the source data in installments way
 func (c *Copy) putSourceAtomic(j *domain.Job, cols string, rows [][]*string, txTarget interface{}) error {
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
+		return err
+	}
 	cmd := c.mountInsert(j.Base, j.Object, cols, rows)
 	if cmd == "" {
 		return nil
 	}
 	if _, err := c.RepoTarget.Exec(txTarget, cmd); err != nil {
+		return err
+	}
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK); err != nil {
 		return err
 	}
 	return nil
