@@ -472,6 +472,7 @@ func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{
 	if err := c.deleteTarget(j, keys, tx); err != nil {
 		return err
 	}
+	
 	if len(rows) == 0 {
 		return nil
 	}
