@@ -468,8 +468,8 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 }
 
 // getAllSource gets all the source data for the insert
-func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{}) error {
-	if err := c.deleteTarget(j, keys, tx); err != nil {
+func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, txTarget interface{}) error {
+	if err := c.deleteTarget(j, keys, txTarget); err != nil {
 		return err
 	}
 
@@ -480,7 +480,7 @@ func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{
 	defer c.RepoSource.Rollback(txSource)
 	last := int64(len(rows))
 	for i := int64(0); i < last; i += port.InLimit {
-		if err := c.moveAtomic(j, rows[i:min(i+port.InLimit, last)], txSource); err != nil {
+		if err := c.moveAtomic(j, rows[i:min(i+port.InLimit, last)], txTarget, txSource); err != nil {
 			return err
 		}
 	}
@@ -488,13 +488,13 @@ func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{
 }
 
 // runWait waits for the run to finish or db relief time
-func (c *Copy) moveAtomic(j *domain.Job, rows [][]*string, txSource interface{}) error {
+func (c *Copy) moveAtomic(j *domain.Job, rows [][]*string, txTarget interface{}, txSource interface{}) error {
 	var err error
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	chn := make(chan bool, 1)
 	go func(chn chan bool) {
-		err = c.moveAtom(j, rows, txSource)
+		err = c.moveAtom(j, rows, txTarget, txSource)
 		wg.Done()
 		chn <- true
 	}(chn)
@@ -514,7 +514,7 @@ func (c *Copy) moveAtomic(j *domain.Job, rows [][]*string, txSource interface{})
 }
 
 // getAllSource steps the source data for the insert
-func (c *Copy) moveAtom(j *domain.Job, rows [][]*string, txSource interface{}) error {
+func (c *Copy) moveAtom(j *domain.Job, rows [][]*string, txTarget interface{}, txSource interface{}) error {
 	fields, err := c.mountAllSourceFields(j)
 	if err != nil {
 		return err
@@ -528,7 +528,7 @@ func (c *Copy) moveAtom(j *domain.Job, rows [][]*string, txSource interface{}) e
 	if err != nil {
 		return err
 	}
-	if err = c.putSourceAtomic(j, c.mountInsertCols(cols), rows, txSource); err != nil {
+	if err = c.putSourceAtomic(j, c.mountInsertCols(cols), rows, txTarget); err != nil {
 		return err
 	}
 	return nil
@@ -586,7 +586,6 @@ func (c *Copy) putSourceAtomic(j *domain.Job, cols string, rows [][]*string, txT
 	if cmd == "" {
 		return nil
 	}
-	fmt.Println(cmd)
 	if _, err := c.RepoTarget.Exec(txTarget, cmd); err != nil {
 		return err
 	}
