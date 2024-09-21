@@ -82,11 +82,14 @@ func (c *Copy) runCopy(j *domain.Job, back bool, txTarget interface{}) (int64, i
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
+	if err := c.deleteTarget(j, keys, txTarget); err != nil {
+		return 0, 0, 0, 0, err
+	}
 	rows, keys, sub, err := c.filterRefs(j, cols, rows, keys, txTarget)
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}
-	if err = c.move(j, keys, rows, txTarget); err != nil {
+	if err = c.move(j, rows); err != nil {
 		return 0, 0, 0, 0, err
 	}
 	if err := j.SetKeysLast(keys, c.RepoTarget, txTarget); err != nil {
@@ -468,13 +471,7 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 }
 
 // getAllSource gets all the source data for the insert
-func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{}) error {
-	if err := c.deleteTarget(j, keys, tx); err != nil {
-		return err
-	}
-	if len(rows) == 0 {
-		return nil
-	}
+func (c *Copy) move(j *domain.Job, rows [][]*string) error {
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
 	last := int64(len(rows))
