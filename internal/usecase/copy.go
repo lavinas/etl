@@ -579,7 +579,6 @@ func (c *Copy) putSource(j *domain.Job, cols []string, rows [][]*string, txTarge
 
 // putSourceAtomic puts the source data in installments way
 func (c *Copy) putSourceAtomic(j *domain.Job, cols string, rows [][]*string, txTarget interface{}) error {
-	fmt.Println(1)
 	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
 		return err
 	}
@@ -587,7 +586,7 @@ func (c *Copy) putSourceAtomic(j *domain.Job, cols string, rows [][]*string, txT
 	if cmd == "" {
 		return nil
 	}
-	fmt.Println(2)
+	fmt.Println(cmd)
 	if _, err := c.RepoTarget.Exec(txTarget, cmd); err != nil {
 		return err
 	}
