@@ -469,10 +469,10 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 
 // getAllSource gets all the source data for the insert
 func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{}) error {
-	if err := c.deleteTarget(j, keys, tx); err != nil {
-		return err
-	}
-	
+	// if err := c.deleteTarget(j, keys, tx); err != nil {
+	//	return err
+	//}
+
 	if len(rows) == 0 {
 		return nil
 	}
