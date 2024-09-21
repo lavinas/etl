@@ -469,9 +469,9 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 
 // getAllSource gets all the source data for the insert
 func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, tx interface{}) error {
-	// if err := c.deleteTarget(j, keys, tx); err != nil {
-	//	return err
-	//}
+	if err := c.deleteTarget(j, keys, tx); err != nil {
+		return err
+	}
 
 	if len(rows) == 0 {
 		return nil
@@ -579,6 +579,7 @@ func (c *Copy) putSource(j *domain.Job, cols []string, rows [][]*string, txTarge
 
 // putSourceAtomic puts the source data in installments way
 func (c *Copy) putSourceAtomic(j *domain.Job, cols string, rows [][]*string, txTarget interface{}) error {
+	fmt.Println(1)
 	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
 		return err
 	}
@@ -586,6 +587,7 @@ func (c *Copy) putSourceAtomic(j *domain.Job, cols string, rows [][]*string, txT
 	if cmd == "" {
 		return nil
 	}
+	fmt.Println(2)
 	if _, err := c.RepoTarget.Exec(txTarget, cmd); err != nil {
 		return err
 	}
