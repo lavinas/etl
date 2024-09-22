@@ -539,9 +539,15 @@ func (c *Copy) deleteMoved(j *domain.Job, keys string, target map[string]string,
 		ids += i + ", "
 	}
 	ids = ids[:len(ids)-2]
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
+		return err
+	}
 	q := fmt.Sprintf(port.CopyDeleteIn, j.Base, j.Object, keys, ids)
 	_, err := c.RepoTarget.Exec(txTarget, q)
 	if err != nil {
+		return err
+	}
+	if _, err := c.RepoTarget.Exec(txTarget, port.CopyEnableFK); err != nil {
 		return err
 	}
 	return nil
