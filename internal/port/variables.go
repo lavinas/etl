@@ -47,6 +47,7 @@ const (
 
 // queries
 const (
+	CopyGetFields              = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' ORDER BY COLUMN_NAME;"
 	CopyDisableFK              = "SET FOREIGN_KEY_CHECKS = 0;"
 	CopyEnableFK               = "SET FOREIGN_KEY_CHECKS = 1;"
 	CopyMaxClient              = "SELECT max(%s) FROM `%s`;"
@@ -55,8 +56,10 @@ const (
 	CopySelectAllCount         = "SELECT count(1) FROM %s.`%s`;"
 	CopySelectAll              = "SELECT * FROM %s.`%s`;"
 	CopyDeleteAll              = "DELETE FROM %s.`%s`;"
-	CopySelectF                = "SELECT %s FROM %s.`%s` WHERE %s > %d and %s <= %d;"
+	CopySelectF                = "SELECT %s, md5(concat(%s)) md5 FROM %s.`%s` WHERE %s > %d and %s <= %d;"
+	CopySelectRef			   = "SELECT %s FROM %s.`%s` WHERE %s > %d and %s <= %d;"
 	CopyDeleteF                = "DELETE FROM %s.`%s` WHERE %s > %d and %s <= %d;"
+	CopyDeleteIn               = "DELETE FROM %s.`%s` WHERE (%s) in (%s);"
 	CopyInsert                 = "REPLACE INTO %s.`%s` %s VALUES %s;"
 	LoadClientAggregator       = "SELECT id FROM aggregator_ref;"
 	LoadClientSelect           = "SELECT id FROM client WHERE id_aggregator in (%s) and id > %d and id <= %d order by id;"

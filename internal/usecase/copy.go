@@ -294,7 +294,7 @@ func (c *Copy) filterRefbyKey(j *domain.Job, r int, i int, cols map[string]int, 
 // getRefPossibles gets the possible references
 func (c *Copy) getRefPossibles(ref *domain.Ref, i int, min int64, max int64, txTarget interface{}) (map[int64]bool, error) {
 	field := ref.Keys[i].Referred
-	sql := fmt.Sprintf(port.CopySelectF, field, ref.Job.Base, ref.Job.Object, field, min-1, field, max)
+	sql := fmt.Sprintf(port.CopySelectRef, field, ref.Job.Base, ref.Job.Object, field, min-1, field, max)
 	_, rows, err := c.RepoTarget.Query(txTarget, sql)
 	if err != nil {
 		return nil, err
@@ -357,6 +357,7 @@ func (c *Copy) getRefRange(field string, cols map[string]int, rows [][]*string) 
 	return min, max, nil
 }
 
+/*
 // deleteTarget deletes the target data
 func (c *Copy) deleteTarget(j *domain.Job, limit []int64, txTarget interface{}) error {
 	if _, err := c.RepoTarget.Exec(txTarget, port.CopyDisableFK); err != nil {
@@ -373,6 +374,7 @@ func (c *Copy) deleteTarget(j *domain.Job, limit []int64, txTarget interface{}) 
 	}
 	return nil
 }
+*/
 
 // deleteTargetAll deletes the target data
 func (c *Copy) deleteTargetAll(j *domain.Job, txTarget interface{}) error {
@@ -397,10 +399,14 @@ func (c *Copy) getSource(j *domain.Job, back bool, limit []int64) ([]string, [][
 	}
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
+	allFields, err := c.getAllFields(j, txSource)
+	if err != nil {
+		return nil, nil, err
+	}
 	cols := []string{}
 	rows := [][]*string{}
 	for i := range j.Keys {
-		co, ro, err := c.getSourceByKey(j, i, fields, limit[i], back, txSource)
+		co, ro, err := c.getSourceByKey(j, i, fields, allFields, limit[i], back, txSource)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -429,8 +435,35 @@ func (c *Copy) mountSourceFields(j *domain.Job) (string, error) {
 	return ret[:len(ret)-2], nil
 }
 
+// getFields gets the fields from target table
+func (c *Copy) getAllFields(j *domain.Job, tx interface{}) (string, error) {
+	q := fmt.Sprintf(port.CopyGetFields, j.Base, j.Object)
+	_, rows, err := c.RepoSource.Query(tx, q)
+	if err != nil {
+		return "", err
+	}
+	mountedFields, err := c.mountAllFields(rows)
+	if err != nil {
+		return "", err
+	}
+	return mountedFields, nil
+}
+
+// mountAllFields mounts the fields to a string
+func (c *Copy) mountAllFields(fields [][]*string) (string, error) {
+	if len(fields) == 0 {
+		return "", errors.New(port.ErrInvalidUpdateFields)
+	}
+	ret := ""
+	pat := "ifnull(%s, ''), "
+	for _, field := range fields {
+		ret += fmt.Sprintf(pat, *field[0])
+	}
+	return ret[:len(ret)-2], nil
+}
+
 // getSourceByKey gets the source data for the insert
-func (c *Copy) getSourceByKey(j *domain.Job, i int, fields string, limit int64, back bool, txSource interface{}) ([]string, [][]*string, error) {
+func (c *Copy) getSourceByKey(j *domain.Job, i int, fields, allFields string, limit int64, back bool, txSource interface{}) ([]string, [][]*string, error) {
 	last := j.Keys[i].Last
 	if back {
 		last -= j.Keys[i].Back
@@ -438,7 +471,7 @@ func (c *Copy) getSourceByKey(j *domain.Job, i int, fields string, limit int64, 
 			last = -1
 		}
 	}
-	sql := fmt.Sprintf(port.CopySelectF, fields, j.Base, j.Object, j.Keys[i].Name, last, j.Keys[i].Name, limit)
+	sql := fmt.Sprintf(port.CopySelectF, fields, allFields, j.Base, j.Object, j.Keys[i].Name, last, j.Keys[i].Name, limit)
 	cols, rows, err := c.RepoSource.Query(txSource, sql)
 	if err != nil {
 		return nil, nil, err
@@ -469,12 +502,17 @@ func (c *Copy) getSourceAll(j *domain.Job) ([]string, [][]*string, error) {
 
 // getAllSource gets all the source data for the insert
 func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, txTarget interface{}) error {
+	/*
 	if err := c.deleteTarget(j, keys, txTarget); err != nil {
 		return err
 	}
-
+	*/
 	if len(rows) == 0 {
 		return nil
+	}
+	rows, err := c.filterMoved(j, keys, rows, txTarget)
+	if err != nil {
+		return err
 	}
 	txSource := c.RepoSource.Begin(j.Base)
 	defer c.RepoSource.Rollback(txSource)
@@ -486,6 +524,91 @@ func (c *Copy) move(j *domain.Job, keys []int64, rows [][]*string, txTarget inte
 	}
 	return nil
 }
+
+// filterMoved filters the moved data
+func (c *Copy) filterMoved(j *domain.Job, limits []int64, rows [][]*string, txTarget interface{}) ([][]*string, error) {
+	keys, err := c.mountKeys(j)
+	if err != nil {
+		return nil, err
+	}
+	target, err := c.getMD5Target(j, keys, limits, txTarget)
+	if err != nil {
+		return nil, err
+	}
+	ret := [][]*string{}
+	for _, row := range rows {
+		f, err := c.mountIds(j, [][]*string{row})
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := target[f]; ok && target[f] == *row[len(row)-1] {
+			delete (target, f)
+			continue
+		}
+		ret = append(ret, row)
+	}
+	if err := c.deleteMoved(j, keys, target, txTarget); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// deleteMoved deletes the moved data
+func (c *Copy) deleteMoved(j *domain.Job, keys string, target map[string]string, txTarget interface{}) error {
+	if len(target) == 0 {
+		return nil
+	}
+	ids := ""
+	for i := range target {
+		ids += i + ", "
+	}
+	ids = ids[:len(ids)-2]
+	q := fmt.Sprintf(port.CopyDeleteIn, j.Base, j.Object, keys, ids)
+	_, err := c.RepoTarget.Exec(txTarget, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// getMD5Target gets the md5 of the target data
+func (c *Copy) getMD5Target(j *domain.Job, keys string, limits []int64, txTarget interface{}) (map[string]string, error) {
+	ret := make(map[string]string)
+	allFields, err := c.getAllFields(j, txTarget)
+	if err != nil {
+		return nil, err
+	}
+	for i := range j.Keys {
+		r, err := c.getMD5TargetbyKey(j, keys, allFields, i, limits, txTarget)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range r {
+			ret[k] = v
+		}
+	}
+	return ret, nil
+}
+
+// getMD5TargetbyKey gets the md5 of the target data by key
+func (c *Copy) getMD5TargetbyKey(j *domain.Job, keys string, allFields string, i int, limits []int64, tx interface{}) (map[string]string, error) {
+	ret := make(map[string]string)
+	q := fmt.Sprintf(port.CopySelectF, keys, allFields, j.Base, j.Object, j.Keys[i].Name, j.Keys[i].Last, j.Keys[i].Name, limits[i])
+	_, rows, err := c.RepoTarget.Query(tx, q)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		kVal := ""
+		for i := 0; i < len(row)-1; i++ {
+			kVal += *row[i] + ", "
+		}
+		kVal = "(" + kVal[:len(kVal)-2] + ")"
+		ret[kVal] = *row[len(row)-1]
+	}
+	return ret, nil
+}
+
 
 // runWait waits for the run to finish or db relief time
 func (c *Copy) moveAtomic(j *domain.Job, rows [][]*string, txTarget interface{}, txSource interface{}) error {
@@ -515,11 +638,11 @@ func (c *Copy) moveAtomic(j *domain.Job, rows [][]*string, txTarget interface{},
 
 // getAllSource steps the source data for the insert
 func (c *Copy) moveAtom(j *domain.Job, rows [][]*string, txTarget interface{}, txSource interface{}) error {
-	fields, err := c.mountAllSourceFields(j)
+	fields, err := c.mountKeys(j)
 	if err != nil {
 		return err
 	}
-	ids, err := c.mountAllSourceIds(j, rows)
+	ids, err := c.mountIds(j, rows)
 	if err != nil {
 		return err
 	}
@@ -535,7 +658,7 @@ func (c *Copy) moveAtom(j *domain.Job, rows [][]*string, txTarget interface{}, t
 }
 
 // mountAllSourceFields mounts the source fields name for the select
-func (c *Copy) mountAllSourceFields(j *domain.Job) (string, error) {
+func (c *Copy) mountKeys(j *domain.Job) (string, error) {
 	ret := ""
 	for _, key := range j.Keys {
 		ret += key.Name + ", "
@@ -547,7 +670,7 @@ func (c *Copy) mountAllSourceFields(j *domain.Job) (string, error) {
 }
 
 // mountAllSourceIds mounts the source ids for the select
-func (c *Copy) mountAllSourceIds(j *domain.Job, rows [][]*string) (string, error) {
+func (c *Copy) mountIds(j *domain.Job, rows [][]*string) (string, error) {
 	ret := ""
 	for _, row := range rows {
 		r := ""
