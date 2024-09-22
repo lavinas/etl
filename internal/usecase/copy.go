@@ -455,7 +455,7 @@ func (c *Copy) mountAllFields(fields [][]*string) (string, error) {
 		return "", errors.New(port.ErrInvalidUpdateFields)
 	}
 	ret := ""
-	pat := "ifnull(%s, ''), "
+	pat := "ifnull(`%s`, ''), "
 	for _, field := range fields {
 		ret += fmt.Sprintf(pat, *field[0])
 	}
